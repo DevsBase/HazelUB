@@ -53,18 +53,17 @@ async def youtube(app, message):
   if len(message.text.split()) < 2:
     return await message.reply("Provide a song/video name or YouTube link.")
   query = " ".join(message.command[1:])
-  media_type = message.command[0].lower()
+  media_type = message.command[0]
   msg = await message.reply("📥 Downloading...")
-  media_file, thumb_name, duration_or_error = await download_youtube(query, media_type)
-  if not media_file:
-    return await msg.edit(f"Error: {duration_or_error}")
+  try: media_file, thumb_name, dur = await download_youtube(query, media_type)
+  except Exception as e: return await msg.edit(f"Error: {e}")
   await msg.edit("📤 Uploading...")
   if media_type == "video":
     await message.reply_video(
       media_file,
       thumb=thumb_name,
       caption=os.path.basename(media_file),
-      duration=duration_or_error
+      duration=dur
     )
   else:
     await message.reply_audio(
@@ -72,7 +71,7 @@ async def youtube(app, message):
       thumb=thumb_name,
       title=os.path.basename(media_file),
       caption=os.path.basename(media_file),
-      duration=duration_or_error
+      duration=dur
     )
   await msg.delete()
   if os.path.exists(media_file):
