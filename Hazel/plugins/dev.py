@@ -107,17 +107,17 @@ async def restart_func(c, message):
       if int(txt[:-1]) <= 5 and txt.endswith('s'):
         return await message.reply("Time should be greater than 5 sec.")
       x = await GetTime(txt)
-      _, seton, endon = await message.edit(f"Done! userbot will be restarted in {txt}"), datetime.now(ist).strftime("%H:%M:%S"), datetime.now(ist).strftime("%H:%M:%S")
+      _, seton, endon = await message.edit(f"Done! userbot will be restarted in {txt}"), datetime.now(ist).strftime("%H:%M:%S"), (datetime.now(ist) + timedelta(seconds=x)).strftime("%H:%M:%S")
       try:
         for i in clients:
-          await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ End on:** {endon}\n\n**Powered by:** @{Channel}!")
+          await bot.send_message(i.me.id, f"**🟢 Time Restart...**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
       except: pass
       await asyncio.sleep(x)
       try:
         for i in clients:
-          await bot.send_message(i.me.id, f"**🟢 Restarted!**\n\n**🕐 Set on:** {seton}\n**⌚ End on:** {endon}\n\n**Powered by:** @{Channel}!")
+          await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
       except: pass
-    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`"), logging.error(e)
+    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`")
   try: await message.edit("Restarting...")
   except: pass
   restart()
