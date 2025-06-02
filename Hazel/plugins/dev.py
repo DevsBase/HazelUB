@@ -118,7 +118,7 @@ async def restart_func(c, message):
         for i in clients:
           await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
       except: pass 
-    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`"), logging.error(e)
+    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`")
   try: await message.edit("Restarting...")
   except: pass
   restart()
