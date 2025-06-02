@@ -8,6 +8,7 @@ from pyrogram.enums import ParseMode
 import contextlib
 import asyncio
 import aiofiles
+import logging
 from MultiSessionManagement import *
 
 async def aexec(code, client, msg):
@@ -115,7 +116,7 @@ async def restart_func(c, message):
         for i in clients:
           await bot.send_message(i.me.id, f"**🟢 Restarted!**\n\n**🕐 Set on:** {seton}\n**⌚ End on:** {endon}\n\n**Powered by:** @{Channel}!")
       except: pass
-    except: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`")
+    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`"), logging.error(e)
   try: await message.edit("Restarting...")
   except: pass
   restart()
