@@ -11,12 +11,10 @@ import aiofiles
 from MultiSessionManagement import *
 
 async def aexec(code, client, msg):
-  m, from_user, r = msg, msg.from_user, msg.reply_to_message
   local_vars = {}
   exec(
     "async def __otazuki_run(client, message, m, r, frm, chat_id): "
-    + "\n p = print"
-    + "\n here = m.chat.id"
+    + "\n p, here, loop = print, m.chat.id, asyncio.get_running_loop()"
     + "".join(f"\n {l_}" for l_ in code.split("\n")),
     globals(),
     local_vars,
@@ -24,7 +22,7 @@ async def aexec(code, client, msg):
   func = local_vars.get("__otazuki_run")
   if not func:
     raise KeyError("__otazuki_run not defined")
-  return await func(client, msg, m, r, from_user, m.chat.id)
+  return await func(client, msg, msg, msg.reply_to_message, msg.from_user, msg.chat.id)
 
 @on_message(filters.command(["e", "eval"],prefixes=HANDLER) & filters.me)
 async def eval_func(c, msg):
@@ -95,10 +93,29 @@ async def log(c, m):
   else: await m.reply(f"<pre>{xx[-2000:]}</pre>", parse_mode=ParseMode.HTML)
   await x.delete()
 
-@on_message(filters.command("restart", prefixes=HANDLER) & filters.me)
+@on_message(filters.command(["trestart","restart"], prefixes=HANDLER) & filters.me)
 async def restart_func(c, message):
   if (c.privilege!='sudo'):
     return await message.reply("You don't have permisson.")  
-  await message.reply("Restarting...")
   from restart import restart
+  from ..helper_functions import GetTime
+  if message.command[0] == 'trestart':
+    try:  
+      txt, ist = " ".join(message.command[1:]), pytz.timezone('Asia/Kolkata')
+      if int(txt[:-1]) <= 5 and txt.endswith('s'):
+        return await message.reply("Time should be greater than 5 sec.")
+      x = await GetTime(txt)
+      _, seton, endon = await message.edit(f"Done! userbot will be restarted in {txt}"), datetime.now(ist).strftime("%H:%M:%S"), datetime.now(ist).strftime("%H:%M:%S")
+      try:
+        for i in clients:
+          await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ End on:** {endon}\n\n**Powered by:** @{Channel}!")
+      except: pass
+      await asyncio.sleep(x)
+      try:
+        for i in clients:
+          await bot.send_message(i.me.id, f"**🟢 Restarted!**\n\n**🕐 Set on:** {seton}\n**⌚ End on:** {endon}\n\n**Powered by:** @{Channel}!")
+      except: pass
+    except: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`")
+  try: await message.edit("Restarting...")
+  except: pass
   restart()
