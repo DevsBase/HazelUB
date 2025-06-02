@@ -6,6 +6,7 @@ Nexgram.py==0.0.23
 tgcrypto
 requests
 py-tgcalls>=2.1.1
+pytz
 google
 numpy
 youtube_search_python
