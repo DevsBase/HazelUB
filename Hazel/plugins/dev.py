@@ -101,6 +101,7 @@ async def restart_func(c, message):
     return await message.reply("You don't have permisson.")  
   from restart import restart
   from ..helper_functions import GetTime
+  from datetime import datetime, timedelta
   if message.command[0] == 'trestart':
     try:  
       txt, ist = " ".join(message.command[1:]), pytz.timezone('Asia/Kolkata')
@@ -116,7 +117,7 @@ async def restart_func(c, message):
       try:
         for i in clients:
           await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
-      except: pass
+      except: pass 
     except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`"), logging.error(e)
   try: await message.edit("Restarting...")
   except: pass
