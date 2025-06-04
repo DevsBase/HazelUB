@@ -43,7 +43,7 @@ async def eval_func(c, msg):
     stdout, stderr = redr_opu.getvalue(), redr_err.getvalue()
   output = exc or stderr or stdout or x or "ɴᴏ ᴏᴜᴛᴘᴜᴛ"
   output_text = f"📒 ᴏᴜᴛᴘᴜᴛ:\n<pre>{output}</pre>"
-  if len(output_text) >= 4000:
+  if (len(output_text) >= 4000):
     import aiofiles
     async with aiofiles.open("result.txt", mode='w') as f:
       await f.write(output)
@@ -54,13 +54,13 @@ async def eval_func(c, msg):
   else:
     await message.reply(output_text, parse_mode=ParseMode.HTML)
   await message.delete()
-  await msg.edit(f"```\n.{msg.command[0]}\n{cmd}```")
+  await msg.edit(f"```\n.{msg.command[0]}\n{msg.text}```")
 
 @on_message(filters.command(["sh", "shell"], prefixes=HANDLER) & filters.me)
 async def shell(c, message):
   if (c.privilege!='sudo'):
     return await msg.reply("You don't have permisson.")
-  if len(message.command) < 2:
+  if (len(message.command) < 2):
     return await message.reply("Please enter a command to run!")
   code = message.text.split(None, 1)[1]
   message_text = await message.reply_text("`Processing...`")
@@ -91,7 +91,7 @@ async def log(c, m):
   x = await m.reply("Processing...")
   async with aiofiles.open("log.txt", mode="r") as l:
     xx = await l.read()
-  if len(xx) > 4000 and 'f' in m.command[0]:
+  if (len(xx) > 4000 and 'f' in m.command[0]):
     await m.reply_document("log.txt")
   else: await m.reply(f"<pre>{xx[-2000:]}</pre>", parse_mode=ParseMode.HTML)
   await x.delete()
@@ -103,7 +103,7 @@ async def restart_func(c, message):
   from restart import restart
   from ..helper_functions import GetTime
   from datetime import datetime, timedelta
-  if message.command[0] == 'trestart':
+  if (message.command[0] == 'trestart'):
     try:  
       txt, ist = " ".join(message.command[1:]), pytz.timezone('Asia/Kolkata')
       if int(txt[:-1]) <= 5 and txt.endswith('s'):
