@@ -54,7 +54,7 @@ async def eval_func(c, msg):
   else:
     await message.reply(output_text, parse_mode=ParseMode.HTML)
   await message.delete()
-  await msg.edit(f"```\n.{msg.command[0]}\n{msg.text}```")
+  await msg.edit(f"```py\n{msg.text}```")
 
 @on_message(filters.command(["sh", "shell"], prefixes=HANDLER) & filters.me)
 async def shell(c, message):
