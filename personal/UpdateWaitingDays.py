@@ -1,8 +1,4 @@
 import asyncio
-import traceback
-import logging
-bio = f">> Hate.tg: I'll walk through fire for you, just let me adore you. Waiting {{}}/Forever for you. @IMissYouMano • @EraseLust • @FutureCity005"
-bioedit = True
 async def UpdateWaitingDays(app):
   if (app.me.id != 5965055071): return
   while (True):
@@ -13,11 +9,6 @@ async def UpdateWaitingDays(app):
       t=f"It's been {days} days since you deleted telegram. I'm still loving and missing you."      
       if (m.text != t):
         await m.edit(t)
-      if (bioedit):
-        nbio = bio.format(days)
-        if ((await app.get_chat('me')).bio == nbio):
-          await app.update_profile(bio=nbio)
+        await app.send_message(-1002613019184, f"Day ( {days} / Forever ) trying new ways to contact you / waiting for your reply.")
       await asyncio.sleep(7000)
-    except:
-      logging.error(traceback.format_exc())
-      await asyncio.sleep(7000)
+    except: await asyncio.sleep(7000)
