@@ -1,5 +1,6 @@
 import asyncio
-
+import traceback
+import logging
 bio = f">> Hate.tg: I'll walk through fire for you, just let me adore you. Waiting {{}}/Forever for you. @IMissYouMano • @EraseLust • @FutureCity005"
 bioedit = True
 async def UpdateWaitingDays(app):
@@ -18,4 +19,5 @@ async def UpdateWaitingDays(app):
           await app.update_profile(bio=nbio)
       await asyncio.sleep(7000)
     except:
+      logging.error(traceback.format_exc())
       await asyncio.sleep(7000)
