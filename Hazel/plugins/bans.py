@@ -62,7 +62,7 @@ async def gban_func(app,message)->None:
 async def ban_func(c,m)->None:
   from MultiSessionManagement import clients
   if m.reply_to_message:
-    victim = m.reply_to_message.from_user.id if not hasattr(m,'sender_chat') else m.reply_to_message.sender_chat.id
+    victim = m.reply_to_message.from_user.id if not hasattr(m.reply_to_message,'sender_chat') else m.reply_to_message.sender_chat.id
   elif len(m.command) >= 2:
     victim = str(m.command[1])
     try: victim = (await c.get_users(victim)).id

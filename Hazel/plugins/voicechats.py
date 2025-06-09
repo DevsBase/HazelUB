@@ -16,3 +16,4 @@ async def leavevc(c,m):
   except:
     await pytgcalls_client.play(m.chat.id)
     await pytgcalls_client.leave_call(m.chat.id)
+    

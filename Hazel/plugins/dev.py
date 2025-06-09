@@ -112,7 +112,7 @@ async def restart_func(c, message):
       _, seton, endon = await message.edit(f"Done! userbot will be restarted in {txt}"), datetime.now(ist).strftime("%H:%M:%S"), (datetime.now(ist) + timedelta(seconds=x)).strftime("%H:%M:%S")
       try:
         for i in clients:
-          await bot.send_message(i.me.id, f"**🟢 Time Restart**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
+          await bot.send_message(i.me.id, f"**🟢 Time Restart**\n\n**🕐 Set on:** {seton}\n**⌚ Restart on:** {endon}\n\n**Powered by:** @{Channel}!")
       except: pass
       await asyncio.sleep(x)
       try:
