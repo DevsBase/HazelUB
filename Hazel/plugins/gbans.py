@@ -16,8 +16,8 @@ async def gban_func(c, m) -> None:
     try: user_id = (await c.get_users(user_id)).id
     except: return await m.reply('Cannot find them. make sure your id is correct!')
   else: return await m.reply("Okay, i'll gban. But who?")
-  if user_id == c.me.id: return await m.reply("Nah. I won't do this on yourself.")
-  
+  if user_id == c.me.id:
+    return await m.reply("Nah. I won't do this on myself.")  
   a, p, t = m.command[0], await m.reply('Processing...'), time.time()
   success = 0
   async for dialog in c.get_dialogs():
@@ -30,8 +30,6 @@ async def gban_func(c, m) -> None:
         await asyncio.sleep(2.1)
       except errors.FloodWait as e:
         return await m.reply(f"FloodwaitError: a wait of {e.value} is required.")
-      except Exception as e:
-        log.error(f"An error occurred while {a}ing user: {user_id} in {chat.title} ({chat.id})") 
   await p.delete()
   await m.reply(f"""**✅ {'Gban' if a == 'gban' else 'Ungban'} Summary 🐬**
 
@@ -39,7 +37,7 @@ async def gban_func(c, m) -> None:
 **👤 User:** __{user_id}__
 **🕒 Taken Time:** __{int(time.time() - t)}s__
 
-**» 🦋 Join:** __{Channel} & {Support} ✨🥀__
+**» 🦋 Join:** __@{Channel} & @{Support} ✨🥀__
     """)
     
 MOD_NAME = "Gbans"

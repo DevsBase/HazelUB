@@ -27,4 +27,4 @@ async def urban_dictionary(_, message):
   await mm.delete()
 
 MOD_NAME = "UD"
-MOD_HELP = ".ud <word> - To get definition of that word!"
+MOD_HELP = ".ud <word> - To get definition of that word."

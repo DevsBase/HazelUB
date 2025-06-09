@@ -17,7 +17,7 @@ async def purge_messages(app, message):
       await app.delete_messages(message.chat.id, x)
       await asyncio.sleep(2.5)
     except Exception as e:
-      logging.error(f"Error deleting message {x}: {str(e)}")
+      logging.error(f"Error deleting messages {x}: {str(e)}")
   
 MOD_NAME = "Purge"
 MOD_HELP = ".purge <reply> - To delete all messages from you replied one."

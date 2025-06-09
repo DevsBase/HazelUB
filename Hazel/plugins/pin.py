@@ -23,4 +23,4 @@ async def pin_unpin(app, message):
     await message.reply(f"**Error:** `{e}`")
 
 MOD_NAME = 'Pins'
-MOD_HELP = ".pin (reply) - To pin the replied message!\n.unpin (reply) - To unpin the replied message!"
+MOD_HELP = ".pin <reply> - To pin the replied message!\n.unpin (reply) - To unpin the replied message!"

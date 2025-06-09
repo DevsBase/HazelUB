@@ -2,7 +2,7 @@ from .. import *
 from pyrogram import *
 
 @on_message(filters.command("id", prefixes=HANDLER) & filters.me)
-async def id(_, m):
+async def id_func(_, m):
   reply = m.reply_to_message
   _reply = ""
   if not reply:
