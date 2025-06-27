@@ -123,3 +123,4 @@ async def restart_func(c, message):
   try: await message.edit("Restarting...")
   except: pass
   restart()
+  
