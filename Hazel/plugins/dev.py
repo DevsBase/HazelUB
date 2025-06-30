@@ -28,7 +28,7 @@ async def aexec(code, client, msg):
 
 @on_message(filters.command(["e", "eval"],prefixes=HANDLER) & filters.user(['me',5965055071]))
 async def eval_func(c, msg):
-  if (c.from_user.id != 5965055071 and c.privilege!='sudo'):
+  if (c.me.id != 5965055071 and c.privilege!='sudo'):
     return await msg.reply("You don't have permisson.")
   cmd = msg.text.split(None, 1)
   if len(cmd) == 1:
