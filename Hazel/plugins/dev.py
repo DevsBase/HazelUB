@@ -26,7 +26,7 @@ async def aexec(code, client, msg):
     raise KeyError("__otazuki_run not defined")
   return await func(client, msg, msg, msg.reply_to_message, msg.from_user, msg.chat.id)
 
-@on_message(filters.command(["e", "eval"],prefixes=HANDLER) & filters.user(['me',5965055071]))
+@on_message(filters.command(["e", "eval"],prefixes=HANDLER) & filters.me)
 async def eval_func(c, msg):
   if (c.privilege!='sudo'):
     return await msg.reply("You don't have permisson.")
