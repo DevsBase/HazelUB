@@ -1,6 +1,5 @@
 from pyrogram import Client
 import asyncio
-from Essentials.vars import __version__
 import os
 
 while (True):
@@ -11,7 +10,7 @@ while (True):
   break
 
 name = 'client'
-client = Client(name, api_id=api_id, api_hash=api_hash, in_memory=True, device_model="HazelUB", system_version=f"HazelUB (v{__version__})")
+client = Client(name, api_id=api_id, api_hash=api_hash, in_memory=True, device_model="HazelUB")
 
 async def main():
   await client.start()
