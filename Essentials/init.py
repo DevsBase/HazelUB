@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import ast
 from art import *
 from clear import clear
 
@@ -69,15 +70,11 @@ class Init:
     for key in OtherKeys:
       if key == "OtherSessions":
         sessions = config.get(key) or os.getenv(key) or "[]"
-        try: data[key] = eval(sessions)
+        try: data[key] = ast.literal_eval(sessions)
         except Exception as e:
-          log.error(e)
           data[key] = []
-          log.info("'OtherSessions' is not variable found in config.json & ENV. proceeding with a single client.")
-        if not isinstance(data[key], list): 
-          data[key] = []
-          log.info("'OtherSessions' is not variable found in config.json & ENV. proceeding with a single client.")
-        log.info("debug 75: executed")
+          if sessions and sessions != "[]": log.error("'OtherSessions' is variable found in config.json or in ENV. there is an error while converting it into List/Array: {e}.")    
+        if not isinstance(data[key], list): data[key] = []
       else:
         data[key] = config.get(key) or os.getenv(key)
 
