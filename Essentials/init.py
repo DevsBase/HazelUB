@@ -69,12 +69,10 @@ class Init:
     for key in OtherKeys:
       if key == "OtherSessions":
         sessions = config.get(key) or os.getenv(key) or "[]"
-        try:
-          data[key] = eval(sessions)
-        except:
-          data[key] = []
-        if not isinstance(data[key], list):
-          data[key] = []
+        try: data[key] = eval(sessions)
+        except: data[key] = []
+        if not isinstance(data[key], list): data[key] = []
+        log.info("debug 75: executed")
       else:
         data[key] = config.get(key)
 
