@@ -21,7 +21,7 @@ class Init:
 
     config = self._load_config_file()
     data = self._collect_config(DefaultKeys, config)
-    self._process_other_keys(data, config, OtherKeys)
+    data = self._process_other_keys(data, config, OtherKeys)
     self._confirm_data(DefaultKeys, data, config)
 
     self.__data = {
@@ -74,7 +74,8 @@ class Init:
         if not isinstance(data[key], list): data[key] = []
         log.info("debug 75: executed")
       else:
-        data[key] = config.get(key)
+        data[key] = config.get(key) or os.getenv(key)
+      return data
 
   def _confirm_data(self, DefaultKeys, data, config):
     try:
@@ -82,13 +83,11 @@ class Init:
         print("Please check values below:")
         for key in DefaultKeys:
           print(f"{key}: {repr(data[key])}")
-        confirm = input("Are these correct? (y/n): ").strip().lower()
-      else:
-        confirm = 'y'
+        confirm = input("Are these correct? (y/N): ").strip().lower()
+      else: confirm = 'y'
     except EOFError:
       log.info("EOF detected. Continuing with y.")
       confirm = 'y'
-
     if confirm != 'y':
       Init()
 
