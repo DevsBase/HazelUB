@@ -6,8 +6,7 @@ import Nexgram
 log = logging.getLogger(__name__)
 
 class CreateClients:
-  def __init__(self, other):
-    config = other.output
+  def __init__(self, config):
     API_ID, API_HASH = config.get('API_ID'), config.get('API_HASH')
     PYROGRAM_SESSION, BOT_TOKEN = config.get("PYROGRAM_SESSION"), config.get("BOT_TOKEN")
     MONGO_DB_URL = config.get('MONGO_DB_URL')
