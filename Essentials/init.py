@@ -21,7 +21,7 @@ class Init:
 
     config = self._load_config_file()
     data = self._collect_config(DefaultKeys, config)
-    data = self._process_other_keys(data, config, OtherKeys)
+    self._process_other_keys(data, config, OtherKeys)
     self._confirm_data(DefaultKeys, data, config)
 
     self.__data = {
@@ -70,12 +70,16 @@ class Init:
       if key == "OtherSessions":
         sessions = config.get(key) or os.getenv(key) or "[]"
         try: data[key] = eval(sessions)
-        except: data[key] = []
-        if not isinstance(data[key], list): data[key] = []
+        except Exception as e:
+          log.error(e)
+          data[key] = []
+          log.info("'OtherSessions' is not variable found in config.json & ENV. proceeding with a single client.")
+        if not isinstance(data[key], list): 
+          data[key] = []
+          log.info("'OtherSessions' is not variable found in config.json & ENV. proceeding with a single client.")
         log.info("debug 75: executed")
       else:
         data[key] = config.get(key) or os.getenv(key)
-    return data
 
   def _confirm_data(self, DefaultKeys, data, config):
     try:
