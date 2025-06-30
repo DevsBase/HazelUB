@@ -17,22 +17,25 @@ class Init:
     print(credits)
     DefaultKeys = ['API_ID', 'API_HASH', 'PYROGRAM_SESSION', 'BOT_TOKEN', 'MONGO_DB_URL']
     OtherKeys = ['quick_start', 'OtherSessions']
-    data,config={}, {}
+    data, config = {}, {}
     if os.path.exists("config.json"):
       try:
         with open("config.json") as f:
           config = json.load(f)
       except Exception as e:
-        log.error("Failed to load config.json")
-        log.error(str(e))
+        log.error(f"Failed to load config.json: {e}")
+    warned = False
     for key in DefaultKeys:
       if not (config.get(key) or os.getenv(key)):
+        if (not warned):
+          log.info("Some of the keys are missing in config.json & ENV. You might promted to enter them manually.")
+          warned = True
         try:
-          i = input(f"Cannot find {key} in config.json & env. Enter: ")
-          if not i: Init()
+          while (True):
+            i = input(f"Enter your {key}: ")
+            if i: break
         except EOFError:
-          log.error("Some keys are missing. Please add them in config.json or as a ENV.")
-          exit()
+          raise Exception("EOFError Occured. Please add your credentials in config.json or as a ENV.")
         data[key] = config.get(key) or os.getenv(key) or i
       else: data[key] = config.get(key) or os.getenv(key)
     for k in OtherKeys:
