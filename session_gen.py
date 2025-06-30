@@ -11,14 +11,12 @@ while (True):
   break
 
 name = 'client'
-client = Client(name, api_id=api_id, api_hash=api_hash, device_model="HazelUB", system_version=f"HazelUB (v{__version__})")
+client = Client(name, api_id=api_id, api_hash=api_hash, in_memory=True, device_model="HazelUB", system_version=f"HazelUB (v{__version__})")
 
 async def main():
   await client.start()
   session = await client.export_session_string()
   print("SESSION STRING GENERATED\n")
   print(session)
-  try: os.remove(f'{name}.session')
-  except: print(f"Delete {name}.session (if created). To be secure and don't share session to anyone.")
-  
+    
 asyncio.run(main())
