@@ -100,7 +100,7 @@ class Init:
     try: config = self._load_config_file()
     except: config = None
     with open('config-backup.json', 'w') as f:
-      if config: f.write(json.dumps(config))
+      if config: f.write(json.dumps(config, indent=2))
     with open('config.json', 'w') as f:
       json.dump({**self.__data, "quick_start": True}, f, indent=2)
     log.info("Configs are saved on config.json. also old config.json shifted to -> config-backup.json")
