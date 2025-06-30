@@ -1,4 +1,4 @@
-from . import *
+from Hazel import *
 import asyncio
 from MultiSessionManagement import start_all
 from clear import clear
