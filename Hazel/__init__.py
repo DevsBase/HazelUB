@@ -1,5 +1,7 @@
 from Essentials import *
 from MultiSessionManagement.decorators import *
 
-x = CreateClients(Init())
-app,bot,nexbot,DATABASE=x.app,x.bot,x.nexbot,x.DATABASE
+init = Init()
+clients = CreateClients(init.get_config())
+app, bot = clients.app, clients.bot
+nexbot, DATABASE = clients.nexbot, clients.DATABASE
