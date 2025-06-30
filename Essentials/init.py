@@ -75,7 +75,7 @@ class Init:
         log.info("debug 75: executed")
       else:
         data[key] = config.get(key) or os.getenv(key)
-      return data
+    return data
 
   def _confirm_data(self, DefaultKeys, data, config):
     try:
