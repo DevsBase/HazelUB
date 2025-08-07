@@ -41,4 +41,6 @@ class Init:
       
     for k in optional_keys:
       v = config.get(k) or os.getenv(k)
+      if v and k == "OtherSessions":
+        v = ast.literal_eval(v)
       setattr(self, k, v)
