@@ -33,12 +33,12 @@ class Init:
     with open('config.json', 'r') as f:
       config = json.loads(f.read())
     
-    for k, v in required_keys:
+    for k in required_keys:
       v = config.get(k) or os.getenv(k)
       if not v:
         raise ValueError(f"{k} is not found in config.json or .env. {k} is an required key you must give it.")
       setattr(self, k, v)
       
-    for k, v in optional_keys:
+    for k in optional_keys:
       v = config.get(k) or os.getenv(k)
       setattr(self, k, v)
