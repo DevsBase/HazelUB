@@ -1,4 +1,4 @@
-from app import app, config, on_message, agent
+from Hazel import app, config, on_message, agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from pyrogram import filters
 import logging
