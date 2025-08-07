@@ -4,6 +4,7 @@ import logging
 import traceback
 
 log = logging.getLogger(__name__)
+tools = []
 
 def create_agent(config):
   if not config.GOOGLE_API_KEY: llm, agent = None, None
@@ -15,7 +16,7 @@ def create_agent(config):
     )
     agent = create_react_agent(
       model=llm,
-      tools=[]
+      tools=tools
     )
     log.info("Ai agent created successfully.")
   except:

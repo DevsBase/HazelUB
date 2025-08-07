@@ -1,5 +1,5 @@
 art
-pyrofork
+kurigram
 aiofiles
 motor>=3.6.0
 Nexgram.py==0.0.23
