@@ -12,7 +12,7 @@ async def hazel_agent(client, m):
     return await m.reply("There's no GOOGLE_API_KEY in env & config.json.")
   try:
     t = await m.reply("Thinking...")
-    response = await client.loop.run_in_executor(None, agent_executor.invoke, {"messages": [("user", user_input)]}))  
+    response = await client.loop.run_in_executor(None, agent_executor.invoke, {"messages": [("user", user_input)]})  
     await t.delete()
     await m.reply(response["messages"][-1].content)
   except Exception as e:
