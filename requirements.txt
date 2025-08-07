@@ -13,3 +13,7 @@ youtube_search_python
 youtube_dl
 youtube_search
 yt_dlp
+python-dotenv
+langchain
+langgraph
+langchain-google-genai

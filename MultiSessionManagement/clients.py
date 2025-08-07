@@ -19,30 +19,28 @@ def add_client(client):
 
 async def start_all():
   global clients_data,TgCallsClients
-  from Hazel import bot, nexbot, init
+  from Hazel import bot, config
   from personal.UpdateWaitingDays import UpdateWaitingDays
   from Essentials.vars import AutoJoinChats, Support
   
   await bot.start()
-  await nexbot.start()
   for client in clients:
-    privilege = f"{'sudo' if client == clients[0] else 'user'}"
+    privilege = 'sudo' if (client == clients[0]) else 'user'
     await client.start()
     await client.pytgcalls.start()
-    client.privilege = privilege      
+    client.privilege = privilege
     clients_data[client.me.id] = {"client": client, "StreamingChats": {}, "pytgcalls_client": client.pytgcalls,"privilege": privilege}
   
   for app in clients:
     for i in AutoJoinChats:
       try: await app.join_chat(i)
-      except: pass
+      except: ...
   
   clear()
   print(text2art("HazelUB"), end="")
-  logging.info("You're all set!")
+  log.info("You're all set!")
   
   try: await clients[0].send_message(Support,"Up!")
-  except: pass
-  init.save_config()
+  except: ...
   asyncio.create_task(UpdateWaitingDays(clients[0]))
   await idle()

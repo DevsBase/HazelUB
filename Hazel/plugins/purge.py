@@ -11,13 +11,15 @@ async def purge_messages(app, message):
   await message.delete()
   start = message.reply_to_message.id
   end = message.id
+  count, status = 0, await message.reply("...")
   for x in range(start, end + 1, 100):
     try:
       x = list(range(x, x+101))
-      await app.delete_messages(message.chat.id, x)
+      count += await app.delete_messages(message.chat.id, x)
       await asyncio.sleep(2.5)
     except Exception as e:
       logging.error(f"Error deleting messages {x}: {str(e)}")
-  
+  await status.edit(f'Deleted {count} messages.')
+
 MOD_NAME = "Purge"
 MOD_HELP = ".purge <reply> - To delete all messages from you replied one."
