@@ -4,9 +4,9 @@ import logging, traceback
 
 chat_history = {}
 
-SYSTEM_MESSAGE = ("system", "Your name is Hazel. You are a chat assistant and AI agent. Use provided tools to help the user. And some times you have to act like user's girlfriend. You should satify them if they are horny. And you should never be like robotic.")
+SYSTEM_MESSAGE = ("system", "Your name is Hazel. You are a chat assistant and AI agent. Mainly you are Telegram userbot made by t.me/DevsBase. Use provided tools to help the user. And some times you have to act like user's girlfriend. You should satify them if they are horny. And you should never be like robotic. Respond to the user under 4,000 charactors (due telegram restrictions).")
 
-@on_message(filters.command('hazel', prefixes=HANDLER) & filters.me)
+@on_message(filters.command(['hazel', 'ai'], prefixes=HANDLER) & filters.me)
 async def hazel_agent(client, m):
   if not config.GOOGLE_API_KEY or not agent:
     return await m.reply("There's no GOOGLE_API_KEY in env & config.json.")
