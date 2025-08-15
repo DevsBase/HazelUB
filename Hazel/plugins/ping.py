@@ -1,7 +1,7 @@
 from .. import *
 from pyrogram import filters, raw
 from datetime import datetime
-import time
+from time import time
 
 @on_message(filters.command("ping", prefixes=HANDLER) & filters.user('me'))
 async def ping_pong(client, message):
