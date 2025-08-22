@@ -5,7 +5,7 @@ from pyrogram.errors import InviteRequestSent
 @on_message(filters.command(['join','leave'], prefixes=HANDLER) & filters.me)
 async def joins_func(app,m):
   if ((len(m.command) < 2 or '-' in m.text) and m.command[0] == 'leave' and m.chat.type not in [enums.ChatType.BOT, enums.ChatType.PRIVATE]):
-    if '-silent' in m.text.lower()
+    if '-silent' in m.text.lower():
       await m.delete()
     else: await m.reply(f"Left from {m.chat.title}.")    
     await app.leave_chat(m.chat.id)
@@ -16,7 +16,7 @@ async def joins_func(app,m):
   if m.command[0] == 'join':
     try:
       chat = await app.join_chat(link)
-      await m.reply(f"Joined, {chat.title}")
+      return await m.reply(f"Joined, {chat.title}.")
     except InviteRequestSent:
       return await m.reply("Join request sent.")
     except Exception as e: return await m.reply(f'Failed: {e}')
