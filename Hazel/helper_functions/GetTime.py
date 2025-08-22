@@ -1,4 +1,5 @@
 import asyncio
+
 async def GetTime(txt, wait=False):
   units = {'h': 3600, 'm': 60, 's': 1, 'd': 86400}
   if not isinstance(txt, str) or len(txt) < 2 or not txt[:-1].isdigit() or txt[-1] not in units:

@@ -7,12 +7,12 @@ import asyncio
 
 log = logging.getLogger(__name__)
 
-async def is_admin(client, chat_id, user_id):
+async def is_admin(client, chat_id, user_id) -> bool:
   member = await client.get_chat_member(chat_id, user_id)
   return member.status in [enums.ChatMemberStatus.ADMINISTRATOR, enums.ChatMemberStatus.OWNER]
 
 @on_message(filters.command(["unbanall", "banall", "kickall"], prefixes=HANDLER) & filters.me)
-async def gban_func(app,message)->None:
+async def gban_func(app, message) -> None:
   user_id, chat_id = message.from_user.id, message.chat.id
   if not await is_admin(app, chat_id, user_id):
     return await message.reply('You should be an admin to do this.')
@@ -58,8 +58,8 @@ async def gban_func(app,message)->None:
     await message.reply(f"**Error:** {e}")
     log.error(f"{app.me.first_name} ({app.me.id}): {e}")
 
-@on_message(filters.command(['ban','kick','unban'],prefixes=HANDLER)&filters.me)
-async def ban_func(c,m)->None:
+@on_message(filters.command(['ban','kick','unban'], prefixes=HANDLER) & filters.me)
+async def ban_func(c, m) -> None:
   from MultiSessionManagement import clients
   if m.reply_to_message:
     victim = m.reply_to_message.from_user.id if not m.reply_to_message.sender_chat else m.reply_to_message.sender_chat.id
