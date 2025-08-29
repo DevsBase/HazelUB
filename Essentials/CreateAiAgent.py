@@ -7,8 +7,8 @@ log = logging.getLogger(__name__)
 tools = []
 
 def create_agent(config):
-  if not config.GOOGLE_API_KEY: llm, agent = None, None
   try:
+    if not config.GOOGLE_API_KEY: return None, None
     log.info("Creating ai agent.")
     llm = ChatGoogleGenerativeAI(
       model="gemini-2.5-flash",

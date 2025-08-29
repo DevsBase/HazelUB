@@ -1,9 +1,3 @@
-"""
-By using bridge you won't get 100% audio quilty 
-So using this is kinda useless tbh.
-It would work, but you cannot expect good audio quilty. Thanks Laky-64 for giving example bridging code! 
-"""
-
 import numpy as np
 from pytgcalls import filters as call_filter
 from pytgcalls.types import Device, Direction, ExternalMedia, RecordStream, MediaStream, StreamFrames

@@ -4,7 +4,7 @@ from pyrogram import *
 import asyncio
 import aiofiles.os
 
-@on_message(filters.command("git", prefixes=HANDLER) & filters.me)
+@on_message(filters.command(["github", "git"], prefixes=HANDLER) & filters.me)
 async def git(app, message):
   if len(message.command) < 2:
     return await message.reply_text("Where username?")
