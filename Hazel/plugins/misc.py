@@ -15,7 +15,12 @@ async def premium_reactions(client, m):
   await m.delete()
   await m.reply_to_message.react(random.choice(reactions[cmd]))
   
-@on_message(filters.command('echo') & filters.reply & filters.me)
+@on_message(filters.command('echo', prefixes=HANDLER) & filters.reply & filters.me)
 async def echo_func(client, m):
   await m.delete()
   await m.reply_to_message.copy(m.chat.id)
+
+@on_message(filters.command(['dchat', 'delchat'], prefixes=HANDLER) & filters.private & filters.me)
+async def delchat_func(client, m):
+  await m.delete()
+  await client.delete_chat_history(m.chat.id, revoke=True)
