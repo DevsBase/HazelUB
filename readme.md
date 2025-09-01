@@ -4,10 +4,10 @@ HazelUB is a powerful and flexible Telegram userbot designed to simplify your Te
 
 ## Features
 
-* Whatsapp support 
-* Instagram support 
+* Whatsapp support (not implemented)
+* Instagram support (not implemented)
 * Group Management Tools
-* Media Download (from ig,yt)
+* Media Download (from ig,yt) (not implemented)
 * Multi-client support
 
   __send `.help` after deployment to know all commands.__
@@ -34,13 +34,13 @@ HazelUB is a powerful and flexible Telegram userbot designed to simplify your Te
    PYROGRAM_SESSION=your_pyrogram_session
    MONGO_DB_URL=your_mongodb_url
    ```
-   Or you can edit in config.json if you didn't add both of this you'll be prompted in terminal.
+   Or you can edit in config.json.
 4. Run the bot:
 
    ```bash
    python3 -m Hazel
    ```
-
+   Make sure [python](https://www.python.org/downloads/) is installed on your system.
 ## Usage
 
 * Add custom plugins to the `plugins/` directory to extend functionality.
@@ -57,3 +57,4 @@ HazelUB is licensed under the MIT License. See the `LICENSE` file for more infor
 ## Support
 
 Join our [Telegram Group](https://t.me/FutureCity005) for help and support.
+
