@@ -15,8 +15,6 @@ class CreateClients:
     if len(BOT_TOKEN) > 50: self.bot = Client("Bot", session_string=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
     else: self.bot = Client("Bot", bot_token=BOT_TOKEN, api_id=API_ID, api_hash=API_HASH)
     
-    self.DATABASE = AsyncIOMotorClient(MONGO_DB_URL)["Something"]
-    
     from MultiSessionManagement import add_client
     
     add_client(self.app)
