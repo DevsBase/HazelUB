@@ -8,7 +8,6 @@ class CreateClients:
   def __init__(self, config):
     API_ID, API_HASH = config.API_ID, config.API_HASH
     PYROGRAM_SESSION, BOT_TOKEN = config.PYROGRAM_SESSION, config.BOT_TOKEN
-    MONGO_DB_URL = config.MONGO_DB_URL
     
     from .vars import __version__
     self.app = Client("UB", session_string=PYROGRAM_SESSION, api_id=API_ID, api_hash=API_HASH, device_model="HazelUB", system_version=f"HazelUB (v{__version__})", plugins=dict(root="Hazel/plugins"))
