@@ -1,7 +1,6 @@
 from pyrogram import *
 from motor.motor_asyncio import AsyncIOMotorClient
 import logging
-import Nexgram
 
 log = logging.getLogger(__name__)
 
