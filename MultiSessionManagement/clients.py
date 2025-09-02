@@ -19,10 +19,11 @@ def add_client(client):
 
 async def start_all():
   global clients_data,TgCallsClients
-  from Hazel import bot, config
+  from Hazel import bot, config, db
   from personal.UpdateWaitingDays import UpdateWaitingDays
   from Essentials.vars import AutoJoinChats, Support
   
+  await db.init()
   await bot.start()
   for client in clients:
     privilege = 'sudo' if (client == clients[0]) else 'user'
