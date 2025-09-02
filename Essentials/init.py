@@ -17,11 +17,11 @@ Github: https://github.com/DevsBase/HazelUB
 required_keys = [
   'API_ID', 'API_HASH',
   'PYROGRAM_SESSION', 'BOT_TOKEN',
-  'MONGO_DB_URL'
 ]
 
 optional_keys = [
-  'GOOGLE_API_KEY', 'OtherSessions'
+  'GOOGLE_API_KEY', 'OtherSessions',
+  'DB_URL'
 ]
 
 class Init:
@@ -43,4 +43,7 @@ class Init:
       v = config.get(k) or os.getenv(k)
       if v and k == "OtherSessions":
         v = ast.literal_eval(v)
+      elif k == "DB_URL" and not v:
+        log.warn("Warning: DB_URL is missing in env. Using SQLite (sqlite+aiosqlite:///./Hazel.db).")
+        v = "sqlite+aiosqlite:///./Hazel.db"
       setattr(self, k, v)

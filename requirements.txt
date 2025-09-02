@@ -17,7 +17,7 @@ python-dotenv
 langchain
 langgraph
 langchain-google-genai
-SQLAlchemy
+SQLAlchemy[asyncio]
 asyncpg
 aiomysql
 aiosqlite
