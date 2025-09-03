@@ -5,7 +5,7 @@ from googlesearch import search as g_search
 @on_message(filters.command("search", prefixes=HANDLER) & filters.me)
 async def search(_, message):
   if len(message.text.split()) < 2:
-    return await message.reply("Okay, i'll search but what?.")
+    return await message.reply("Okay, I'll search but what?.")
   MSG = await message.reply("`Loading...`")
   try:
     links = "\n".join([f"{i+1}. {j}" for i, j in enumerate(g_search(" ".join(message.command[1:]), num=10, stop=10, pause=2))])

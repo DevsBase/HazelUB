@@ -29,3 +29,6 @@ async def hazel_agent(client, m):
   except Exception as e:
     logging.error(traceback.format_exc())
     return await m.reply(str(e))
+    
+MOD_NAME = "Ai"
+MOD_HELP = ".ai / .hazel (prompt) - To chat with Ai."
