@@ -20,3 +20,6 @@ async def imgur(app, message):
           await msg.edit(f"Error: {e}. Result from API: {result}")
   else:
     await msg.edit("Please reply to a photo or animation (GIF) to upload to Imgur.")
+    
+MOD_NAME = "Imgur"
+MOD_HELP = ".imgur (reply to a photo/animation) - To get its imgur link. (imgur.com)"

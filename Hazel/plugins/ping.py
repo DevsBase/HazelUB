@@ -3,7 +3,7 @@ from pyrogram import filters, raw
 from datetime import datetime
 from time import time
 
-@on_message(filters.command("ping", prefixes=HANDLER) & filters.user('me'))
+@on_message(filters.command("ping", prefixes=HANDLER) & filters.me)
 async def ping_pong(client, message):
   uptime = datetime.now() - start_time
 

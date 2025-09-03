@@ -44,3 +44,14 @@ async def remove_sudo(c,m):
   else:
     clients_data[uid]["client"].privilege = "user"
     return await m.reply("Demoted.")
+   
+MOD_NAME = "Clients"
+MOD_HELP = """
+This module is to mange other clients/users in your HazelUB.
+
+.asudo (reply to a user) - To give them sudo privilage.
+.rsudo (reply to a user) - To remove sudo privilage.
+.clients - To get all clients/users connected in HazelUB.
+
+**⚠️ Warning:** Don't give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus they can hack the system Hazel running on and your telegram account also.
+""".

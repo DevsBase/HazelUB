@@ -96,31 +96,20 @@ async def log(c, m):
   else: await m.reply(f"<pre>{xx[-2000:]}</pre>", parse_mode=ParseMode.HTML)
   await x.delete()
 
-@on_message(filters.command(["trestart","restart"], prefixes=HANDLER) & filters.me)
+@on_message(filters.command("restart", prefixes=HANDLER) & filters.me)
 async def restart_func(c, message):
-  if (c.privilege!='sudo'):
+  if (c.privilege != 'sudo'):
     return await message.reply("You don't have permisson.")  
   from restart import restart
-  from ..helper_functions import GetTime
-  from datetime import datetime, timedelta
-  if (message.command[0] == 'trestart'):
-    try:  
-      txt, ist = " ".join(message.command[1:]), pytz.timezone('Asia/Kolkata')
-      if int(txt[:-1]) <= 5 and txt.endswith('s'):
-        return await message.reply("Time should be greater than 5 sec.")
-      x = await GetTime(txt)
-      _, seton, endon = await message.edit(f"Done! userbot will be restarted in {txt}"), datetime.now(ist).strftime("%H:%M:%S"), (datetime.now(ist) + timedelta(seconds=x)).strftime("%H:%M:%S")
-      try:
-        for i in clients:
-          await bot.send_message(i.me.id, f"**🟢 Time Restart**\n\n**🕐 Set on:** {seton}\n**⌚ Restart on:** {endon}\n\n**Powered by:** @{Channel}!")
-      except: pass
-      await asyncio.sleep(x)
-      try:
-        for i in clients:
-          await bot.send_message(i.me.id, f"**🔴 Restarting...**\n\n**🕐 Set on:** {seton}\n**⌚ Restarted on:** {endon}\n\n**Powered by:** @{Channel}!")
-      except: pass 
-    except Exception as e: return await message.edit("Nooo, this is not correct time format.\nUse: `.trestart 1h`")
-  try: await message.edit("Restarting...")
-  except: pass
+  await message.edit("Restarting...")
   restart()
-  
+
+MOD_NAME = "Dev"
+MOD_HELP = """
+.e (python code)
+.sh (bash code)
+.log / .flog - To get Hazsl logs (use flog for full log).
+.restart - Restart Hazel.
+
+requires sudo privilge to use these.
+"""
