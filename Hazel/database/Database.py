@@ -16,3 +16,7 @@ class Database(Methods):
   async def init(self) -> None:
     async with self.engine.begin() as conn:
       await conn.run_sync(Base.metadata.create_all)
+      if "sqlite" in str(self.engine.url.drivername):
+        await conn.execute("PRAGMA journal_mode=WAL;")
+        setattr(self, "SQLType", "sqlite")
+      else: setattr(self, "SQLType", "postgresql")
