@@ -13,4 +13,8 @@ async def set_afk(_, m):
 async def handle_afk(c, m):
   uid = c.me.id
   is_afk = await db.is_afk(uid)
-  await m.reply("I'm currently unavalable.")
+  if uid == m.from_user.id:
+    await db.remove_afk(uid)
+    return await m.reply("Removed from afk.")
+  elif is_afk:
+    await m.reply("I'm currently unavalable.")
