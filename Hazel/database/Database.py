@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy import text
 from .base import Base
 from . import tables
 from .Methods import Methods
@@ -17,6 +18,6 @@ class Database(Methods):
     async with self.engine.begin() as conn:
       await conn.run_sync(Base.metadata.create_all)
       if "sqlite" in str(self.engine.url.drivername):
-        await conn.execute("PRAGMA journal_mode=WAL;")
+        await conn.execute(text("PRAGMA journal_mode=WAL;"))
         setattr(self, "SQLType", "sqlite")
       else: setattr(self, "SQLType", "postgresql")
