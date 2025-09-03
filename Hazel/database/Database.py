@@ -2,8 +2,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from .base import Base
 from . import tables
+from .Methods import Methods
 
-class Database:
+class Database(Methods):
   def __init__(self, db_url: str):
     self.engine = create_async_engine(db_url, echo=False, future=True)
     self.Session = sessionmaker(
