@@ -24,3 +24,10 @@ async def echo_func(client, m):
 async def delchat_func(client, m):
   await m.delete()
   await client.delete_chat_history(m.chat.id, revoke=True)
+  
+@on_message(filters.command("repo", prefixes=HANDLER) & filters.user('me'))
+async def repo(_, message):
+  if message.reply_to_message:
+    return await message.reply_to_message.reply("https://github.com/DevsBase/HazelUB", disable_web_page_preview=True)
+  await message.reply("https://github.com/DevsBase/HazelUB", disable_web_page_preview=True)
+  await message.delete()

@@ -18,7 +18,7 @@ async def pin_unpin(app, message):
     try:
       await message.delete()
       await ser_msg.delete()
-    except:pass
+    except: ...
   except Exception as e:
     await message.reply(f"**Error:** `{e}`")
 

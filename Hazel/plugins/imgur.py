@@ -16,7 +16,7 @@ async def imgur(app, message):
       async with session.post(url, headers=headers, data={"image": base64_data}) as response:
         result = await response.json()
         try:await msg.edit(f"""**Your link has been generated**: {result["data"]["link"]}""", disable_web_page_preview=True)
-        except:
-          await msg.edit(f"Error."),print(result)
+        except Exception as e:
+          await msg.edit(f"Error: {e}. Result from API: {result}")
   else:
     await msg.edit("Please reply to a photo or animation (GIF) to upload to Imgur.")

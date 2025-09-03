@@ -9,7 +9,7 @@ SYSTEM_MESSAGE = ("system", "Your name is Hazel. You are a friendly AI agent and
 @on_message(filters.command(['hazel', 'ai'], prefixes=HANDLER) & filters.me)
 async def hazel_agent(client, m):
   if not config.GOOGLE_API_KEY or not agent:
-    return await m.reply("There's no GOOGLE_API_KEY in env & config.json.")
+    return await m.reply("There's no GOOGLE_API_KEY in env or provied key might invaild.")
   
   try:
     t = await m.reply("Thinking...")
