@@ -41,7 +41,6 @@ async def gban_func(c, m) -> None:
     """)
     
 MOD_NAME = "Gbans"
-MOD_HELP = """
-.gban <reply|user_id> - Globally ban a user from all groups
-.ungban <reply|user_id> - Globally unban a user from all groups
+MOD_HELP = """.gban (reply|user_id) - Globally ban a user from all groups
+.ungban (reply|user_id) - Globally unban a user from all groups
 """    

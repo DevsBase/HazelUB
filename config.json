@@ -3,7 +3,7 @@
   "API_HASH": "ff197c0d23d7fe54c89b44ed092c1752",
   "PYROGRAM_SESSION": "",
   "BOT_TOKEN": "",
-  "MONGO_DB_URL": "",
+  "DB_URL": "",
   "OtherSessions": [],
   "GOOGLE_API_KEY": ""
 }

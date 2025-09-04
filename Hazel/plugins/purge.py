@@ -22,4 +22,4 @@ async def purge_messages(app, message):
   await status.edit(f'Deleted {count} messages.')
 
 MOD_NAME = "Purge"
-MOD_HELP = ".purge <reply> - To delete all messages from you replied one."
+MOD_HELP = ".purge (reply) - To delete all messages from you replied one."

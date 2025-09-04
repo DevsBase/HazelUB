@@ -37,8 +37,8 @@ async def spam_func(app, message):
       else: await asyncio.sleep(0.7)
 
 MOD_NAME = "Spam"
-MOD_HELP = """.spam <text> - To spam the text or reply to a message to spam it.
+MOD_HELP = """.spam (text) - To spam the text or reply to a message to spam it.
 .sspam - To stop the ongoing spam.
-.slspam - Slow spam 2.5 sec delay for each.
-.dspam - Same as slspam or (slow spam), but it would delete the spam message. used in chatfight bot's rank boosting.
+.slspam (text) - Slow spam 2.5 sec delay for each.
+.dspam (text) - Same as slspam or (slow spam), but it will delete the spam message. used in chatfight bot's rank boosting.
 """

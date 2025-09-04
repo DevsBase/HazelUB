@@ -48,8 +48,7 @@ async def repo(_, message):
   await message.delete()
   
 MOD_NAME = "Misc"
-MOD_HELP = """
-.yes .no .ok .lol .wtf (reply) - To react to that message. premium required.
+MOD_HELP = """.yes .no .ok .lol .wtf (reply) - To react to that message. premium required.
 .echo (reply) - send the replied message without forward tag.
 .write (text) - To write the text in a paper. 
 .repo - To get Hazel github repo.

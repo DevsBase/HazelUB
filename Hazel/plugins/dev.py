@@ -105,11 +105,10 @@ async def restart_func(c, message):
   restart()
 
 MOD_NAME = "Dev"
-MOD_HELP = """
-.e (python code)
-.sh (bash code)
+MOD_HELP = """.e (python code) - To run the python code.
+.sh (bash code) - To run the bash code.
 .log / .flog - To get Hazsl logs (use flog for full log).
-.restart - Restart Hazel.
+.restart - To Restart Hazel.
 
 requires sudo privilge to use these.
 """
