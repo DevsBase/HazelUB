@@ -25,9 +25,32 @@ async def delchat_func(client, m):
   await m.delete()
   await client.delete_chat_history(m.chat.id, revoke=True)
   
+@on_message(filters.command("write", prefixes=HANDLER) & filters.me)
+async def paper_write(_, message):
+  if len(message.command) < 2:
+    return await message.reply_text("I'll write. But what?.")
+  m = await message.reply_text("Writing...")
+  txt = (
+    message.text.split(None, 1)[1]
+    if len(message.command) < 3
+    else message.text.split(None, 1)[1].replace(" ", "%20")
+  )
+  hand = "https://apis.xditya.me/write?text=" + txt
+  await m.edit("Uploading...")
+  await message.reply_photo(hand)
+  await m.delete()  
+  
 @on_message(filters.command("repo", prefixes=HANDLER) & filters.user('me'))
 async def repo(_, message):
   if message.reply_to_message:
     return await message.reply_to_message.reply("https://github.com/DevsBase/HazelUB", disable_web_page_preview=True)
   await message.reply("https://github.com/DevsBase/HazelUB", disable_web_page_preview=True)
   await message.delete()
+  
+MOD_NAME = "Misc"
+MOD_HELP = """
+.yes .no .ok .lol .wtf (reply) - To react to that message. premium required.
+.echo (reply) - send the replied message without forward tag.
+.write (text) - To write the text in a paper. 
+.repo - To get Hazel github repo.
+"""
