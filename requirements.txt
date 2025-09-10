@@ -1,5 +1,5 @@
 art
-kurigram
+kurigram>=2.2.9,!=2.2.10
 aiofiles
 motor>=3.6.0
 tgcrypto
