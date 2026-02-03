@@ -37,3 +37,20 @@ async def restartFunc(c: Client, m: Message):
     import restart
     await m.reply("Rerstarting...")
     restart.restart()
+
+@Tele.on_message(filters.command("update") & filters.me)
+async def updateFunc(c: Client, m: Message):
+    if c.privilege != 'sudo': # type: ignore
+        return await m.reply("You don't have permission.")
+    import subprocess
+    await m.reply("Updating HazelUB...")
+    result = subprocess.run(
+        ["git", "pull", "origin", "main"],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode != 0:
+        return await m.reply(f"Update Failed:```bash\n{result.stderr}```")
+    await m.reply(f"Update Successful:```bash\n{result.stdout}```\nRestarting...")
+    import restart
+    restart.restart()
