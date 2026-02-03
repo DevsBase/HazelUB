@@ -44,7 +44,7 @@ async def updateFunc(c: Client, m: Message):
     if c.privilege != 'sudo': # type: ignore
         return await m.reply("You don't have permission.")
     import subprocess
-    await m.reply("Updating HazelUB...")
+    s = await m.reply("Updating HazelUB...")
     
     config_data = ""
     with open("config.py", "r") as f:
@@ -60,7 +60,7 @@ async def updateFunc(c: Client, m: Message):
         capture_output=True,
         text=True
     )
-    
+    await s.delete()
     try:
         with open("config.py", "w") as f:
             f.write(config_data)
