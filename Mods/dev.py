@@ -72,6 +72,8 @@ async def updateFunc(c: Client, m: Message):
     
     if result.returncode != 0:
         return await m.reply(f"Update Failed:```bash\n{result.stderr}```")
+    if "Already up to date." in result.stdout:
+        return await m.reply("Already up to date.")
     await m.reply(f"Update Successful:```bash\n{result.stdout}```\nRestarting...")
     import restart
     restart.restart()
