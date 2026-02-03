@@ -3,6 +3,7 @@ from Hazel import Tele, SQLClient
 from pyrogram.client import Client
 from pyrogram import filters
 from pyrogram.types import Message
+from pathlib import Path
 
 @Tele.on_message(filters.command(["e", "eval"]) & filters.me)
 async def evalFunc(c: Client, m: Message):
@@ -44,11 +45,31 @@ async def updateFunc(c: Client, m: Message):
         return await m.reply("You don't have permission.")
     import subprocess
     await m.reply("Updating HazelUB...")
+    
+    config_data = ""
+    with open("config.py", "r") as f:
+        config_data = f.read()
+    
+    env_data = ""
+    if Path(".env").exists():
+        with open(".env", "r") as f:
+            env_data = f.read()
+    
     result = subprocess.run(
         ["git", "pull", "origin", "main"],
         capture_output=True,
         text=True
     )
+    
+    try:
+        with open("config.py", "w") as f:
+            f.write(config_data)
+        if env_data:
+            with open(".env", "w") as f:
+                f.write(env_data)
+    except Exception as e:
+        await m.reply(f"Could not restore config files: {e}")
+    
     if result.returncode != 0:
         return await m.reply(f"Update Failed:```bash\n{result.stderr}```")
     await m.reply(f"Update Successful:```bash\n{result.stdout}```\nRestarting...")
