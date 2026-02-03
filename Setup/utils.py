@@ -15,17 +15,21 @@ def signal_handler(signum, __):
     logger.info(f"Stop signal received ({signum}). Stopping HazelUB...")
     os._exit(0)
 
-def install_requirements() -> int | str:
-    result = subprocess.run(
+def install_requirements():
+    subprocess.run( # Install PIP if not available
+        [sys.executable, "-m", "ensurepip"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
+
+    result = subprocess.run( # Install requirements.txt
         [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
-        capture_output=True, # This grabs the error text
+        capture_output=True,
         text=True
     )
 
-    if result.returncode == 0:
-        return 0  # Success
-    else:
-        return result.stderr  # Return the error details
+    return result.returncode if result.returncode == 0 else result.stderr
+
     
 def _ask_missing(key: str):
     try:
