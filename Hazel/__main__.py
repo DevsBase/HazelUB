@@ -1,5 +1,5 @@
 import asyncio
-from Setup.setup import main
+from Setup.main import main
 
 if __name__ == "__main__":
     try:
