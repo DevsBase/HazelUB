@@ -11,7 +11,6 @@ logger = getLogger(__name__)
 
 async def main() -> Tuple[DBClient, tuple]:
     clear()
-    print(art.text2art("HazelUB"))
     print(
         "HazelUB is now booting...\n"
         "* If this is the first boot required packages may install.\n"
@@ -23,6 +22,7 @@ async def main() -> Tuple[DBClient, tuple]:
         from sqlalchemy import create_engine
         from asyncpg import create_pool
         from aiosqlite import connect
+        from art import text2art
     except ImportError:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()

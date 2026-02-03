@@ -5,7 +5,6 @@ import traceback
 import logging
 import asyncio
 import Hazel
-import art
 import os
 
 logger = logging.getLogger("Hazel.setup")
@@ -13,6 +12,7 @@ logger = logging.getLogger("Hazel.setup")
 async def main(install_packages: bool=True):
     db, config = await installation_main()  # Ensure installation is done first.
     from MultiSessionManagement.telegram import Telegram
+    import art
     
     logger.info("Starting telegram setup...")
     Tele = Telegram(config)
