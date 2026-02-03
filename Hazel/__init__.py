@@ -6,6 +6,9 @@ if TYPE_CHECKING:
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient
+else:
+    Tele = None
+    SQLClient = None
 
 logging.basicConfig(
     format="[HazelUB] %(name)s: %(message)s",

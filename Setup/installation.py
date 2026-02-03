@@ -1,4 +1,3 @@
-import art
 import Hazel
 from logging import getLogger
 from typing import TYPE_CHECKING, Tuple
@@ -6,6 +5,8 @@ from .utils import install_requirements, load_config, clear
 
 if TYPE_CHECKING:
     from Database.client import DBClient
+else:
+    DBClient = None
 
 logger = getLogger(__name__)
 
