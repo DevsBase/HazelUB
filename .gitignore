@@ -1,0 +1,89 @@
+# ========================
+# Python bytecode
+# ========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ========================
+# Virtual environments
+# ========================
+venv/
+.venv/
+env/
+ENV/
+.virtualenv/
+
+# ========================
+# Environment variables / secrets
+# ========================
+.env
+.env.*
+*.env
+
+# ========================
+# Logs
+# ========================
+*.log
+logs/
+
+# ========================
+# OS files
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# IDE / Editors
+# ========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ========================
+# Build / dist
+# ========================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ========================
+# Pytest / coverage
+# ========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ========================
+# Jupyter
+# ========================
+.ipynb_checkpoints/
+
+# ========================
+# MyPy / Ruff / Lint
+# ========================
+.mypy_cache/
+.ruff_cache/
+
+# ========================
+# SQLite / DB
+# ========================
+*.sqlite3
+*.db
+*.session
+*.session-journal
+
+# ========================
+# Compiled extensions
+# ========================
+*.so
+*.pyd
+*.dll
+
+# ========================
+# Custom (add yours)
+# ========================
+# data/
+# secrets.json
