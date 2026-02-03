@@ -23,11 +23,11 @@ def install_requirements():
     )
 
     result = subprocess.run( # Install requirements.txt
-        [sys.executable, "-m", "pip", "install", "-r", "requirements.txt"],
+        [sys.executable, "-m", "pip", "install", "-U", "-r", "requirements.txt"],
         capture_output=True,
         text=True
     )
-
+    
     return result.returncode if result.returncode == 0 else result.stderr
 
     

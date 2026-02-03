@@ -1,5 +1,6 @@
 import Hazel
 from logging import getLogger
+from restart import restart
 from typing import TYPE_CHECKING, Tuple
 from .utils import install_requirements, load_config, clear
 
@@ -28,7 +29,8 @@ async def main() -> Tuple[DBClient, tuple]:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()
         if install_status == 0:
-            logger.info("Packages installed successfully.")
+            logger.info("Packages installed successfully. Restarting...")
+            restart()
         else:
             raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
     
