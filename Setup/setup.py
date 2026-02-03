@@ -4,9 +4,6 @@ import Hazel
 import asyncio 
 import logging
 import traceback
-from pyrogram.sync import idle
-from Database.client import DBClient
-from MultiSessionManagement.telegram import Telegram
 from signal import signal as signal_fn, SIGINT, SIGTERM, SIGABRT
 from .utils import install_requirements, load_config, signal_handler, signal_handler, startup_popup
 
@@ -22,11 +19,9 @@ async def main(install_packages: bool=True):
     print(f"HazelUB is now booting...\n* If this is the first boot required packages may install.\nVersion: {Hazel.__version__}")
     try:
         from dotenv import load_dotenv
-        load_dotenv()
-        config = load_config()
-        db = DBClient(config[4])
-        Hazel.SQLClient = db
-        await db.init()
+        from pyrogram.sync import idle
+        from Database.client import DBClient
+        from MultiSessionManagement.telegram import Telegram      
     except ImportError:
         logger.critical("python-dotenv not installed, Installing required packages...")
         install_status = install_requirements()
@@ -35,6 +30,12 @@ async def main(install_packages: bool=True):
             return await main(install_packages=False)
         else:
             raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
+    
+    load_dotenv()
+    config = load_config()
+    db = DBClient(config[4])
+    Hazel.SQLClient = db
+    await db.init()
 
     is_installed = await db.is_installed()
     if not is_installed and install_packages:
