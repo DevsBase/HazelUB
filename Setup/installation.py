@@ -1,0 +1,51 @@
+import art
+import Hazel
+from logging import getLogger
+from typing import TYPE_CHECKING, Tuple
+from .utils import install_requirements, load_config, clear
+
+if TYPE_CHECKING:
+    from Database.client import DBClient
+
+logger = getLogger(__name__)
+
+async def main() -> Tuple[DBClient, tuple]:
+    clear()
+    print(art.text2art("HazelUB"))
+    print(
+        "HazelUB is now booting...\n"
+        "* If this is the first boot required packages may install.\n"
+        f"Version: {Hazel.__version__}"
+    )
+    
+    try: # Checking once if essential packages are installed.
+        from dotenv import load_dotenv
+        from sqlalchemy import create_engine
+        from asyncpg import create_pool
+        from aiosqlite import connect
+    except ImportError:
+        logger.critical("ImportError, Installing required packages...")
+        install_status = install_requirements()
+        if install_status == 0:
+            logger.info("Packages installed successfully.")
+        else:
+            raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
+    
+    from Database.client import DBClient
+
+    load_dotenv()
+    config = load_config()
+    db = DBClient(config[4])
+    await db.init()
+    Hazel.SQLClient = db # Override SQLClient in Hazel.__init__
+
+    is_installed = await db.is_installed()
+    if not is_installed:
+        logger.info("Installing required packages...")
+        install_status = install_requirements()
+        if install_status == 0:
+            logger.info("Packages installed successfully.")
+        else:
+            raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
+        await db.set_installed(True)
+    return (db, config)

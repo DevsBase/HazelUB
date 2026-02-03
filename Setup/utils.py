@@ -1,12 +1,15 @@
 import subprocess
 import asyncio
 import logging
-from plyer import notification
 import config
 import sys
 import os 
 
 logger = logging.getLogger(__name__)
+
+def clear():
+    try: os.system('cls' if os.name == 'nt' else 'clear')
+    except: pass
 
 def signal_handler(signum, __):
     logger.info(f"Stop signal received ({signum}). Stopping HazelUB...")
@@ -45,6 +48,8 @@ def load_config() -> tuple:
     return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX)
 
 def startup_popup():
+    from plyer import notification
+
     try:
         notification.notify(
             title="HazelUB",

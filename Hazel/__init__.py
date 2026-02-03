@@ -1,7 +1,11 @@
 import logging
-from MultiSessionManagement.telegram import Telegram
-import Database.client as Database
 from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from MultiSessionManagement.telegram import Telegram
+    import Database.client as Database
+    Tele: Telegram
+    SQLClient: Database.DBClient
 
 logging.basicConfig(
     format="[HazelUB] %(name)s: %(message)s",
@@ -9,12 +13,5 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-if TYPE_CHECKING:
-    Tele: Telegram
-    SQLClient: Database.DBClient
-else:
-    Tele = None
-    SQLClient = None
-
-__version__ = "01.2026"
+__version__ = "02.2026"
 __channel__ = "DevsBase"
