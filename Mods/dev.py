@@ -12,6 +12,7 @@ async def evalFunc(c: Client, m: Message):
     cmd = m.text.split(None, 1) # type: ignore
     if len(cmd) == 1:
         return await m.reply("No code provided.")
+    s = await m.reply("Evaluating...")
     try:
         result = await aexec(cmd[1], c, m)
     except Exception as e:
@@ -22,6 +23,7 @@ async def evalFunc(c: Client, m: Message):
         await m.reply(f"Result:```python\n{result[1]}```")
     else:
         await m.reply(f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```")
+    await s.delete()
 
 @Tele.on_message(filters.command("stop") & filters.me)
 async def stopFunc(c: Client, m: Message):
