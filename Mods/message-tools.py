@@ -256,10 +256,10 @@ async def pauseAndResumeFunc(c: Client, m: Message):
     if 'resume' in m.command[0].lower():
         if event.is_set():
             return await m.reply("Repeat tasks are not paused.")
-        event.clear()
+        event.set()
         return await m.reply("Resumed all messageRepeat Tasks for you.")
     else:
         if not event.is_set():
             return await m.reply("Repeat Tasks are paused already.")
-        event.set()
+        event.clear()
         return await m.reply("Paused all messageRepeat Tasks for you.")
