@@ -13,7 +13,8 @@ async def purgeFunc(app: Client, m: Message):
     await m.delete()
     start = m.reply_to_message.id
     end = m.id
-    count, status = 0, await m.reply("...")
+    count = 0 
+    status = await m.reply("...")
     for x in range(start, end + 1, 100):
         try:
             x = list(range(x, x+101))
