@@ -79,3 +79,16 @@ async def updateFunc(c: Client, m: Message):
     await m.reply(f"Update Successful:```bash\n{result.stdout}```\nRestarting...")
     import restart
     restart.restart()
+
+@Tele.on_message(filters.command("logs") & filters.me)
+async def logsFunc(c: Client, m: Message):
+    if c.privilege != 'sudo': # type: ignore
+        return await m.reply("You don't have permission.")
+    log_file = Path("log.txt")
+    if not log_file.exists():
+        return await m.reply("No logs found.")
+    with open(log_file, "r") as f:
+        log_data = f.read()
+    if len(log_data) < 4096:
+        return await m.reply(f"Logs:```log\n{log_data}```")
+    await m.reply_document(document=str(log_file))
