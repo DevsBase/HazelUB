@@ -5,13 +5,21 @@ from pyrogram.client import Client
 from Database.client import DBClient
 from Database.Tables.repeatMessage import RepeatMessage
 from pyrogram.errors import FloodWait
+from typing import TYPE_CHECKING, Dict
 
 logger = logging.getLogger("Hazel.Tasks.messageRepeater")
+
+if TYPE_CHECKING:
+    events: Dict[int, asyncio.Event] # int is client's user_id
+else:
+    events = {}
 
 async def createJob(job: RepeatMessage, chats: list, client: Client):
     while True:
         try:
             await asyncio.sleep(int(job.repeatTime * 60)) # type: ignore # Convert sec to mins 
+            if job.userId in events:
+                await events[job.userId].wait() # type: ignore
             chat_id: int = 0
             for chat_id in chats:
                 await client.copy_message(
@@ -33,6 +41,9 @@ async def main(Tele: Telegram, db: DBClient):
     for job in jobs:
         for client in Tele._allClients:
             if client.me.id == job.userId: # type: ignore
+                if job.userId not in events:
+                    events[job.userId] = asyncio.Event() # type: ignore
+                    events[job.userId].set() # type: ignore
                 chats = await db.get_group_chats(job.group_id, user_id=client.me.id) # type: ignore
                 asyncio.create_task(createJob(job, chats, client))
                 logger.info(f"Created repeat message job for user {job.userId} in group {job.group_id}") # type: ignore

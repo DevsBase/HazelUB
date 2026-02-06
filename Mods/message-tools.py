@@ -24,6 +24,12 @@ $repeat_delete (id)
 
 $repeat_list 
   List all repeating messages.
+
+$rpause
+  Pause all repeat message tasks
+
+$rresume
+  resume all repeat message tasks
 """
 
 from Hazel import SQLClient, Tele
@@ -239,3 +245,21 @@ async def repeatList(c: Client, m: Message):
         )
 
     return await m.reply(msg)
+
+@Tele.on_message(filters.command(['rpause', 'rresume']) & filters.me)
+async def pauseAndResumeFunc(c: Client, m: Message):
+    import Hazel.Tasks.messageRepeater as messageRepeater
+    uid = c.me.id # type: ignore
+    if uid not in messageRepeater.events:
+        return await m.reply("Cannot find this client Hazel.Tasks.messageRepeater.events")
+    event = messageRepeater.events[uid]
+    if 'resume' in m.command[0].lower():
+        if event.is_set():
+            return await m.reply("Repeat tasks are not paused.")
+        event.clear()
+        return await m.reply("Resumed all messageRepeat Tasks for you.")
+    else:
+        if not event.is_set():
+            return await m.reply("Repeat Tasks are paused already.")
+        event.set()
+        return await m.reply("Paused all messageRepeat Tasks for you.")
