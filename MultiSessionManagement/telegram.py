@@ -79,3 +79,9 @@ class Telegram(Decorators):
     async def stop(self) -> None:
         for client in self._allClients:
             await client.stop()
+    
+    async def getClientById(self, id: int) -> Client | None:
+        for client in self._allClients:
+            if client.me and client.me.id == id: # type: ignore
+                return client
+        return None

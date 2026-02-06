@@ -17,14 +17,14 @@ async def evalFunc(c: Client, m: Message):
         result = await aexec(cmd[1], c, m)
     except Exception as e:
         result = (str(e), None)
+    await s.delete()
     if not result[1]:
         await m.reply(f"Output:```python\n{result[0]}```")
     elif not result[0]:
         await m.reply(f"Result:```python\n{result[1]}```")
     else:
         await m.reply(f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```")
-    await s.delete()
-
+    
 @Tele.on_message(filters.command("stop") & filters.me)
 async def stopFunc(c: Client, m: Message):
     if c.privilege != 'sudo': # type: ignore
@@ -62,6 +62,7 @@ async def updateFunc(c: Client, m: Message):
         capture_output=True,
         text=True
     )
+
     await s.delete()
     try:
         with open("config.py", "w") as f:
@@ -76,7 +77,19 @@ async def updateFunc(c: Client, m: Message):
         return await m.reply(f"Update Failed:```bash\n{result.stderr}```")
     if "Already up to date." in result.stdout:
         return await m.reply("Already up to date.")
-    await m.reply(f"Update Successful:```bash\n{result.stdout}```\nRestarting...")
+    
+    msg = subprocess.run(
+        ["git", "log", "-1", "--pretty=%B"],
+        capture_output=True,
+        text=True,
+        check=True
+    ).stdout.strip()
+    title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
+    await m.reply(
+        f"**Update Successful:**```bash\n{result.stdout}```\n\n"
+        f"**Message:** \n {title}\n{body}\n\n"
+        "```Restarting HazelUB...`"
+    )
     import restart
     restart.restart()
 
@@ -93,4 +106,24 @@ async def logsFunc(c: Client, m: Message):
         logs = log_data[-4000:]
         await m.reply(f"Logs:```log\n{logs}```")
     else:
-        await m.reply_document(document=str(log_file))
+        await m.reply_document(document='log.txt')
+
+@Tele.on_message(filters.command("sh") & filters.me)
+async def shellFunc(c: Client, m: Message):
+    if c.privilege != 'sudo': # type: ignore
+        return await m.reply("You don't have permission.")
+    cmd = m.text.split(None, 1) # type: ignore
+    if len(cmd) == 1:
+        return await m.reply("No command provided.")
+    import subprocess
+    s = await m.reply("Executing...")
+    result = subprocess.run(
+        cmd[1],
+        shell=True,
+        capture_output=True,
+        text=True
+    )
+    await s.delete()
+    if result.returncode != 0:
+        return await m.reply(f"Command Failed:```bash\n{result.stderr}```")
+    await m.reply(f"Command Output:```bash\n{result.stdout}```")

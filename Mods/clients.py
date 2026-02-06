@@ -1,4 +1,4 @@
-"""This module is to mange other clients/users in your HazelUB.
+"""This module is to manage other clients/users in your HazelUB.
 
 .asudo (reply to a user) - To give them sudo privilage.
 .rsudo (reply to a user) - To remove sudo privilage.
@@ -37,13 +37,13 @@ async def add_sudo(c: Client, m: Message):
         uid = int(m.text.split(None, 1)[1]) # type: ignore
     else:
         uid = m.reply_to_message.from_user.id # type: ignore
-    for client in Tele._allClients:
-        if getattr(client.me, 'id') == uid:
-            if c.privilege == "sudo": # type: ignore
-                return await m.reply("They already has `sudo` privilege.")
-            else:
-                c.privilege = 'sudo' # type: ignore
-                return await m.reply("Promoted.")
+    client = await Tele.getClientById(uid)
+    if client:
+        if client.privilege == "sudo": # type: ignore           
+            client.privilege = 'sudo' # type: ignore
+            return await m.reply("Promoted.")
+        else: 
+            return await m.reply("They already have `sudo` privilege.")
     return await m.reply("Client not found. You should add their session in OtherSessions in config.py or env.")
         
 
@@ -57,11 +57,11 @@ async def remove_sudo(c: Client, m: Message):
         uid = int(m.text.split(None, 1)[1]) # type: ignore
     else:
         uid = m.reply_to_message.from_user.id # type: ignore
-    for client in Tele._allClients:
-        if getattr(client.me, 'id') == uid:
-            if c.privilege == "sudo": # type: ignore
-                c.privilege = 'user' # type: ignore
-                return await m.reply("Demoted.")
-            else:
-                return await m.reply("They already don't have `sudo` privilege.")
+    client = await Tele.getClientById(uid)
+    if client:
+        if client.privilege == "sudo": # type: ignore           
+            client.privilege = 'user' # type: ignore
+            return await m.reply("Demoted.")
+        else: 
+            return await m.reply("They already don't have `sudo` privilege.")
     return await m.reply("Client not found. You should add their session in OtherSessions in config.py or env.")
