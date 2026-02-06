@@ -80,7 +80,7 @@ async def updateFunc(c: Client, m: Message):
     import restart
     restart.restart()
 
-@Tele.on_message(filters.command("logs") & filters.me)
+@Tele.on_message(filters.command(["logs", "log", "flogs"]) & filters.me)
 async def logsFunc(c: Client, m: Message):
     if c.privilege != 'sudo': # type: ignore
         return await m.reply("You don't have permission.")
@@ -89,6 +89,8 @@ async def logsFunc(c: Client, m: Message):
         return await m.reply("No logs found.")
     with open(log_file, "r") as f:
         log_data = f.read()
-    if len(log_data) < 4096:
-        return await m.reply(f"Logs:```log\n{log_data}```")
-    await m.reply_document(document=str(log_file))
+    if not 'f' in m.command[0]: # type: ignore
+        logs = log_data[-4000:]
+        await m.reply(f"Logs:```log\n{logs}```")
+    else:
+        await m.reply_document(document=str(log_file))
