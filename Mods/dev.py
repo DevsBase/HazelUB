@@ -87,7 +87,7 @@ async def updateFunc(c: Client, m: Message):
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
     await m.reply(
         f"**Update Successful:**```bash\n{result.stdout[1:]}```\n"
-        f"**Message:** \n Commit message: {title}\nDescription: {body}\n\n"
+        f"**Message:** \nCommit message: {title}\nDescription: {body}\n\n"
         "`Restarting HazelUB...`"
     )
     import restart
