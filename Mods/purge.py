@@ -21,4 +21,4 @@ async def purgeFunc(app: Client, m: Message):
             await asyncio.sleep(2.5)
         except Exception as e:
             logger.error(f"Error deleting messages {x}: {str(e)}")
-    await m.edit(f'Deleted {count} messages.')
+    await app.send_message(m.chat.id, f'Deleted {count} messages.')
