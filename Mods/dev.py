@@ -86,7 +86,7 @@ async def updateFunc(c: Client, m: Message):
     ).stdout.strip()
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
     await m.reply(
-        f"**Update Successful:**```bash\n{result.stdout}```\n"
+        f"**Update Successful:**```bash\n{result.stdout[1:]}```\n"
         f"**Message:** \n Commit message: {title}\nDescription: {body}\n\n"
         "`Restarting HazelUB...`"
     )
@@ -125,5 +125,5 @@ async def shellFunc(c: Client, m: Message):
     )
     await s.delete()
     if result.returncode != 0:
-        return await m.reply(f"Command Failed:```bash\n{result.stderr}```")
-    await m.reply(f"Command Output:```bash\n{result.stdout}```")
+        return await m.reply(f"Command Failed:```bash\n{result.stderr[1:]}```")
+    await m.reply(f"Command Output:```bash\n{result.stdout[1:]}```")
