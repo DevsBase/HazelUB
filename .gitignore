@@ -82,8 +82,4 @@ htmlcov/
 *.pyd
 *.dll
 
-# ========================
-# Custom (add yours)
-# ========================
-# data/
-# secrets.json
+

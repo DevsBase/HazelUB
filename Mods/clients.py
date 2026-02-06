@@ -39,7 +39,7 @@ async def add_sudo(c: Client, m: Message):
         uid = m.reply_to_message.from_user.id # type: ignore
     client = await Tele.getClientById(uid)
     if client:
-        if client.privilege == "sudo": # type: ignore           
+        if client.privilege != "sudo": # type: ignore           
             client.privilege = 'sudo' # type: ignore
             return await m.reply("Promoted.")
         else: 
