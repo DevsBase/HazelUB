@@ -15,6 +15,7 @@ logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 
 logging.basicConfig(
     format="[HazelUB] [%(asctime)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %I:%M:%S %p",
     handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
     level=logging.INFO
 )
