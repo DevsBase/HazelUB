@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -10,8 +11,10 @@ else:
     Tele = None
     SQLClient = None
 
+logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
+
 logging.basicConfig(
-    format="[HazelUB] %(name)s: %(message)s",
+    format="[HazelUB] [%(asctime)s] %(name)s: %(message)s",
     handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
     level=logging.INFO
 )
