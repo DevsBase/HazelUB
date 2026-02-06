@@ -10,11 +10,10 @@ logger = logging.getLogger("Hazel.Mods.purge")
 async def purgeFunc(app: Client, m: Message):
     if not m.reply_to_message:
         return await m.reply("Reply to the message you want to delete from.")
-    await m.delete()
     start = m.reply_to_message.id
     end = m.id
     count = 0 
-    status = await m.reply("...")
+    await m.edit("...")
     for x in range(start, end + 1, 100):
         try:
             x = list(range(x, x+101))
@@ -22,4 +21,4 @@ async def purgeFunc(app: Client, m: Message):
             await asyncio.sleep(2.5)
         except Exception as e:
             logger.error(f"Error deleting messages {x}: {str(e)}")
-    await status.edit(f'Deleted {count} messages.')
+    await m.edit(f'Deleted {count} messages.')
