@@ -84,6 +84,7 @@ async def updateFunc(c: Client, m: Message):
         text=True,
         check=True
     ).stdout.strip()
+    
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
     await m.reply(
         f"**Update Successful:**```bash\n{result.stdout}```\n"
