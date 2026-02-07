@@ -18,11 +18,11 @@ async def main(install_packages: bool=True):
     logger.info("Starting telegram setup...")
     Tele = Telegram(config)
     Hazel.Tele = Tele # Override Tele in Hazel.__init__
+    Hazel.OneClient = await oneApiMain(config[7]) # Override OneClient in Hazel.__init__
     
     try:
         await Tele.create_pyrogram_clients()
         await Tele.start()
-        OneClient = await oneApiMain(config[7])
 
         clear()
         print(art.text2art("HazelUB"))
