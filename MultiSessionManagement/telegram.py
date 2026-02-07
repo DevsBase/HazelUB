@@ -2,8 +2,9 @@ from pyrogram.client import Client
 from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
+from pyrogram.types import Message
 from functools import partial
-from typing import List
+from typing import List, Any
 
 class Telegram(Decorators):
     def __init__(self, config: tuple) -> None:
@@ -80,8 +81,11 @@ class Telegram(Decorators):
         for client in self._allClients:
             await client.stop()
     
-    async def getClientById(self, id: int) -> Client | None:
+    async def getClientById(self, id: int | None = 0, m: Message | None = None) -> Client | None:
+        if m and isinstance(m, Message):
+            if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
+                id = m.reply_to_message.from_user.id
         for client in self._allClients:
-            if client.me and client.me.id == id: # type: ignore
+            if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client
         return None
