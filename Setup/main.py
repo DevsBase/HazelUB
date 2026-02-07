@@ -4,6 +4,7 @@ from .installation import main as installation_main
 import traceback
 import logging
 import asyncio
+from OneApi.main import main as oneApiMain
 import Hazel
 import os
 
@@ -21,6 +22,7 @@ async def main(install_packages: bool=True):
     try:
         await Tele.create_pyrogram_clients()
         await Tele.start()
+        OneClient = await oneApiMain(config[7])
 
         clear()
         print(art.text2art("HazelUB"))

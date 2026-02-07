@@ -12,3 +12,4 @@ plyer
 SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
+websockets

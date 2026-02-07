@@ -5,6 +5,7 @@ BOT_TOKEN = ""
 DB_URL = "" # PostgreSQL URL
 OtherSessions = [] # Example: ["session1", "session2", ...]
 PREFIX = [".","~","$","^"]
+ONEAPI_URL = "ws://16.170.232.228/"
 
 """
 * Pyrogram session(s) are only allowed.
