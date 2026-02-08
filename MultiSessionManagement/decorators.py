@@ -1,5 +1,11 @@
-from MultiSessionManagement.telegram import Telegram
-from MultiSessionManagement.OneApi import OneApi
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from MultiSessionManagement.telegram import Telegram
+    from MultiSessionManagement.OneApi import OneApi
+else:
+    Telegram = None
+    OneApi = None
 
 class Decorators:
     def on_message(self: Telegram, filters=None, group=0): # type: ignore
