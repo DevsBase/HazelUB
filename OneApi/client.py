@@ -30,6 +30,7 @@ class Client:
             logger.warning(f"No handler registered for update type: {type}")
 
     async def connectHazelClient(self):
+        logger.info(f"Connecting with OneApi please connect your client with {self.hazel_id} ID!")
         try:
             self.hazelClientConn = await websockets.connect(self.url+f"ws/HazelUB?Hazel_ID={self.hazel_id}")
         except websockets.exceptions.InvalidURI as e:
