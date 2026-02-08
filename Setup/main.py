@@ -12,7 +12,6 @@ logger = logging.getLogger("Hazel.setup")
 async def main(install_packages: bool=True):
     db, config = await installation_main()  # Ensure installation is done first.
     from MultiSessionManagement.telegram import Telegram
-    from MultiSessionManagement.OneApi import OneApi
     import art
     
     logger.info("Starting telegram setup...")
@@ -42,11 +41,7 @@ async def main(install_packages: bool=True):
 
     asyncio.create_task(messageRepeater.main(Tele, db))
     # -----------------------------
-    OneApi = OneApi(config[7], Hazel.Tele)
-    await OneApi.init()
-    logger.info("OneApi initialized successfully.")
-    import Mods
-    Mods.load_mods()
+    import Mods; Mods.load_mods()
     # -- Idle System ---------------------------
     for s in (SIGINT, SIGTERM, SIGABRT): 
         signal_fn(s, signal_handler)

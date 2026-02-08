@@ -46,11 +46,10 @@ def load_config() -> tuple:
     API_HASH = config.API_HASH or os.getenv('API_HASH') or _ask_missing("API_HASH")
     SESSION = config.SESSION or os.getenv('SESSION') or _ask_missing("SESSION")
     DB_URL = config.DB_URL or os.getenv('DB_URL') or _ask_missing("DB_URL")
-    ONEAPI_URL = config.ONEAPI_URL or os.getenv('ONEAPI_URL') or _ask_missing("ONEAPI_URL")
     # ---------- Optional ----------
     OtherSessions = config.OtherSessions or list(os.getenv('OtherSessions', []))
     PREFIX = list(config.PREFIX) or os.getenv('PREFIX', [])
-    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX, ONEAPI_URL)
+    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX)
 
 def startup_popup():
     from plyer import notification

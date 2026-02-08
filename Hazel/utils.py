@@ -2,7 +2,7 @@ import sys, io, asyncio
 from typing import Any
 from pyrogram.client import Client
 from pyrogram.types import Message
-from Hazel import Tele, OneApi, SQLClient
+from Hazel import Tele, SQLClient
 
 async def aexec(code: str, app: Client, m: Message) -> Any:
     old_stdout = sys.stdout
