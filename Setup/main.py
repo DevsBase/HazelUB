@@ -45,8 +45,8 @@ async def main(install_packages: bool=True):
     OneApi = OneApi(config[7], Hazel.Tele)
     await OneApi.init()
     logger.info("OneApi initialized successfully.")
-    from Mods import load_mods
-    load_mods()
+    import Mods
+    Mods.load_mods()
     # -- Idle System ---------------------------
     for s in (SIGINT, SIGTERM, SIGABRT): 
         signal_fn(s, signal_handler)

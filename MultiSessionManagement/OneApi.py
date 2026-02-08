@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from OneApi.client import Client
 from MultiSessionManagement.telegram import Telegram
 from MultiSessionManagement.decorators import OneApiDecorators
@@ -17,7 +18,7 @@ class OneApi(OneApiDecorators):
             if client.is_connected and hasattr(client, "me") and client.me is not None:
                 hazel_id = client.me.id
                 oneClient = Client(self.url)
-                await oneClient.connectHazelClient(hazel_id)
+                asyncio.create_task(oneClient.connectHazelClient(hazel_id))
                 self.HazelClients.append(oneClient)
                 if len(self.HazelClients) >= self.maxConnectionsForHazelClient:
                     break
