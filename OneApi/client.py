@@ -1,48 +1,95 @@
-import websockets
+import json
 import logging
 import random
-import json
-from typing import Callable, NoReturn
+import inspect
+from typing import Callable, Dict, List
+
+import websockets
 from websockets.asyncio.client import ClientConnection
 
 logger = logging.getLogger(__name__)
+
 
 class Client:
     def __init__(self, url: str) -> None:
         if not url.endswith("/"):
             url += "/"
+
         self.url: str = url
         self.hazel_id: int = random.randint(10000, 99999)
         self.hazelClientConn: ClientConnection | None = None
-        self._handlers = {}
-        self._handlerTypes = ["hazelClient"]
-    
-    def registerHandler(self, type: str, handler: Callable) -> None:
-        if type not in self._handlerTypes:
-            raise ValueError(f"Invalid handler type: {type}. Valid types are: {self._handlerTypes}")
-        self._handlers[type] = handler
-    
-    async def dispatchUpdate(self, type: str, update: dict) -> None:
-        if type in self._handlers:
-            for handler in self._handlers[type]:
-                await handler(update)
-        else:
-            logger.warning(f"No handler registered for update type: {type}")
 
-    async def connectHazelClient(self):
-        logger.info(f"Connecting with OneApi please connect your client with {self.hazel_id} ID!")
+        # event_type -> list of handlers
+        self._handlers: Dict[str, List[Callable]] = {}
+        self._handlerTypes = {"hazelClient"}
+
+    # -----------------------------
+    # Handler registration
+    # -----------------------------
+    def registerHandler(self, event: str, handler: Callable) -> None:
+        if event not in self._handlerTypes:
+            raise ValueError(
+                f"Invalid handler type: {event}. Valid types: {self._handlerTypes}"
+            )
+
+        self._handlers.setdefault(event, []).append(handler)
+
+    # Decorator System
+    def on_update(self, event: str):
+        def decorator(func: Callable):
+            self.registerHandler(event, func)
+            return func
+        return decorator
+
+    # -----------------------------
+    # Dispatch system
+    # -----------------------------
+    async def dispatchUpdate(self, event: str, update: dict) -> None:
+        handlers = self._handlers.get(event)
+
+        if not handlers:
+            logger.warning(f"No handler registered for update type: {event}")
+            return
+
+        for handler in handlers:
+            try:
+                if inspect.iscoroutinefunction(handler):
+                    await handler(update)
+                else:
+                    handler(update)
+            except Exception as e:
+                logger.error(f"Handler error [{event}]: {e}")
+
+    # -----------------------------
+    # WebSocket connection
+    # -----------------------------
+    async def connectHazelClient(self) -> None:
+        logger.info(
+            f"Connecting to OneApi – Hazel ID: {self.hazel_id}"
+        )
+
         try:
-            self.hazelClientConn = await websockets.connect(self.url+f"ws/HazelUB?Hazel_ID={self.hazel_id}")
+            self.hazelClientConn = await websockets.connect(
+                self.url + f"ws/HazelUB?Hazel_ID={self.hazel_id}"
+            )
         except websockets.exceptions.InvalidURI as e:
             raise ConnectionError(f"Invalid OneApi URI: {e}")
-        while True:
-            update = await self.hazelClientConn.recv()
-            try:
-                update_dict = json.loads(update)
-                await self.dispatchUpdate("hazelClient", update_dict)
-            except json.JSONDecodeError:
-                logger.error(f"Received invalid JSON update: {update}")
-            except Exception as e:
-                logger.error(e)
-    
 
+        assert self.hazelClientConn is not None
+
+        while True:
+            try:
+                message = await self.hazelClientConn.recv()
+                data = json.loads(message)
+
+                await self.dispatchUpdate("hazelClient", data)
+
+            except json.JSONDecodeError:
+                logger.error(f"Invalid JSON received: {message}")
+
+            except websockets.exceptions.ConnectionClosed:
+                logger.error("WebSocket connection closed")
+                break
+
+            except Exception as e:
+                logger.error(f"WebSocket loop error: {e}")
