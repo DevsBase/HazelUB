@@ -41,9 +41,11 @@ async def main(install_packages: bool=True):
     import Hazel.Tasks.messageRepeater as messageRepeater
 
     asyncio.create_task(messageRepeater.main(Tele, db))
-    # -- OneApi ---------------------------
+    # -----------------------------
     OneApi = OneApi(config[7], Hazel.Tele)
     await OneApi.init()
+    from Mods import load_mods
+    load_mods()
     # -- Idle System ---------------------------
     for s in (SIGINT, SIGTERM, SIGABRT): 
         signal_fn(s, signal_handler)

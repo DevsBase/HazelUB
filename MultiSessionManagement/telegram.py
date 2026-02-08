@@ -43,8 +43,7 @@ class Telegram(Decorators):
             name="HazelUB",
             session_string=self.session,
             api_id=self.api_id,
-            api_hash=self.api_hash,
-            plugins=dict(root="Mods/")
+            api_hash=self.api_hash
         )
         self.mainClient.privilege = "sudo" # type: ignore
         self.mainClient.pytgcalls: PyTgCalls = PyTgCalls(self.mainClient) # type: ignore
