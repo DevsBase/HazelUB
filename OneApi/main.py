@@ -5,5 +5,5 @@ logger = logging.getLogger("OneApi")
 
 async def main(url: str):
     OneClient = Client(url)
-    await OneClient.connect()
+    await OneClient.connectHazelClient()
     return OneClient
