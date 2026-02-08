@@ -4,7 +4,7 @@ from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
 from pyrogram.types import Message
 from functools import partial
-from typing import List, Any
+from typing import List
 
 class Telegram(Decorators):
     def __init__(self, config: tuple) -> None:

@@ -1,6 +1,5 @@
 import json
 import logging
-import random
 import inspect
 from typing import Callable, Dict, List
 
@@ -54,9 +53,9 @@ class Client:
         for handler in handlers:
             try:
                 if inspect.iscoroutinefunction(handler):
-                    await handler(update)
+                    await handler(self, update)
                 else:
-                    handler(update)
+                    handler(self, update)
             except Exception as e:
                 logger.error(f"Handler error [{event}]: {e}")
 
@@ -86,6 +85,11 @@ class Client:
             try:
                 message = await self.hazelClientConn.recv()
                 data = json.loads(message)
+                
+                if data.get("type") == 'client_joined':
+                    logger.info(f"Hazel Client connected.")
+                elif data.get("type") == 'client_left':
+                    logger.info(f"Hazel Client disconnected.")
 
                 await self.dispatchUpdate("hazelClient", data)
 

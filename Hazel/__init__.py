@@ -4,15 +4,16 @@ from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
+    from MultiSessionManagement.OneApi import OneApi as OneApiClass
     from OneApi.client import Client
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient
-    OneClients: List[Client]
+    OneApi: OneApiClass
 else:
     Tele = None
     SQLClient = None
-    OneClients = []
+    OneApi = None
 
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 
