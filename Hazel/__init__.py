@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
@@ -8,11 +8,11 @@ if TYPE_CHECKING:
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient
-    OneClient: Client
+    OneClients: List[Client]
 else:
     Tele = None
     SQLClient = None
-    OneClient = None
+    OneClients = []
 
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 

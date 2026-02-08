@@ -4,7 +4,6 @@ from .installation import main as installation_main
 import traceback
 import logging
 import asyncio
-from OneApi.client import Client as OneApiClient
 import Hazel
 import os
 
@@ -13,12 +12,12 @@ logger = logging.getLogger("Hazel.setup")
 async def main(install_packages: bool=True):
     db, config = await installation_main()  # Ensure installation is done first.
     from MultiSessionManagement.telegram import Telegram
+    from MultiSessionManagement.OneApi import main as oneApi_main
     import art
     
     logger.info("Starting telegram setup...")
     Tele = Telegram(config)
     Hazel.Tele = Tele # Override Tele in Hazel.__init__
-    Hazel.OneClient = OneApiClient(config[7]) # Override OneClient in Hazel.__init__
     
     try:
         await Tele.create_pyrogram_clients()
@@ -42,9 +41,9 @@ async def main(install_packages: bool=True):
     import Hazel.Tasks.messageRepeater as messageRepeater
 
     asyncio.create_task(messageRepeater.main(Tele, db))
-    # -----------------------------
-    asyncio.create_task(Hazel.OneClient.connectHazelClient())
-
+    # -- OneApi ---------------------------
+    await oneApi_main(config[7], Hazel.Tele)
+    # -- Idle System ---------------------------
     for s in (SIGINT, SIGTERM, SIGABRT): 
         signal_fn(s, signal_handler)
     while True:

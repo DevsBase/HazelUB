@@ -16,7 +16,7 @@ class Client:
             url += "/"
 
         self.url: str = url
-        self.hazel_id: int = random.randint(10000, 99999)
+        self.hazel_id: int = 0
         self.hazelClientConn: ClientConnection | None = None
 
         # event_type -> list of handlers
@@ -63,11 +63,14 @@ class Client:
     # -----------------------------
     # WebSocket connection
     # -----------------------------
-    async def connectHazelClient(self) -> None:
+    async def connectHazelClient(self, hazel_id: int) -> None:
+        self.hazel_id = hazel_id
         logger.info(
-            f"Connecting to OneApi – Hazel ID: {self.hazel_id}"
+            f"Connecting to OneApi..."
         )
-
+        if not self.hazelClientConn is None:
+            logger.warning("Already connected to OneApi, skipping connection.")
+            return
         try:
             self.hazelClientConn = await websockets.connect(
                 self.url + f"ws/HazelUB?Hazel_ID={self.hazel_id}"
@@ -76,7 +79,9 @@ class Client:
             raise ConnectionError(f"Invalid OneApi URI: {e}")
 
         assert self.hazelClientConn is not None
-
+        logger.info(
+            f"Connected to OneApi successfully. Please Connect Your HazelUB Client in using {self.hazel_id} to use our ecosystem!"
+        )
         while True:
             try:
                 message = await self.hazelClientConn.recv()
@@ -88,7 +93,7 @@ class Client:
                 logger.error(f"Invalid JSON received: {message}")
 
             except websockets.exceptions.ConnectionClosed:
-                logger.error("WebSocket connection closed")
+                logger.error("WebSocket connection closed, Restart HazelUB to reconnect.")
                 break
 
             except Exception as e:
