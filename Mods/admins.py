@@ -1,6 +1,9 @@
 from Hazel import Tele
 from pyrogram import Client, filters
 from pyrogram.types import Message
+import logging
+
+logger = logging.getLogger(__name__)
 
 @Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.me & filters.group)
 async def banFunc(c: Client, m: Message):
@@ -13,7 +16,7 @@ async def banFunc(c: Client, m: Message):
     if m.reply_to_message:
         user = m.reply_to_message.from_user.id # type: ignore
     else:
-        user = m.text.split(None, 1)[1]
+        user = (m.text.split(None, 1)[1]).replace('@', '')
     
     if str(user).isdigit() and int(user) == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
@@ -26,6 +29,13 @@ async def banFunc(c: Client, m: Message):
     privileges = await Tele.get_chat_member_privileges(c, m.chat.id)
     if privileges and not privileges.can_restrict_members:
         return await m.reply("You are missing rights `can_restrict_members`.")
+    
+    try:
+        user = await c.get_chat_member(m.chat.id, user)
+        user = user.user.id
+    except Exception as e:
+        logger.error(e)
+        return await m.reply('User is not found.')
     
     if ban_or_unban_or_kick == "ban":
         try:
