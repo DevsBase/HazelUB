@@ -5,7 +5,7 @@ from pyrogram.types import Message
 @Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.me & filters.group)
 async def banFunc(c: Client, m: Message):
     ban_or_unban_or_kick = m.command[0]  # type: ignore
-    if len(m.command) < 2 or not m.reply_to_message:
+    if len(m.command) < 2 and not m.reply_to_message:
         return await m.reply(f"Provide a user to {ban_or_unban_or_kick}.")
     elif m.reply_to_message.from_user.id == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
