@@ -2,9 +2,11 @@ from pyrogram.client import Client
 from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
-from pyrogram.types import Message
+from pyrogram.types import Message, ChatPrivileges
 from functools import partial
 from typing import List, Dict, Optional
+from pyrogram.enums import ChatMemberStatus
+import logging
 
 class Telegram(Decorators):
     def __init__(self, config: tuple) -> None:
@@ -103,3 +105,28 @@ class Telegram(Decorators):
     
     def getClientPyTgCalls(self, client: Client) -> Optional[PyTgCalls]:
         return self._clientPyTgCalls.get(client, None)
+    
+    async def is_admin(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> bool:
+        try:
+            if not user_id:
+                user_id = client.me.id # type: ignore
+            member = await client.get_chat_member(chat_id, user_id)
+            return member.status in (
+                ChatMemberStatus.ADMINISTRATOR,
+                ChatMemberStatus.OWNER,
+            )
+        except Exception as e:
+            logger = logging.getLogger("Telegram.is_admin")
+            logger.error(f"Error checking admin status: {str(e)}")
+            return False
+    
+    async def get_chat_member_privileges(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> Optional[ChatPrivileges]:
+        try:
+            if not user_id:
+                user_id = client.me.id # type: ignore
+            member = await client.get_chat_member(chat_id, user_id)
+            return member.privileges
+        except Exception as e:
+            logger = logging.getLogger("Telegram.get_chat_member_privileges")
+            logger.error(f"Error getting chat member privileges: {str(e)}")
+            return None

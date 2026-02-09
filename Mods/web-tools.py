@@ -22,7 +22,5 @@ async def openCommand(client, m):
         await m.reply(f'Failed to open link.\n\n**Error:** {e}')
 
 """
-    Try on your machine. It won't work on servers untill broswer is installed.
-    You can also use it to open files by providing file path instead of url.
-    Example: $open C:\Users\user\Desktop\file.txt
+Try on your machine. It won't work on servers untill broswer is installed.
 """
