@@ -8,7 +8,7 @@ import os
 
 @Tele.on_message(filters.command(["e", "eval"]) & filters.me)
 async def evalFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
     
     cmd = m.text.split(None, 1) # type: ignore
@@ -38,7 +38,7 @@ async def evalFunc(c: Client, m: Message):
     
 @Tele.on_message(filters.command("stop") & filters.me)
 async def stopFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
     await m.reply("Stopping HazelUB...")
     import os
@@ -46,7 +46,7 @@ async def stopFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("restart") & filters.me)
 async def restartFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
     import restart
     await m.reply("Rerstarting...")
@@ -54,7 +54,7 @@ async def restartFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("update") & filters.me)
 async def updateFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
     import subprocess
     s = await m.reply("Updating HazelUB...")
@@ -107,8 +107,9 @@ async def updateFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command(["logs", "log", "flogs"]) & filters.me)
 async def logsFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo': 
         return await m.reply("You don't have permission.")
+    
     log_file = Path("log.txt")
     if not log_file.exists():
         return await m.reply("No logs found.")
@@ -122,11 +123,13 @@ async def logsFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("sh") & filters.me)
 async def shellFunc(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo': 
         return await m.reply("You don't have permission.")
+    
     cmd = m.text.split(None, 1) # type: ignore
     if len(cmd) == 1:
         return await m.reply("No command provided.")
+    
     import subprocess
     s = await m.reply("Executing...")
     result = subprocess.run(
@@ -135,6 +138,7 @@ async def shellFunc(c: Client, m: Message):
         capture_output=True,
         text=True
     )
+    
     await s.delete()
 
     if result.stderr and len(result.stderr) > 1999 or result.stdout and len(result.stdout) > 1999:

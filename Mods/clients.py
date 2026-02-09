@@ -29,7 +29,7 @@ async def clientsFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command('asudo') & filters.me)
 async def add_sudo(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
     if not m.reply_to_message:
         if len(m.command or []) < 2:
@@ -37,10 +37,11 @@ async def add_sudo(c: Client, m: Message):
         uid = int(m.text.split(None, 1)[1]) # type: ignore
     else:
         uid = m.reply_to_message.from_user.id # type: ignore
-    client = await Tele.getClientById(uid)
+    
+    client = Tele.getClientById(uid)
     if client:
-        if client.privilege != "sudo": # type: ignore           
-            client.privilege = 'sudo' # type: ignore
+        if Tele.getClientPrivilege(client) != "sudo":           
+            Tele._clientPrivileges[client] = 'sudo'
             return await m.reply("Promoted.")
         else: 
             return await m.reply("They already have `sudo` privilege.")
@@ -49,7 +50,7 @@ async def add_sudo(c: Client, m: Message):
 
 @Tele.on_message(filters.command('rsudo') & filters.me)
 async def remove_sudo(c: Client, m: Message):
-    if c.privilege != 'sudo': # type: ignore
+    if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
     if not m.reply_to_message:
         if len(m.command or []) < 2:
@@ -57,10 +58,11 @@ async def remove_sudo(c: Client, m: Message):
         uid = int(m.text.split(None, 1)[1]) # type: ignore
     else:
         uid = m.reply_to_message.from_user.id # type: ignore
-    client = await Tele.getClientById(uid)
+    
+    client = Tele.getClientById(uid)
     if client:
-        if client.privilege == "sudo": # type: ignore           
-            client.privilege = 'user' # type: ignore
+        if Tele.getClientPrivilege(client) == "sudo":           
+            Tele._clientPrivileges[client] = 'user'
             return await m.reply("Demoted.")
         else: 
             return await m.reply("They already don't have `sudo` privilege.")

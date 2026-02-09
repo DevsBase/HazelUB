@@ -2,9 +2,9 @@ from pyrogram.client import Client
 from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
-from pyrogram.types import Message, User
+from pyrogram.types import Message
 from functools import partial
-from typing import List
+from typing import List, Dict, Optional
 
 class Telegram(Decorators):
     def __init__(self, config: tuple) -> None:
@@ -15,12 +15,15 @@ class Telegram(Decorators):
         self.api_hash: str = config[2]
         self.bot_token: str = config[0]
         # ----------- Clients ------------
-        self.bot: Client | None = None
-        self.mainClient: Client | None = None
+        self.bot: Client = Client("HazelUB-Bot")
+        self.mainClient: Client = Client("HazelUB")
         self.otherClients: List[Client] = []
         # ---------- Others -------------
         self._allClients: List[Client] = []
         self._allPyTgCalls: List[PyTgCalls] = []
+        self._clientPrivileges: Dict[Client, str] = {}
+        self._clientPyTgCalls: Dict[Client, PyTgCalls] = {}
+
         filters.command = partial(filters.command, prefixes=config[6]) # Override filters.command to set defualt prefixes
     
     async def create_pyrogram_clients(self) -> None:
@@ -45,8 +48,8 @@ class Telegram(Decorators):
             api_id=self.api_id,
             api_hash=self.api_hash
         )
-        self.mainClient.privilege = "sudo" # type: ignore
-        self.mainClient.pytgcalls: PyTgCalls = PyTgCalls(self.mainClient) # type: ignore
+        self._clientPrivileges[self.mainClient] = "sudo"
+        self._clientPyTgCalls[self.mainClient] = PyTgCalls(self.mainClient)
 
         for session in self.othersessions: # Other clients
             client = Client(
@@ -55,21 +58,27 @@ class Telegram(Decorators):
                 api_id=self.api_id,
                 api_hash=self.api_hash
             )
-            client.privilege = "user" # type: ignore
-            client.pytgcalls: PyTgCalls = PyTgCalls(client) # type: ignore
-            self._allPyTgCalls.append(client.pytgcalls) # type: ignore
+            clientPyTgCalls = PyTgCalls(client)
+            
+            self._clientPrivileges[client] = "user"
+            self._clientPyTgCalls[client] = clientPyTgCalls
+
+            self._allPyTgCalls.append(clientPyTgCalls)
             self.otherClients.append(client)
+        
         self._allClients = [self.mainClient, *self.otherClients]
         self._allPyTgCalls.append(self.mainClient.pytgcalls) # type: ignore
 
     async def start(self) -> None:
-        # HazelUB v02.2026
-        await self.bot.start() # type: ignore
-        await self.mainClient.start() # type: ignore
-        await self.mainClient.pytgcalls.start() # type: ignore
-        for client in self.otherClients:
+        # HazelUB
+        await self.bot.start()
+        
+        for client in self._allClients:
             await client.start()
-            await client.pytgcalls.start() # type: ignore
+            pytgcalls = self.getClientPyTgCalls(client)
+            if pytgcalls:
+                await pytgcalls.start()
+
         from Hazel import __channel__
         try:
             for client in self._allClients:
@@ -80,7 +89,7 @@ class Telegram(Decorators):
         for client in self._allClients:
             await client.stop()
     
-    async def getClientById(self, id: int | None = 0, m: Message | None = None) -> Client | None:
+    def getClientById(self, id: int | None = 0, m: Message | None = None) -> Optional[Client]:
         if m and isinstance(m, Message):
             if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
                 id = m.reply_to_message.from_user.id
@@ -88,3 +97,9 @@ class Telegram(Decorators):
             if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client
         return None
+    
+    def getClientPrivilege(self, client: Client) -> str:
+        return self._clientPrivileges.get(client, "user")
+    
+    def getClientPyTgCalls(self, client: Client) -> Optional[PyTgCalls]:
+        return self._clientPyTgCalls.get(client, None)

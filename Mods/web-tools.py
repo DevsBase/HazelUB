@@ -7,11 +7,9 @@ import asyncio
 
 @Tele.on_message(filters.command('open') & filters.me)
 async def openCommand(client, m):
-    """
-    Try on your machine. It won't work on servers untill broswer is installed.
-    """
-    if client.privilege != 'sudo':
+    if Tele.getClientPrivilege(client) != 'sudo':
         return await m.reply("You don't have permission.")
+    
     link = m.text.split(None, 1)
     if len(link) == 1:
        return await m.reply('Provide a link to open.')
@@ -23,3 +21,8 @@ async def openCommand(client, m):
     except Exception as e:
         await m.reply(f'Failed to open link.\n\n**Error:** {e}')
 
+"""
+    Try on your machine. It won't work on servers untill broswer is installed.
+    You can also use it to open files by providing file path instead of url.
+    Example: $open C:\Users\user\Desktop\file.txt
+"""
