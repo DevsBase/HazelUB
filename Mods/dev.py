@@ -4,11 +4,13 @@ from pyrogram.client import Client
 from pyrogram import filters
 from pyrogram.types import Message
 from pathlib import Path
+import os
 
 @Tele.on_message(filters.command(["e", "eval"]) & filters.me)
 async def evalFunc(c: Client, m: Message):
     if c.privilege != 'sudo': # type: ignore
         return await m.reply("You don't have permission.")
+    
     cmd = m.text.split(None, 1) # type: ignore
     if len(cmd) == 1:
         return await m.reply("No code provided.")
@@ -18,7 +20,16 @@ async def evalFunc(c: Client, m: Message):
     except Exception as e:
         result = (str(e), None)
     await s.delete()
-    if not result[1]:
+    
+    if len(result[0]) > 1999 or (result[1] and len(str(result[1])) > 1999):
+        
+        with open("eval.txt", "w", encoding="utf-8") as f:
+            f.write(f"Output:\n{result[0]}\n\nResult:\n{result[1]}")
+        
+        await m.reply_document(document="eval.txt")
+        os.remove("eval.txt")
+    
+    elif not result[1]:
         await m.reply(f"Output:```python\n{result[0]}```")
     elif not result[0]:
         await m.reply(f"Result:```python\n{result[1]}```")
@@ -104,7 +115,7 @@ async def logsFunc(c: Client, m: Message):
     with open(log_file, "r") as f:
         log_data = f.read()
     if not 'f' in m.command[0]: # type: ignore
-        logs = log_data[-4000:]
+        logs = log_data[-4999:]
         await m.reply(f"Logs:```log\n{logs}```")
     else:
         await m.reply_document(document='log.txt')
@@ -125,6 +136,16 @@ async def shellFunc(c: Client, m: Message):
         text=True
     )
     await s.delete()
+
+    if result.stderr and len(result.stderr) > 1999 or result.stdout and len(result.stdout) > 1999:
+        
+        with open('shell.txt', 'w', encoding='utf-8') as f:
+            txt = result.stdout if result.returncode == 0 else result.stderr
+            f.write(txt)
+        
+        await m.reply_document('shell.txt')
+        return os.remove('shell.txt')
+    
     if result.returncode != 0:
         return await m.reply(f"Command Failed:```bash\n{result.stderr}```")
     await m.reply(f"Command Output:```bash\n{result.stdout}```")
