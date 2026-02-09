@@ -2,7 +2,7 @@ from pyrogram.client import Client
 from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
-from pyrogram.types import Message
+from pyrogram.types import Message, User
 from functools import partial
 from typing import List
 
