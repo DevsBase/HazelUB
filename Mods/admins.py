@@ -7,20 +7,25 @@ async def banFunc(c: Client, m: Message):
     ban_or_unban_or_kick = m.command[0]  # type: ignore
     if len(m.command) < 2 and not m.reply_to_message:
         return await m.reply(f"Provide a user to {ban_or_unban_or_kick}.")
-    elif m.reply_to_message.from_user.id == c.me.id: # type: ignore
+    elif m.reply_to_message and m.reply_to_message.from_user.id == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
     
+    if m.reply_to_message:
+        user = m.reply_to_message.from_user.id # type: ignore
+    else:
+        user = m.text.split(None, 1)[1]
+    
+    if str(user).isdigit() and int(user) == c.me.id: # type: ignore
+        return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
+    elif str(user).lower() == c.me.username: # type: ignore
+        return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
+
     is_admin = await Tele.is_admin(c, m.chat.id)
     if not is_admin:
         return await m.reply("You must be admin to do this.")
     privileges = await Tele.get_chat_member_privileges(c, m.chat.id)
     if privileges and not privileges.can_restrict_members:
         return await m.reply("You are missing rights `can_restrict_members`.")
-    
-    if m.reply_to_message:
-        user = m.reply_to_message.from_user.id # type: ignore
-    else:
-        user = m.text.split(None, 1)[1]
     
     if ban_or_unban_or_kick == "ban":
         try:
