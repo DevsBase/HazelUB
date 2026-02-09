@@ -31,6 +31,8 @@ async def banFunc(c: Client, m: Message):
         return await m.reply("You are missing rights `can_restrict_members`.")
     
     try:
+        if str(user).isdigit():
+            user = int(user)
         user = await c.get_chat_member(m.chat.id, user)
         user = user.user.id
     except Exception as e:
