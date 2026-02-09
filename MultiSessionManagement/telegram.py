@@ -50,8 +50,9 @@ class Telegram(Decorators):
             api_id=self.api_id,
             api_hash=self.api_hash
         )
+        mainClientPyTgCalls = PyTgCalls(self.mainClient)
         self._clientPrivileges[self.mainClient] = "sudo"
-        self._clientPyTgCalls[self.mainClient] = PyTgCalls(self.mainClient)
+        self._clientPyTgCalls[self.mainClient] = mainClientPyTgCalls
 
         for session in self.othersessions: # Other clients
             client = Client(
@@ -69,7 +70,7 @@ class Telegram(Decorators):
             self.otherClients.append(client)
         
         self._allClients = [self.mainClient, *self.otherClients]
-        self._allPyTgCalls.append(self.mainClient.pytgcalls) # type: ignore
+        self._allPyTgCalls.append(mainClientPyTgCalls)
 
     async def start(self) -> None:
         # HazelUB
