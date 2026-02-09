@@ -20,7 +20,7 @@ async def banFunc(c: Client, m: Message):
     
     if str(user).isdigit() and int(user) == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
-    elif str(user).lower() == c.me.username: # type: ignore
+    elif str(user).lower() == (c.me.username).lower(): # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
 
     is_admin = await Tele.is_admin(c, m.chat.id)
