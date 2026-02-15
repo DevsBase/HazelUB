@@ -86,7 +86,8 @@ class Telegram(Decorators):
         try:
             for client in self._allClients:
                 await client.join_chat(__channel__)
-        except: pass
+        except:
+            pass
     
     async def stop(self) -> None:
         for client in self._allClients:

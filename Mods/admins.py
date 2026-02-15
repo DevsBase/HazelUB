@@ -1,6 +1,7 @@
 from Hazel import Tele
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from pyrogram.errors import PeerIdInvalid
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,8 @@ async def banFunc(c: Client, m: Message):
             user = int(user)
         user = await c.get_chat_member(m.chat.id, user)
         user = user.user.id
+    except PeerIdInvalid:
+        return await m.reply('PeerId is invalid. You must interacted with that person once, otherwise use thier username.')
     except Exception as e:
         logger.error(e)
         return await m.reply('User is not found.')
