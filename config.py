@@ -1,11 +1,10 @@
 API_ID = "10187126"
 API_HASH = "ff197c0d23d7fe54c89b44ed092c1752"
-SESSION = ""
+SESSION = "sesssion"
 BOT_TOKEN = ""
 DB_URL = "" # PostgreSQL URL
 OtherSessions = [] # Example: ["session1", "session2", ...]
 PREFIX = [".","~","$","^"]
-ONEAPI_URL = "ws://16.170.232.228/"
 
 """
 * Pyrogram session(s) are only allowed.

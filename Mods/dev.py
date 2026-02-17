@@ -116,7 +116,7 @@ async def logsFunc(c: Client, m: Message):
     with open(log_file, "r") as f:
         log_data = f.read()
     if not 'f' in m.command[0]: # type: ignore
-        logs = log_data[-4999:]
+        logs = log_data[-4000:]
         await m.reply(f"Logs:```log\n{logs}```")
     else:
         await m.reply_document(document='log.txt')
