@@ -53,7 +53,7 @@ async def ai_cmd(c: Client, m: Message):
             full_text = response.text
         else:
             try:
-                full_text = response.candidates[0].content.parts[0].text or # type: ignore
+                full_text = response.candidates[0].content.parts[0].text # type: ignore
             except:
                 full_text = "Gemini sent nothing. Please check if the prompt is not offensive."
 
