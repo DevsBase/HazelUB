@@ -15,7 +15,7 @@ import config
 API_KEY = config.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
 
 if not API_KEY:
-    raise RuntimeError("GEMINI_API_KEY not found in config or environment.")
+    logger.critical("GEMINI_API_KEY not found in config or environment. Ai features will not work.")
 
 # Create client 
 GENAI_CLIENT = genai.Client(api_key=API_KEY)
@@ -34,8 +34,9 @@ def get_ai_session(user_id: int) -> Chat:
 
 @Tele.on_message(filters.command("ai") & filters.me)
 async def ai_cmd(c: Client, m: Message):
-
-    if len(m.command) < 2:
+    if not API_KEY:
+        return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
+    elif len(m.command) < 2:
         return await m.edit("Usage: `.ai <your question>`")
 
     query = m.text.split(None, 1)[1]
