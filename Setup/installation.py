@@ -26,7 +26,7 @@ async def main() -> Tuple[DBClient, tuple]:
         from aiosqlite import connect
         from art import text2art
         from pyrogram import Client
-        import google.generativeai
+        import google
     except ImportError:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()
