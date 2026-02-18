@@ -1,37 +1,3 @@
-"""
-Repeat System Commands
-
-$repeat (minutes) (group_name)
-  Reply to a message to repeat it every (minutes) in a group.
-
-$rgroup create (name)
-  Create a new repeat group.
-
-$rgroup_add (group_name)
-  Add current chat to a group.
-
-$rgroup_remove (group_name)
-  Remove current chat from a group.
-
-$rgroup_list (group_name)
-  List all chats in a group.
-
-$rgroup_list_all
-  List all your repeat groups.
-
-$repeat_delete (id)
-  Delete a repeat task.
-
-$repeat_list 
-  List all repeating messages.
-
-$rpause
-  Pause all repeat message tasks
-
-$rresume
-  resume all repeat message tasks
-"""
-
 from Hazel import SQLClient, Tele
 from pyrogram.client import Client
 from pyrogram.types import Message 
@@ -44,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 @Tele.on_message(filters.command('repeat') & filters.me)
 async def repeatFunc(c: Client, m: Message):
     if 'help' in str(m.text): 
-        return await m.reply(__doc__ or "No help.")
+        return await m.reply(MOD_HELP)
     text = m.text.split()  # type: ignore
 
     if len(text) < 3:
@@ -264,7 +230,7 @@ async def pauseAndResumeFunc(c: Client, m: Message):
         event.clear()
         return await m.reply("Paused all messageRepeat Tasks for you.")
 
-MOD_NAME = "Message-Tools"
+MOD_NAME = "Repeater"
 MOD_HELP = """**Usage:**
 > .repeat (mins) (group) - Repeat a message.
 > .rgroup create (name) - Create a group.
