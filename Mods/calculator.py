@@ -5,6 +5,7 @@ from Hazel import Tele
 from typing import Any
 from pyrogram import Client, filters
 from pyrogram.types import Message
+from pyrogram.enums import ParseMode
 
 logger = logging.getLogger("Mods.calculator")
 
@@ -45,6 +46,6 @@ async def calculateFunc(c: Client, m: Message):
         exp = exp.replace(x, '')
     try:
         result = calculate(exp)
-        await m.reply(f'>> {exp} = {result}')
+        await m.reply(f'>> {exp} = {result}', parse_mode=ParseMode.DISABLED)
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
