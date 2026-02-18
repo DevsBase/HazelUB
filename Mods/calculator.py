@@ -42,7 +42,7 @@ async def calculateFunc(c: Client, m: Message):
     exp = str(m.text.split(None, 1)) # type: ignore
     rm = ["'['", "']'", '//', ' ']
     for x in rm:
-        exp.replace(x, '')
+        exp = exp.replace(x, '')
     try:
         result = calculate(exp)
         await m.reply(f'{exp} = {result}')
