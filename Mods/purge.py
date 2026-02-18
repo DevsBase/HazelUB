@@ -22,3 +22,6 @@ async def purgeFunc(app: Client, m: Message):
         except Exception as e:
             logger.error(f"Error deleting messages {x}: {str(e)}")
     await app.send_message(m.chat.id, f'Deleted {count} messages.')
+
+MOD_NAME = "Purge"
+MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"

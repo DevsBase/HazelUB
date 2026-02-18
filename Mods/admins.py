@@ -61,3 +61,6 @@ async def banFunc(c: Client, m: Message):
             await m.reply("Kicked.")
         except Exception as e:
             await m.reply(f"Failed to kick user {user}\n\n**Error:** {e}")
+
+MOD_NAME = "Admins"
+MOD_HELP = "**Usage:**\n> .ban (reply/username)\n> .unban (reply/username)\n> .kick (reply/username)"

@@ -153,3 +153,12 @@ async def shellFunc(c: Client, m: Message):
     if result.returncode != 0:
         return await m.reply(f"Command Failed:```bash\n{result.stderr}```")
     await m.reply(f"Command Output:```bash\n{result.stdout}```")
+
+MOD_NAME = "Dev"
+MOD_HELP = """**Usage:**
+> .eval (code) - Evaluate python code.
+> .sh (cmd) - Execute shell command.
+> .restart - Restart HazelUB.
+> .update - Update HazelUB.
+> .logs - Get logs.
+> .stop - Stop HazelUB."""

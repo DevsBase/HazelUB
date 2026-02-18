@@ -263,3 +263,16 @@ async def pauseAndResumeFunc(c: Client, m: Message):
             return await m.reply("Repeat Tasks are paused already.")
         event.clear()
         return await m.reply("Paused all messageRepeat Tasks for you.")
+
+MOD_NAME = "Message-Tools"
+MOD_HELP = """**Usage:**
+> .repeat (mins) (group) - Repeat a message.
+> .rgroup create (name) - Create a group.
+> .rgroup_add (group) - Add current chat to group.
+> .rgroup_remove (group) - Remove current chat from group.
+> .rgroup_list (group) - List chats in group.
+> .rgroup_list_all - List all groups.
+> .repeat_delete (id) - Delete repeat task.
+> .repeat_list - List repeat tasks.
+> .rpause - Pause repeats.
+> .rresume - Resume repeats."""

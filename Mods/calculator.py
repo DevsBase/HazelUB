@@ -1,3 +1,4 @@
+import re
 import ast
 import operator
 import logging
@@ -16,6 +17,7 @@ allowed_operators = {
 }
 
 def calculate(expression: str) -> (bool | int | float):
+    expression = re.sub(r'\b0+(\d+)', r'\1', expression)
     node = ast.parse(expression, mode='eval').body
 
     def evaluate(node):
@@ -47,11 +49,11 @@ async def calculateFunc(c: Client, m: Message):
         result = calculate(exp)
         if result is False or result is None:
             return
-        await m.reply(f'-> {exp} = `{result}`')
+        await m.reply(f'» {exp} = `{result}`')
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
 
-MOD_NAME = "calculator"
+MOD_NAME = "Calculator"
 MOD_HELP = """**Usage:**
 > //2+2 (add)
 > //2/2 (divide)

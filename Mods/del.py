@@ -10,3 +10,6 @@ async def delCommand(client, m):
         await m.delete()
         await m.reply_to_message.delete()
     except: pass
+
+MOD_NAME = "Delete"
+MOD_HELP = "**Usage:**\n> .del (reply to a message)"

@@ -67,3 +67,9 @@ async def remove_sudo(c: Client, m: Message):
         else: 
             return await m.reply("They already don't have `sudo` privilege.")
     return await m.reply("Client not found. You should add their session in OtherSessions in config.py or env.")
+
+MOD_NAME = "Clients"
+MOD_HELP = """**Usage:**
+> .clients - Info about all sessions.
+> .asudo - Add sudo (reply).
+> .rsudo - Remove sudo (reply)."""
