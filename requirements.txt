@@ -12,4 +12,4 @@ SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
 websockets
-google-generativeai
+google-genai
