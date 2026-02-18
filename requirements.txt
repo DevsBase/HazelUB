@@ -4,7 +4,6 @@ aiofiles
 #gcrypto
 requests
 py-tgcalls
-pytz
 google
 numpy
 python-dotenv
@@ -13,3 +12,4 @@ SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
 websockets
+google-generativeai

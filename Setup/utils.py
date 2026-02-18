@@ -49,7 +49,8 @@ def load_config() -> tuple:
     # ---------- Optional ----------
     OtherSessions = config.OtherSessions or list(os.getenv('OtherSessions', []))
     PREFIX = list(config.PREFIX) or os.getenv('PREFIX', [])
-    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX)
+    GEMINI_API_KEY = config.GEMINI_API_KEY or os.getenv('GEMINI_API_KEY', '')
+    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
 
 def startup_popup():
     from plyer import notification

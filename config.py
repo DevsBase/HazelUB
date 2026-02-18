@@ -1,10 +1,11 @@
 API_ID = "10187126"
 API_HASH = "ff197c0d23d7fe54c89b44ed092c1752"
-SESSION = "sesssion"
+SESSION = "" # Example: "sessionqwertyuiopasdfghjkl..."
 BOT_TOKEN = ""
 DB_URL = "" # PostgreSQL URL
 OtherSessions = [] # Example: ["session1", "session2", ...]
 PREFIX = [".","~","$","^"]
+GEMINI_API_KEY = "" # Get it from https://aistudio.google.com/app/api-keys
 
 """
 * Pyrogram session(s) are only allowed.
