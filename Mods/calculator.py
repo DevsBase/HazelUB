@@ -5,7 +5,6 @@ from Hazel import Tele
 from typing import Any
 from pyrogram import Client, filters
 from pyrogram.types import Message
-from pyrogram.enums import ParseMode
 
 logger = logging.getLogger("Mods.calculator")
 
@@ -16,7 +15,7 @@ allowed_operators = {
     ast.Div: operator.truediv
 }
 
-def calculate(expression: str) -> (bool | int | float | Any):
+def calculate(expression: str) -> (bool | int | float):
     node = ast.parse(expression, mode='eval').body
 
     def evaluate(node):
@@ -46,6 +45,18 @@ async def calculateFunc(c: Client, m: Message):
         exp = exp.replace(x, '')
     try:
         result = calculate(exp)
-        await m.reply(f'>> {exp} = {result}', parse_mode=ParseMode.DISABLED)
+        if result is False or result is None:
+            return
+        await m.reply(f'-> {exp} = `{result}`')
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
+
+MOD_NAME = "calculator"
+MOD_HELP = """**Usage:**
+> //2+2 (add)
+> //2/2 (divide)
+> //2-2 (subract)
+> //2*2 (multiply)
+
+Default prefixes will not work for this command only `//` is allowed.
+"""
