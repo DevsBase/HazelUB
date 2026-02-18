@@ -50,8 +50,7 @@ async def stopFunc(c: Client, m: Message):
 async def restartFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
-    import restart
-    await m.reply("Rerstarting...")
+    await m.reply("Restarting...")
     restart.restart()
 
 @Tele.on_message(filters.command("update") & filters.me)
