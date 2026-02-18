@@ -37,9 +37,10 @@ def calculate(expression: str) -> (bool | int | float | Any):
     return evaluate(node)
 
 
-@Tele.on_message(filters.command('/', prefixes='/') & filters.me)
+@Tele.on_message(filters.regex('//') & filters.me)
 async def calculateFunc(c: Client, m: Message):
     exp = str(m.text.split(None, 1)) # type: ignore
+    exp = exp.replace('//', '')
     try:
         result = calculate(exp)
         await m.reply(f'{exp} = {result}')
