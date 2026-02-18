@@ -45,6 +45,6 @@ async def calculateFunc(c: Client, m: Message):
         exp = exp.replace(x, '')
     try:
         result = calculate(exp)
-        await m.reply(f'{exp} = {result}')
+        await m.reply(f'>> {exp} = {result}')
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
