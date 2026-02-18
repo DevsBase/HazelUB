@@ -40,7 +40,7 @@ async def ai_cmd(c: Client, m: Message):
         return await m.edit("Usage: `.ai <your question>`")
 
     query = m.text.split(None, 1)[1]
-    await m.edit("🔍 **Thinking...**")
+    loading = await m.reply("...")
 
     try:
         session = get_ai_session(c.me.id)  # type: ignore
@@ -49,14 +49,13 @@ async def ai_cmd(c: Client, m: Message):
             session.send_message,
             query
         )
-
         text = (response.text or "")[:4000]
 
-        await m.edit(f"🤖 **AI:**\n\n{text}")
+        await loading.edit(text)
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await m.edit(f"❌ **Error:** `{e}`")
+        await m.edit(f"**Error:** `{e}`")
 
 
 @Tele.on_message(filters.command("aiclr") & filters.me)
@@ -64,9 +63,9 @@ async def ai_clear(c: Client, m: Message):
     uid = c.me.id  # type: ignore
 
     if AI_SESSIONS.pop(uid, None):
-        await m.edit("✅ **AI Chat History Cleared.**")
+        await m.edit("Cleared.")
     else:
-        await m.edit("ℹ️ **No active AI session to clear.**")
+        await m.edit("No active AI session to clear.")
 
 
 MOD_NAME = "AI"
