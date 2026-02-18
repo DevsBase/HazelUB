@@ -27,7 +27,7 @@ AI_SESSIONS: Dict[int, Chat] = {}
 def get_ai_session(user_id: int) -> Chat:
     if user_id not in AI_SESSIONS:
         AI_SESSIONS[user_id] = GENAI_CLIENT.chats.create(
-            model="gemini-1.5-flash"
+            model="models/gemini-2.5-flash"
         )
     return AI_SESSIONS[user_id]
 
