@@ -9,6 +9,7 @@ from pyrogram.types import (
     InlineQueryResultArticle,
     InputTextMessageContent
 )
+from pyrogram.errors import BadRequest
 import os
 import importlib
 import logging
@@ -93,6 +94,16 @@ async def help_userbot(c: Client, m: Message):
             await m.delete()
         else:
             await m.edit("No results from bot. Make sure inline mode is enabled.")
+    
+    except BadRequest as e:
+        
+        if 'CHAT_SEND_INLINE_FORBIDDEN' in str(e):
+            return await m.reply("Sending inline messages is not allowed in this chat.")
+        elif "BOT_INLINE_DISABLED" in str(e):
+            return await m.reply(f'Please enable inline mode for @{Tele.bot.me.username} in @BotFather') # type: ignore
+        else:
+            logging.error(f"Error while sending help menu: {e}")
+    
     except Exception as e:
         await m.edit(f"**HazelUB Help**\n\nError: {e}\nMake sure inline mode is enabled for the bot.")
 
