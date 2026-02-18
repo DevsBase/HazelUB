@@ -5,6 +5,7 @@ from pyrogram.types import Message
 from Hazel import Tele, SQLClient
 
 async def aexec(code: str, app: Client, m: Message) -> Any:
+    code = code.replace('r$4', 'return')
     old_stdout = sys.stdout
     sys.stdout = buffer = io.StringIO()
     local_vars = {}

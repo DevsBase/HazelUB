@@ -49,13 +49,21 @@ async def ai_cmd(c: Client, m: Message):
             session.send_message,
             query
         )
-        text = (response.text or "")[:4000]
+        if hasattr(response, "text") and response.text:
+            full_text = response.text
+        else:
+            try:
+                full_text = response.candidates[0].content.parts[0].text or # type: ignore
+            except:
+                full_text = "Gemini sent nothing. Please check if the prompt is not offensive."
 
-        await loading.edit(text)
+        full_text = full_text[:4090]
+        if full_text:
+            await loading.edit(full_text)
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await m.edit(f"**Error:** `{e}`")
+        await loading.edit(f"**Error:** `{e}`")
 
 
 @Tele.on_message(filters.command("aiclr") & filters.me)
