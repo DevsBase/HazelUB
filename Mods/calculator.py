@@ -40,7 +40,7 @@ def calculate(expression: str) -> (bool | int | float | Any):
 @Tele.on_message(filters.regex('//') & filters.me)
 async def calculateFunc(c: Client, m: Message):
     exp = str(m.text.split(None, 1)) # type: ignore
-    rm = ['[', ']', '//']
+    rm = ["'['", "']'", '//', ' ']
     for x in rm:
         exp.replace(x, '')
     try:
