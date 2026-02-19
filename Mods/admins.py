@@ -42,7 +42,7 @@ async def banFunc(c: Client, m: Message):
         if user and str(user).isdigit():
             user = int(user)
         user = await c.get_chat_member(m.chat.id, user_id=user)
-        user = user.user.id
+        user = user.user
     except PeerIdInvalid:
         return await m.reply('PeerId is invalid. You must interacted with that person once, otherwise use thier username.')
     except Exception as e:
@@ -51,23 +51,23 @@ async def banFunc(c: Client, m: Message):
     
     if ban_or_unban_or_kick == "ban":
         try:
-            await c.ban_chat_member(m.chat.id, user) # type: ignore
-            await m.reply("Banned.")
+            await c.ban_chat_member(m.chat.id, user.id)
+            await m.reply(f"Banned {user.first_name}.")
         except Exception as e:
-            await m.reply(f"Failed to ban user {user}\n\n**Error:** {e}")
+            await m.reply(f"Failed to ban user {user.id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "unban":
         try:
-            await c.unban_chat_member(m.chat.id, user) # type: ignore
-            await m.reply("Unbanned.")
+            await c.unban_chat_member(m.chat.id, user.id)
+            await m.reply(f"Unbanned {user.first_name}.")
         except Exception as e:
-            await m.reply(f"Failed to unban user {user}\n\n**Error:** {e}")
+            await m.reply(f"Failed to unban user {user.id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "kick":
         try:
-            await c.ban_chat_member(m.chat.id, user) # type: ignore
-            await c.unban_chat_member(m.chat.id, user) # type: ignore
-            await m.reply("Kicked.")
+            await c.ban_chat_member(m.chat.id, user.id)
+            await c.unban_chat_member(m.chat.id, user.id)
+            await m.reply(f"Kicked {user.first_name}.")
         except Exception as e:
-            await m.reply(f"Failed to kick user {user}\n\n**Error:** {e}")
+            await m.reply(f"Failed to kick user {user.id}\n\n**Error:** {e}")
 
 MOD_NAME = "Admins"
 MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)"
