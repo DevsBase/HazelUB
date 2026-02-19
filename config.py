@@ -7,6 +7,9 @@ OtherSessions = [] # Example: ["session1", "session2", ...]
 PREFIX = [".","~","$","^"]
 GEMINI_API_KEY = "" # Get it from https://aistudio.google.com/app/api-keys
 
+# No need to change (almost all time)
+DazzerBot = "@Dazzerbot" # This bot allows us to download songs
+
 """
 * Pyrogram session(s) are only allowed.
 * You can use Bot's session in BOT_TOKEN var. to avoid login errors.

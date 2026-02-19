@@ -4,11 +4,12 @@ from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
 from pyrogram.types import Message, ChatPrivileges
 from functools import partial
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Protocol
 from pyrogram.enums import ChatMemberStatus
+from .TelegramMethods import Methods
 import logging
 
-class Telegram(Decorators):
+class Telegram(Methods, Decorators):
     def __init__(self, config: tuple) -> None:
         # ----------- Config---------
         self.session: str = config[3]
