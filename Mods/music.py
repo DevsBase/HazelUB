@@ -11,7 +11,8 @@ from pyrogram.types import (
     CallbackQuery,
     InlineQuery,
     InlineQueryResultArticle,
-    InputTextMessageContent
+    InputTextMessageContent,
+    Chat
 )
 from pyrogram.errors import BadRequest
 from pytgcalls import filters as call_filters
@@ -70,6 +71,19 @@ def get_music_keyboard(chat_id: int, loop_mode: int) -> InlineKeyboardMarkup:
         ]
     ])
 
+async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
+    """Checks if a user is authorized to control the music (sudo or admin)."""
+    # 1. Check if the user is one of our own accounts (Sudo)
+    for ub_client in Tele._allClients:
+        if ub_client.me and ub_client.me.id == user_id:
+            return True
+    
+    # 2. Check if the user is a chat administrator
+    try:
+        return await Tele.is_admin(client, chat_id, user_id)
+    except:
+        return False
+
 async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing"):
     """Sends the track UI, attempting inline buttons first, then falling back to text."""
     data = streaming_chats.get(chat_id)
@@ -83,8 +97,6 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     # Try to send via assistant bot (inline)
     try:
         bot_me = await Tele.bot.get_me()
-        # Querying the bot for an inline result that contains our buttons
-        # We pass the chat_id in the query so the inline handler knows what to show
         results = await client.get_inline_bot_results(bot_me.username, f"mus_ui_{chat_id}")
         if results.results:
             await client.send_inline_bot_result(
@@ -99,7 +111,7 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     # Fallback to plain text if bot/inline fails
     await client.send_message(chat_id, text)
 
-# --- Core Logic ---
+# --- Logic Core Functions ---
 async def play_next(chat_id: int, tgcalls: PyTgCalls):
     """Plays the next song in the queue or cleans up if empty."""
     if chat_id not in streaming_chats:
@@ -145,6 +157,52 @@ async def play_next(chat_id: int, tgcalls: PyTgCalls):
         logger.error(f"Error playing next song: {e}")
         data["current"] = None
         await play_next(chat_id, tgcalls)
+
+async def skip_track(chat_id: int):
+    """Internal function to skip a track."""
+    if chat_id not in streaming_chats:
+        return False
+    
+    data = streaming_chats[chat_id]
+    tgcalls = Tele.getClientPyTgCalls(data["client"])
+    if not tgcalls or not data["current"]:
+        return False
+        
+    old_loop = data["loop"]
+    if old_loop == 1:
+        data["loop"] = 0
+        
+    await play_next(chat_id, tgcalls)
+    
+    if old_loop == 1:
+        data["loop"] = 1
+    return True
+
+async def stop_music(chat_id: int):
+    """Internal function to stop music and clean up."""
+    if chat_id not in streaming_chats:
+        return False
+        
+    data = streaming_chats[chat_id]
+    tgcalls = Tele.getClientPyTgCalls(data["client"])
+    if not tgcalls:
+        return False
+
+    if data["current"] and os.path.exists(data["current"]["path"]):
+        try: os.remove(data["current"]["path"])
+        except: pass
+    for song in data["queue"]:
+        if os.path.exists(song["path"]):
+            try: os.remove(song["path"])
+            except: pass
+    
+    del streaming_chats[chat_id]
+    
+    try:
+        await tgcalls.leave_call(chat_id)
+    except:
+        pass
+    return True
 
 # --- Userbot Handlers ---
 @Tele.on_update(call_filters.stream_end())
@@ -198,52 +256,21 @@ async def play_command(c: Client, m: Message):
         await loading.edit(get_track_text(song_data, f"📝 Queued (Position: {len(data['queue'])})", data["loop"]))
 
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
-async def skip_command(c: Client, m: Message):
-    chat_id = m.chat.id
-    tgcalls = Tele.getClientPyTgCalls(c)
-    if not tgcalls or chat_id not in streaming_chats or not streaming_chats[chat_id]["current"]:
-        return await m.reply("❌ Nothing is playing to skip.")
-    
-    data = streaming_chats[chat_id]
-    # If looping current track, bypass it for skip
-    original_loop = data["loop"]
-    if original_loop == 1:
-        data["loop"] = 0
-    
-    await play_next(chat_id, tgcalls)
-    
-    if original_loop == 1:
-        data["loop"] = 1
-    
-    if m.from_user: # Only reply if it was a command (and not an internal call)
+async def skip_cmd_handler(c: Client, m: Message):
+    if await skip_track(m.chat.id):
         await m.reply("⏭ Skipped to next track.")
+    else:
+        await m.reply("❌ Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
-async def stop_command(c: Client, m: Message):
-    chat_id = m.chat.id
-    tgcalls = Tele.getClientPyTgCalls(c)
-    if not tgcalls:
-        return
-    
-    if chat_id in streaming_chats:
-        data = streaming_chats[chat_id]
-        if data["current"] and os.path.exists(data["current"]["path"]):
-            try: os.remove(data["current"]["path"])
-            except: pass
-        for song in data["queue"]:
-            if os.path.exists(song["path"]):
-                try: os.remove(song["path"])
-                except: pass
-        del streaming_chats[chat_id]
-    
-    try:
-        await tgcalls.leave_call(chat_id)
+async def stop_cmd_handler(c: Client, m: Message):
+    if await stop_music(m.chat.id):
         await m.reply("🛑 Stopped playback and cleared queue.")
-    except:
+    else:
         await m.reply("❌ Not in voice chat.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
-async def queue_command(c: Client, m: Message):
+async def queue_cmd_handler(c: Client, m: Message):
     chat_id = m.chat.id
     if chat_id not in streaming_chats:
         return await m.reply("❌ Queue is empty.")
@@ -296,40 +323,49 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
     action = q.matches[0].group(1)
     chat_id = int(q.matches[0].group(2))
 
-    # Check permission (only userbot owner)
-    if not q.from_user or not Tele.mainClient.me or q.from_user.id != Tele.mainClient.me.id:
-        return await q.answer("❌ You are not authorized to control this player.", show_alert=True)
+    if not q.from_user:
+        return await q.answer("❌ Error: User info not found.")
 
     if chat_id not in streaming_chats:
-        return await q.answer("❌ No active session found.", show_alert=True)
+        return await q.answer("❌ No active music session in this chat.", show_alert=True)
 
     data = streaming_chats[chat_id]
-    tgcalls = Tele.getClientPyTgCalls(data["client"])
+    
+    # Permission Check
+    if not await is_authorized(data["client"], chat_id, q.from_user.id):
+        return await q.answer("❌ You don't have permission! Only chat admins or the userbot owner can do this.", show_alert=True)
 
     if action == "skip":
         if not data["current"]:
-            return await q.answer("❌ Nothing is playing to skip.", show_alert=True)
+            return await q.answer("❌ Nothing is playing!", show_alert=True)
             
-        if not q.message or not q.message.chat:
-            return await q.answer("❌ Message context lost.", show_alert=True)
-            
-        # Reuse userbot skip logic
-        await skip_command(data["client"], Message(id=0, chat=q.message.chat)) 
-        await q.answer("⏭ Skipped.")
+        if not data["queue"] and data["loop"] != 2:
+            await q.answer("👋 This was the last song. Leaving the voice chat...", show_alert=True)
+            await stop_music(chat_id)
+            if q.message:
+                try: await q.edit_message_text("🛑 Music playback has been stopped.")
+                except: pass
+            return
+
+        if await skip_track(chat_id):
+            await q.answer("⏭ Skipped to next track!")
+        else:
+            await q.answer("❌ Failed to skip track.", show_alert=True)
 
     elif action == "loop":
         data["loop"] = (data["loop"] + 1) % 3
         modes = {0: "Off", 1: "Track", 2: "Queue"}
         await q.answer(f"🔄 Loop Mode: {modes[data['loop']]}")
-        # Update original UI message
         if data["current"]:
-            await q.edit_message_text(
-                get_track_text(data["current"], "Now Playing", data["loop"]),
-                reply_markup=get_music_keyboard(chat_id, data["loop"])
-            )
+            try:
+                await q.edit_message_text(
+                    get_track_text(data["current"], "Now Playing", data["loop"]),
+                    reply_markup=get_music_keyboard(chat_id, data["loop"])
+                )
+            except: pass
 
     elif action == "queue":
-        res = "📜 **Queue:**\n"
+        res = "📜 Queue:\n"
         if data["current"]:
             res += f"▶️ {data['current']['title']}\n"
         for i, s in enumerate(data["queue"][:5], 1):
@@ -337,12 +373,11 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
         await q.answer(res, show_alert=True)
 
     elif action == "stop":
-        if not q.message or not q.message.chat:
-            return await q.answer("❌ Message context lost.", show_alert=True)
-            
-        await stop_command(data["client"], Message(id=0, chat=q.message.chat))
-        await q.answer("🛑 Stopped.")
-        await q.edit_message_text("🛑 Music playback stopped.")
+        await stop_music(chat_id)
+        await q.answer("🛑 Music stopped and queue cleared.")
+        if q.message:
+            try: await q.edit_message_text("🛑 Music playback has been stopped.")
+            except: pass
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
@@ -359,8 +394,8 @@ Stop playback and clear the queue.
 Show the list of upcoming songs.
 
 **Features:**
-- ✨ **Inline Controls**: Easy buttons to manage playback via assistant bot.
-- 🔁 **Loop Modes**: Off, Track (🔂), or Queue (🔁).
-- 🔊 **Auto-Cleanup**: Temporary files are deleted after use.
-- 🎵 **Metadata**: Full title, artist, and duration display.
+- **Inline Controls**: Easy buttons to manage playback via assistant bot.
+- **Loop Modes**: Off, Track (🔂), or Queue (🔁).
+- **Auto-Cleanup**: Temporary files are deleted after use.
+- **Metadata**: Full title, artist, and duration display.
 """
