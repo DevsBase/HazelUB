@@ -16,13 +16,14 @@ async def banFunc(c: Client, m: Message):
     elif m.reply_to_message and m.reply_to_message.from_user.id == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
     
-    if m.reply_to_message:
-        user = m.reply_to_message.from_user.id # type: ignore
+    if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
+        user = m.reply_to_message.from_user.id
     elif any(e.type == MessageEntityType.TEXT_MENTION for e in m.entities):
         for entity in m.entities:
             if entity.type != MessageEntityType.TEXT_MENTION:
                 continue
             user = entity.user.id
+            break
     else:
         user = (m.text.split(None, 1)[1]).replace('@', '')
     
