@@ -37,6 +37,7 @@ class SessionData(TypedDict):
     loop: int  # 0: Off, 1: Track, 2: Queue
     current: Optional[SongDict]
     client: Client
+    is_paused: bool
 
 # --- Global State ---
 streaming_chats: Dict[int, SessionData] = {}
@@ -49,30 +50,31 @@ def get_duration_str(seconds: int) -> str:
 
 def get_track_text(song: SongDict, status: str = "Now Playing", loop_mode: int = 0) -> str:
     """Generates the formatted text for a track."""
-    modes = {0: "Off", 1: "🔂 Track", 2: "🔁 Queue"}
+    modes = {0: "Off", 1: "Track", 2: "Queue"}
     return (
         f"**{status}**\n\n"
-        f"**🎵 Title:** `{song['title']}`\n"
-        f"**👤 Artist:** `{song['performer']}`\n"
-        f"**🕒 Duration:** `{get_duration_str(song['duration'])}`\n"
-        f"**🔄 Loop:** `{modes.get(loop_mode, 'Off')}`"
+        f"**Title:** `{song['title']}`\n"
+        f"**Artist:** `{song['performer']}`\n"
+        f"**Duration:** `{get_duration_str(song['duration'])}`\n"
+        f"**Loop:** `{modes.get(loop_mode, 'Off')}`"
     )
 
-def get_music_keyboard(chat_id: int, loop_mode: int) -> InlineKeyboardMarkup:
+def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) -> InlineKeyboardMarkup:
     """Creates the control keyboard for the music player."""
+    pause_resume_btn = InlineKeyboardButton("Resume", callback_data=f"mus_resume_{chat_id}") if is_paused else InlineKeyboardButton("Pause", callback_data=f"mus_pause_{chat_id}")
+    
     return InlineKeyboardMarkup([
         [
-            InlineKeyboardButton("⏪ -10s", callback_data=f"mus_seek_-10_{chat_id}"),
-            InlineKeyboardButton("⏭ Skip", callback_data=f"mus_skip_{chat_id}"),
-            InlineKeyboardButton("⏩ +10s", callback_data=f"mus_seek_+10_{chat_id}"),
+            pause_resume_btn,
+            InlineKeyboardButton("Skip", callback_data=f"mus_skip_{chat_id}"),
         ],
         [
-            InlineKeyboardButton("� Loop", callback_data=f"mus_loop_{chat_id}"),
-            InlineKeyboardButton("�📜 Queue", callback_data=f"mus_queue_{chat_id}"),
-            InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
+            InlineKeyboardButton("Loop", callback_data=f"mus_loop_{chat_id}"),
+            InlineKeyboardButton("Queue", callback_data=f"mus_queue_{chat_id}"),
+            InlineKeyboardButton("Stop", callback_data=f"mus_stop_{chat_id}"),
         ],
         [
-            InlineKeyboardButton("❌ Close Player", callback_data=f"mus_close_{chat_id}")
+            InlineKeyboardButton("Close Player", callback_data=f"mus_close_{chat_id}")
         ]
     ])
 
@@ -96,6 +98,7 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
         return
     
     loop_mode = data["loop"]
+    is_paused = data.get("is_paused", False)
     text = get_track_text(song, status, loop_mode)
     client = data["client"]
 
@@ -126,6 +129,7 @@ async def play_next(chat_id: int, tgcalls: PyTgCalls):
     current = data["current"]
     loop = data["loop"]
     queue = data["queue"]
+    data["is_paused"] = False
 
     # Cleanup or re-queue current song
     if current:
@@ -209,22 +213,36 @@ async def stop_music(chat_id: int):
         pass
     return True
 
-async def seek_track(chat_id: int, seconds: int) -> bool:
-    """Internal function to seek within the current track."""
+async def pause_music(chat_id: int) -> bool:
+    """Internal function to pause music."""
     if chat_id not in streaming_chats:
         return False
-    
     data = streaming_chats[chat_id]
     tgcalls = Tele.getClientPyTgCalls(data["client"])
-    if not tgcalls or not data["current"]:
+    if not tgcalls or data.get("is_paused"):
         return False
-    
     try:
-        # In pytgcalls v4+, seek is a direct method
-        await tgcalls.seek(chat_id, seconds)
+        await tgcalls.pause(chat_id)
+        data["is_paused"] = True
         return True
     except Exception as e:
-        logger.error(f"Seek failed: {e}")
+        logger.error(f"Pause failed: {e}")
+        return False
+
+async def resume_music(chat_id: int) -> bool:
+    """Internal function to resume music."""
+    if chat_id not in streaming_chats:
+        return False
+    data = streaming_chats[chat_id]
+    tgcalls = Tele.getClientPyTgCalls(data["client"])
+    if not tgcalls or not data.get("is_paused"):
+        return False
+    try:
+        await tgcalls.resume(chat_id)
+        data["is_paused"] = False
+        return True
+    except Exception as e:
+        logger.error(f"Resume failed: {e}")
         return False
 
 # --- Userbot Handlers ---
@@ -239,7 +257,7 @@ async def play_command(c: Client, m: Message):
     
     chat_id = m.chat.id
     query = " ".join(m.command[1:])
-    loading = await m.reply('`🔍 Searching and downloading...`')
+    loading = await m.reply('Searhing and downloading...')
     
     tgcalls = Tele.getClientPyTgCalls(c)
     if not tgcalls:
@@ -248,17 +266,18 @@ async def play_command(c: Client, m: Message):
     try:
         song_info = await Tele.download_song(query, c)
         if not song_info:
-            return await loading.edit("❌ Song not found.")
+            return await loading.edit("Song not found.")
         song_data: SongDict = song_info  # type: ignore
     except Exception as e:
-        return await loading.edit(f"❌ Error: {str(e)}")
+        return await loading.edit(f"Error: {str(e)}")
     
     if chat_id not in streaming_chats:
         streaming_chats[chat_id] = {
             "queue": [],
             "loop": 0,
             "current": None,
-            "client": c
+            "client": c,
+            "is_paused": False
         }
     
     data = streaming_chats[chat_id]
@@ -271,63 +290,62 @@ async def play_command(c: Client, m: Message):
             await loading.delete()
             await send_track_ui(chat_id, song_data)
         except Exception as e:
-            await loading.edit(f"❌ Error playing: {e}")
+            await loading.edit(f"Error playing: {e}")
             if os.path.exists(song_data["path"]): os.remove(song_data["path"])
             data["current"] = None
     else:
         data["queue"].append(song_data)
-        await loading.edit(get_track_text(song_data, f"📝 Queued (Position: {len(data['queue'])})", data["loop"]))
+        await loading.edit(get_track_text(song_data, f"Queued (Position: {len(data['queue'])})", data["loop"]))
 
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
 async def skip_cmd_handler(c: Client, m: Message):
     if await skip_track(m.chat.id):
-        await m.reply("⏭ Skipped to next track.")
+        await m.reply("Skipped to next track.")
     else:
-        await m.reply("❌ Nothing is playing to skip.")
+        await m.reply("Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
 async def stop_cmd_handler(c: Client, m: Message):
     if await stop_music(m.chat.id):
-        await m.reply("🛑 Stopped playback and cleared queue.")
+        await m.reply("Stopped playback and cleared queue.")
     else:
-        await m.reply("❌ Not in voice chat.")
+        await m.reply("Not in voice chat.")
 
-@Tele.on_message(filters.command('mseek') & filters.me)
-async def seek_cmd_handler(c: Client, m: Message):
-    if len(m.command) < 2:
-        return await m.reply("Provide seconds to seek (e.g. `+10` or `-10`).")
-    
-    query = m.command[1]
-    try:
-        seconds = int(query)
-        if await seek_track(m.chat.id, seconds):
-            await m.reply(f"⏩ Seeked `{seconds}` seconds.")
-        else:
-            await m.reply("❌ Failed to seek. Are you playing anything?")
-    except ValueError:
-        await m.reply("❌ Invalid seconds value.")
+@Tele.on_message(filters.command('pause') & filters.me)
+async def pause_cmd_handler(c: Client, m: Message):
+    if await pause_music(m.chat.id):
+        await m.reply("Paused playback.")
+    else:
+        await m.reply("Already paused or not playing.")
+
+@Tele.on_message(filters.command('resume') & filters.me)
+async def resume_cmd_handler(c: Client, m: Message):
+    if await resume_music(m.chat.id):
+        await m.reply("Resumed playback.")
+    else:
+        await m.reply("Already playing or not playing.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
 async def queue_cmd_handler(c: Client, m: Message):
     chat_id = m.chat.id
     if chat_id not in streaming_chats:
-        return await m.reply("❌ Queue is empty.")
+        return await m.reply("Queue is empty.")
     
     data = streaming_chats[chat_id]
-    res = "**🎶 Current Queue:**\n\n"
+    res = "**Current Queue:**\n\n"
     if data["current"]:
         curr = data["current"]
-        res += f"▶️ **Now:** `{curr['title']}` - `{curr['performer']}`\n"
+        res += f"Now Playing: `{curr['title']}` - `{curr['performer']}`\n"
     
     if data["queue"]:
-        res += "\n**🔜 Next Up:**\n"
+        res += "\nUpcoming:\n"
         for i, song in enumerate(data["queue"][:10], 1):
             res += f"{i}. `{song['title']}` - `{song['performer']}`\n"
         if len(data["queue"]) > 10:
             res += f"... and {len(data['queue']) - 10} more."
     else:
         if not data["current"]:
-            return await m.reply("❌ Queue is empty.")
+            return await m.reply("Queue is empty.")
                 
     await m.reply(res)
 
@@ -352,116 +370,123 @@ async def music_inline_handler(c: Client, q: InlineQuery):
         InlineQueryResultArticle(
             title="Music Player",
             input_message_content=InputTextMessageContent(get_track_text(song, "Now Playing", data["loop"])),
-            reply_markup=get_music_keyboard(chat_id, data["loop"])
+            reply_markup=get_music_keyboard(chat_id, data["loop"], data.get("is_paused", False))
         )
     ], cache_time=1)
 
-@Tele.bot.on_callback_query(filters.regex(r"^mus_(skip|loop|queue|stop|seek|close)_(.*)_(-?\d+)$") | filters.regex(r"^mus_(skip|loop|queue|stop|close)_(-?\d+)$"))
+@Tele.bot.on_callback_query(filters.regex(r"^mus_(skip|loop|queue|stop|close|pause|resume)_(-?\d+)$"))
 async def music_callback_handler(c: Client, q: CallbackQuery):
-    # Regex 1 matches mus_seek_+10_-12345
-    # Regex 2 matches mus_skip_-12345
-    if q.matches[0].lastindex == 3:
-        action = q.matches[0].group(1)
-        value = q.matches[0].group(2)
-        chat_id = int(q.matches[0].group(3))
-    else:
-        action = q.matches[0].group(1)
-        chat_id = int(q.matches[0].group(2))
-        value = None
+    action = q.matches[0].group(1)
+    chat_id = int(q.matches[0].group(2))
 
     if not q.from_user:
-        return await q.answer("❌ Error: User info not found.")
+        return await q.answer("Error: User info not found.")
 
     if chat_id not in streaming_chats and action != "close":
-        return await q.answer("❌ No active music session in this chat.", show_alert=True)
+        return await q.answer("No active music session in this chat.", show_alert=True)
 
     data = streaming_chats.get(chat_id)
     
     # Permission Check
     if data and not await is_authorized(data["client"], chat_id, q.from_user.id):
-        return await q.answer("❌ You don't have permission! Only chat admins or the userbot owner can do this.", show_alert=True)
+        return await q.answer("No permission! Only admins or sudo can do this.", show_alert=True)
 
     if action == "skip" and data:
         if not data["current"]:
-            return await q.answer("❌ Nothing is playing!", show_alert=True)
+            return await q.answer("Nothing is playing!", show_alert=True)
             
         if not data["queue"] and data["loop"] != 2:
-            await q.answer("👋 This was the last song. Leaving the voice chat...", show_alert=True)
+            await q.answer("This was the last song. Leaving...", show_alert=True)
             await stop_music(chat_id)
             if q.message:
-                try: await q.edit_message_text("🛑 Music playback has been stopped.")
+                try: await q.edit_message_text("Music playback stopped.")
                 except: pass
             return
 
         if await skip_track(chat_id):
-            await q.answer("⏭ Skipped to next track!")
+            await q.answer("Skipped track!")
         else:
-            await q.answer("❌ Failed to skip track.", show_alert=True)
+            await q.answer("Failed to skip.", show_alert=True)
 
     elif action == "loop" and data:
         data["loop"] = (data["loop"] + 1) % 3
         modes = {0: "Off", 1: "Track", 2: "Queue"}
-        await q.answer(f"🔄 Loop Mode: {modes[data['loop']]}")
+        await q.answer(f"Loop Mode: {modes[data['loop']]}")
         if data["current"]:
             try:
                 await q.edit_message_text(
                     get_track_text(data["current"], "Now Playing", data["loop"]),
-                    reply_markup=get_music_keyboard(chat_id, data["loop"])
+                    reply_markup=get_music_keyboard(chat_id, data["loop"], data.get("is_paused", False))
                 )
             except: pass
 
     elif action == "queue" and data:
-        res = "📜 Queue:\n"
+        res = "Queue:\n"
         if data["current"]:
-            res += f"▶️ {data['current']['title']}\n"
+            res += f"Playing: {data['current']['title']}\n"
         for i, s in enumerate(data["queue"][:5], 1):
             res += f"{i}. {s['title']}\n"
         await q.answer(res, show_alert=True)
 
     elif action == "stop" and data:
         await stop_music(chat_id)
-        await q.answer("🛑 Music stopped and queue cleared.")
+        await q.answer("Stopped.")
         if q.message:
-            try: await q.edit_message_text("🛑 Music playback has been stopped.")
+            try: await q.edit_message_text("Music playback stopped.")
             except: pass
 
-    elif action == "seek" and data:
-        try:
-            sec = int(value or 0)
-            if await seek_track(chat_id, sec):
-                await q.answer(f"⏩ Seeked {sec}s")
-            else:
-                await q.answer("❌ Seek failed.", show_alert=True)
-        except:
-            await q.answer("❌ Invalid seek value.", show_alert=True)
+    elif action == "pause" and data:
+        if await pause_music(chat_id):
+            await q.answer("Paused.")
+            if q.message:
+                try:
+                    await q.edit_message_text(
+                        get_track_text(data["current"], "Paused", data["loop"]), # type: ignore
+                        reply_markup=get_music_keyboard(chat_id, data["loop"], True)
+                    )
+                except: pass
+        else:
+            await q.answer("Already paused.", show_alert=True)
+
+    elif action == "resume" and data:
+        if await resume_music(chat_id):
+            await q.answer("Resumed.")
+            if q.message:
+                try:
+                    await q.edit_message_text(
+                        get_track_text(data["current"], "Now Playing", data["loop"]), # type: ignore
+                        reply_markup=get_music_keyboard(chat_id, data["loop"], False)
+                    )
+                except: pass
+        else:
+            await q.answer("Already playing.", show_alert=True)
 
     elif action == "close":
         try:
             await q.message.delete()
         except:
-            await q.answer("❌ Could not delete player message.")
+            await q.answer("Could not delete message.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
-MOD_HELP = """> `.play <query>`
+MOD_HELP = """> .play <query>
 Download and play a song. Supports searching by title or artist.
 
-> `.skip` / `.next`
+> .skip / .next
 Skip the current track.
 
-> `.mseek <seconds>`
-Seek within the current track (e.g. `+10` or `-10`).
+> .pause / .resume
+Pause or Resume playback.
 
-> `.mstop`
+> .mstop
 Stop playback and clear the queue.
 
-> `.queue`
+> .queue
 Show the list of upcoming songs.
 
 **Features:**
 - **Inline Controls**: Easy buttons to manage playback via assistant bot.
-- **Loop Modes**: Off, Track (🔂), or Queue (🔁).
-- **Seek**: Fast forward or rewind inside the track.
+- **Loop Modes**: Off, Track, or Queue.
 - **Auto-Cleanup**: Temporary files are deleted after use.
 - **Metadata**: Full title, artist, and duration display.
 """
