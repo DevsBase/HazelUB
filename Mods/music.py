@@ -165,10 +165,10 @@ async def play_command(c: Client, m: Message):
         return await loading.edit("Voice chat client not initialized.")
     
     try:
-        # download_song returns a dict with path, title, performer, duration
-        song_data: SongDict = await Tele.download_song(query, c)
-        if not song_data:
+        song_info = await Tele.download_song(query, c)
+        if not song_info:
             return await loading.edit("❌ Song not found.")
+        song_data: SongDict = song_info  # type: ignore
     except Exception as e:
         return await loading.edit(f"❌ Error: {str(e)}")
     
@@ -297,7 +297,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
     chat_id = int(q.matches[0].group(2))
 
     # Check permission (only userbot owner)
-    if q.from_user.id != Tele.mainClient.me.id: # Simple check assuming mainClient is the owner
+    if not q.from_user or not Tele.mainClient.me or q.from_user.id != Tele.mainClient.me.id:
         return await q.answer("❌ You are not authorized to control this player.", show_alert=True)
 
     if chat_id not in streaming_chats:
@@ -308,9 +308,13 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
 
     if action == "skip":
         if not data["current"]:
-            return await q.answer("Nothing to skip.", show_alert=True)
+            return await q.answer("❌ Nothing is playing to skip.", show_alert=True)
+            
+        if not q.message or not q.message.chat:
+            return await q.answer("❌ Message context lost.", show_alert=True)
+            
         # Reuse userbot skip logic
-        await skip_command(data["client"], Message(chat=q.message.chat)) 
+        await skip_command(data["client"], Message(id=0, chat=q.message.chat)) 
         await q.answer("⏭ Skipped.")
 
     elif action == "loop":
@@ -333,16 +337,16 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
         await q.answer(res, show_alert=True)
 
     elif action == "stop":
-        await stop_command(data["client"], Message(chat=q.message.chat))
+        if not q.message or not q.message.chat:
+            return await q.answer("❌ Message context lost.", show_alert=True)
+            
+        await stop_command(data["client"], Message(id=0, chat=q.message.chat))
         await q.answer("🛑 Stopped.")
         await q.edit_message_text("🛑 Music playback stopped.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
-MOD_HELP = """
-**Music Player Module**
-
-> `.play <query>`
+MOD_HELP = """> `.play <query>`
 Download and play a song. Supports searching by title or artist.
 
 > `.skip` / `.next`
