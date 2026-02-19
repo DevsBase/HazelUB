@@ -22,7 +22,7 @@ from pytgcalls.types import Update
 from Hazel import Tele
 
 # --- Logging Setup ---
-logger = logging.getLogger("HazelUB.Music")
+logger = logging.getLogger("Mods.Music")
 
 # --- Types ---
 class SongDict(TypedDict):
@@ -62,12 +62,17 @@ def get_music_keyboard(chat_id: int, loop_mode: int) -> InlineKeyboardMarkup:
     """Creates the control keyboard for the music player."""
     return InlineKeyboardMarkup([
         [
+            InlineKeyboardButton("⏪ -10s", callback_data=f"mus_seek_-10_{chat_id}"),
             InlineKeyboardButton("⏭ Skip", callback_data=f"mus_skip_{chat_id}"),
-            InlineKeyboardButton("🔄 Loop", callback_data=f"mus_loop_{chat_id}"),
+            InlineKeyboardButton("⏩ +10s", callback_data=f"mus_seek_+10_{chat_id}"),
         ],
         [
-            InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),
+            InlineKeyboardButton("� Loop", callback_data=f"mus_loop_{chat_id}"),
+            InlineKeyboardButton("�📜 Queue", callback_data=f"mus_queue_{chat_id}"),
             InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
+        ],
+        [
+            InlineKeyboardButton("❌ Close Player", callback_data=f"mus_close_{chat_id}")
         ]
     ])
 
@@ -204,6 +209,24 @@ async def stop_music(chat_id: int):
         pass
     return True
 
+async def seek_track(chat_id: int, seconds: int) -> bool:
+    """Internal function to seek within the current track."""
+    if chat_id not in streaming_chats:
+        return False
+    
+    data = streaming_chats[chat_id]
+    tgcalls = Tele.getClientPyTgCalls(data["client"])
+    if not tgcalls or not data["current"]:
+        return False
+    
+    try:
+        # In pytgcalls v4+, seek is a direct method
+        await tgcalls.seek(chat_id, seconds)
+        return True
+    except Exception as e:
+        logger.error(f"Seek failed: {e}")
+        return False
+
 # --- Userbot Handlers ---
 @Tele.on_update(call_filters.stream_end())
 async def stream_end_handler(c: PyTgCalls, update: Update):
@@ -269,6 +292,21 @@ async def stop_cmd_handler(c: Client, m: Message):
     else:
         await m.reply("❌ Not in voice chat.")
 
+@Tele.on_message(filters.command('mseek') & filters.me)
+async def seek_cmd_handler(c: Client, m: Message):
+    if len(m.command) < 2:
+        return await m.reply("Provide seconds to seek (e.g. `+10` or `-10`).")
+    
+    query = m.command[1]
+    try:
+        seconds = int(query)
+        if await seek_track(m.chat.id, seconds):
+            await m.reply(f"⏩ Seeked `{seconds}` seconds.")
+        else:
+            await m.reply("❌ Failed to seek. Are you playing anything?")
+    except ValueError:
+        await m.reply("❌ Invalid seconds value.")
+
 @Tele.on_message(filters.command('queue') & filters.me)
 async def queue_cmd_handler(c: Client, m: Message):
     chat_id = m.chat.id
@@ -318,24 +356,32 @@ async def music_inline_handler(c: Client, q: InlineQuery):
         )
     ], cache_time=1)
 
-@Tele.bot.on_callback_query(filters.regex(r"^mus_(skip|loop|queue|stop)_(-?\d+)$"))
+@Tele.bot.on_callback_query(filters.regex(r"^mus_(skip|loop|queue|stop|seek|close)_(.*)_(-?\d+)$") | filters.regex(r"^mus_(skip|loop|queue|stop|close)_(-?\d+)$"))
 async def music_callback_handler(c: Client, q: CallbackQuery):
-    action = q.matches[0].group(1)
-    chat_id = int(q.matches[0].group(2))
+    # Regex 1 matches mus_seek_+10_-12345
+    # Regex 2 matches mus_skip_-12345
+    if q.matches[0].lastindex == 3:
+        action = q.matches[0].group(1)
+        value = q.matches[0].group(2)
+        chat_id = int(q.matches[0].group(3))
+    else:
+        action = q.matches[0].group(1)
+        chat_id = int(q.matches[0].group(2))
+        value = None
 
     if not q.from_user:
         return await q.answer("❌ Error: User info not found.")
 
-    if chat_id not in streaming_chats:
+    if chat_id not in streaming_chats and action != "close":
         return await q.answer("❌ No active music session in this chat.", show_alert=True)
 
-    data = streaming_chats[chat_id]
+    data = streaming_chats.get(chat_id)
     
     # Permission Check
-    if not await is_authorized(data["client"], chat_id, q.from_user.id):
+    if data and not await is_authorized(data["client"], chat_id, q.from_user.id):
         return await q.answer("❌ You don't have permission! Only chat admins or the userbot owner can do this.", show_alert=True)
 
-    if action == "skip":
+    if action == "skip" and data:
         if not data["current"]:
             return await q.answer("❌ Nothing is playing!", show_alert=True)
             
@@ -352,7 +398,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
         else:
             await q.answer("❌ Failed to skip track.", show_alert=True)
 
-    elif action == "loop":
+    elif action == "loop" and data:
         data["loop"] = (data["loop"] + 1) % 3
         modes = {0: "Off", 1: "Track", 2: "Queue"}
         await q.answer(f"🔄 Loop Mode: {modes[data['loop']]}")
@@ -364,7 +410,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
                 )
             except: pass
 
-    elif action == "queue":
+    elif action == "queue" and data:
         res = "📜 Queue:\n"
         if data["current"]:
             res += f"▶️ {data['current']['title']}\n"
@@ -372,12 +418,28 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
             res += f"{i}. {s['title']}\n"
         await q.answer(res, show_alert=True)
 
-    elif action == "stop":
+    elif action == "stop" and data:
         await stop_music(chat_id)
         await q.answer("🛑 Music stopped and queue cleared.")
         if q.message:
             try: await q.edit_message_text("🛑 Music playback has been stopped.")
             except: pass
+
+    elif action == "seek" and data:
+        try:
+            sec = int(value or 0)
+            if await seek_track(chat_id, sec):
+                await q.answer(f"⏩ Seeked {sec}s")
+            else:
+                await q.answer("❌ Seek failed.", show_alert=True)
+        except:
+            await q.answer("❌ Invalid seek value.", show_alert=True)
+
+    elif action == "close":
+        try:
+            await q.message.delete()
+        except:
+            await q.answer("❌ Could not delete player message.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
@@ -386,6 +448,9 @@ Download and play a song. Supports searching by title or artist.
 
 > `.skip` / `.next`
 Skip the current track.
+
+> `.mseek <seconds>`
+Seek within the current track (e.g. `+10` or `-10`).
 
 > `.mstop`
 Stop playback and clear the queue.
@@ -396,6 +461,7 @@ Show the list of upcoming songs.
 **Features:**
 - **Inline Controls**: Easy buttons to manage playback via assistant bot.
 - **Loop Modes**: Off, Track (🔂), or Queue (🔁).
+- **Seek**: Fast forward or rewind inside the track.
 - **Auto-Cleanup**: Temporary files are deleted after use.
 - **Metadata**: Full title, artist, and duration display.
 """
