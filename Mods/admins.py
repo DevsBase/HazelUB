@@ -52,20 +52,20 @@ async def banFunc(c: Client, m: Message):
     if ban_or_unban_or_kick == "ban":
         try:
             await c.ban_chat_member(m.chat.id, user.id)
-            await m.reply(f"Banned {user.first_name}.")
+            await m.reply(f"Banned {user.mention}.")
         except Exception as e:
             await m.reply(f"Failed to ban user {user.id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "unban":
         try:
             await c.unban_chat_member(m.chat.id, user.id)
-            await m.reply(f"Unbanned {user.first_name}.")
+            await m.reply(f"Unbanned {user.mention}.")
         except Exception as e:
             await m.reply(f"Failed to unban user {user.id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "kick":
         try:
             await c.ban_chat_member(m.chat.id, user.id)
             await c.unban_chat_member(m.chat.id, user.id)
-            await m.reply(f"Kicked {user.first_name}.")
+            await m.reply(f"Kicked {user.mention}.")
         except Exception as e:
             await m.reply(f"Failed to kick user {user.id}\n\n**Error:** {e}")
 
