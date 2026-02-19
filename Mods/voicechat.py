@@ -9,14 +9,25 @@ logger = logging.getLogger("Mods.voicechat")
 
 @Tele.on_message(filters.command('play') & filters.me)
 async def playFunc(c: Client, m: Message):
+    if len(m.command) < 2:
+        return await m.reply("Please give a query.")
+    
     query = " ".join(m.command[1:])
+    loading = await m.reply('...')
+    tgcalls = Tele.getClientPyTgCalls(c)
+    try:
+        if tgcalls:
+            await tgcalls.leave_call(m.chat.id)
+    except: ...
+    
     try:
         path = await Tele.download_song(query, c)
         if not path:
             return await m.reply("Song not found.")
     except TimeoutError:
         return await m.reply("Timeout: DazzerBot doesn't give audio file")
-    tgcalls = Tele.getClientPyTgCalls(c)
+    
     if tgcalls:
         await tgcalls.play(m.chat.id, path)
+        await loading.edit("Playing...")
         await asyncio.to_thread(os.remove, path)
