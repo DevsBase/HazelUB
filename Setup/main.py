@@ -28,6 +28,8 @@ async def main(install_packages: bool=True):
             f'Version: {Hazel.__version__}\n'
             f'Process ID: {os.getpid()}'
         )
+        logger.info("Loading Mods...")
+        import Mods; Mods.load_mods()
         
         logger.info("HazelUB is now running!")
         await asyncio.to_thread(startup_popup)
@@ -35,13 +37,11 @@ async def main(install_packages: bool=True):
         raise SystemExit(f"Setup Failed: {traceback.format_exc()}")
     
     # Tasks -----------------------
-    logging.info('Starting HazelUB Tasks...')
+    logger.info('Starting HazelUB Tasks...')
 
     import Hazel.Tasks.messageRepeater as messageRepeater
 
     asyncio.create_task(messageRepeater.main(Tele, db))
-    # -----------------------------
-    import Mods; Mods.load_mods()
     # -- Idle System ---------------------------
     for s in (SIGINT, SIGTERM, SIGABRT): 
         signal_fn(s, signal_handler)
