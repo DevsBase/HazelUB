@@ -97,7 +97,7 @@ class Telegram(Methods, Decorators):
     def getClientById(self, id: int | None = 0, m: Message | None = None) -> Optional[Client]:
         if m and isinstance(m, Message):
             if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
-                id = m.reply_to_message.from_user.id
+                id = m.reply_to_message.from_user.id # type: ignore
         for client in self._allClients:
             if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client

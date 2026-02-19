@@ -3,7 +3,8 @@ import logging
 import asyncio
 import os
 
-from pyrogram import Client, filters
+from pyrogram.client import Client
+from pyrogram import filters
 from pyrogram.types import (
     Message, 
     InlineKeyboardMarkup, 
@@ -14,6 +15,7 @@ from pyrogram.types import (
     InputTextMessageContent,
     Chat
 )
+from pyrogram.enums import ButtonStyle
 from pyrogram.errors import BadRequest
 from pytgcalls import filters as call_filters
 from pytgcalls import PyTgCalls
@@ -72,11 +74,11 @@ def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) ->
         ],
         [
             InlineKeyboardButton("🔁 Loop", callback_data=f"mus_loop_{chat_id}"),
-            InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),
+            InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}", style=ButtonStyle.PRIMARY),
             InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
         ],
         [
-            InlineKeyboardButton("❌ Close Player", callback_data=f"mus_close_{chat_id}")
+            InlineKeyboardButton("Close Player", callback_data=f"mus_close_{chat_id}", style=ButtonStyle.DANGER)
         ]
     ])
 
@@ -108,7 +110,7 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     # Try to send via assistant bot (inline)
     try:
         bot_me = await Tele.bot.get_me()
-        results = await client.get_inline_bot_results(bot_me.username, f"mus_ui_{chat_id}")
+        results = await client.get_inline_bot_results(bot_me.username, f"mus_ui_{chat_id}") # type: ignore
         if results.results:
             await client.send_inline_bot_result(
                 chat_id,
@@ -257,11 +259,11 @@ async def stream_end_handler(c: PyTgCalls, update: Update):
 
 @Tele.on_message(filters.command('play') & filters.me)
 async def play_command(c: Client, m: Message):
-    if len(m.command) < 2:
+    if len(m.command) < 2: # type: ignore
         return await m.reply("Please provide a song name or link.")
     
-    chat_id = m.chat.id
-    query = " ".join(m.command[1:])
+    chat_id = m.chat.id # type: ignore
+    query = " ".join(m.command[1:]) # type: ignore
     loading = await m.reply('`🔍 Searching and downloading...`')
     
     tgcalls = Tele.getClientPyTgCalls(c)
@@ -277,7 +279,7 @@ async def play_command(c: Client, m: Message):
         return await loading.edit(f"❌ Error: {str(e)}")
     
     if chat_id not in streaming_chats:
-        streaming_chats[chat_id] = {
+        streaming_chats[chat_id] = { # type: ignore
             "queue": [],
             "loop": 0,
             "current": None,
@@ -285,15 +287,15 @@ async def play_command(c: Client, m: Message):
             "is_paused": False
         }
     
-    data = streaming_chats[chat_id]
+    data = streaming_chats[chat_id] # type: ignore
     data["client"] = c
 
     if not data["current"]:
         data["current"] = song_data
         try:
-            await tgcalls.play(chat_id, song_data["path"])
+            await tgcalls.play(chat_id, song_data["path"]) # type: ignore
             await loading.delete()
-            await send_track_ui(chat_id, song_data)
+            await send_track_ui(chat_id, song_data) # type: ignore
         except Exception as e:
             await loading.edit(f"❌ Error playing: {e}")
             if os.path.exists(song_data["path"]): os.remove(song_data["path"])
@@ -304,35 +306,35 @@ async def play_command(c: Client, m: Message):
 
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
 async def skip_cmd_handler(c: Client, m: Message):
-    if await skip_track(m.chat.id):
+    if await skip_track(m.chat.id): # type: ignore
         await m.reply("⏭ Skipped to next track.")
     else:
         await m.reply("❌ Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
 async def stop_cmd_handler(c: Client, m: Message):
-    if await stop_music(m.chat.id):
+    if await stop_music(m.chat.id): # type: ignore
         await m.reply("🛑 Stopped playback and cleared queue.")
     else:
         await m.reply("❌ Not in voice chat.")
 
 @Tele.on_message(filters.command('pause') & filters.me)
 async def pause_cmd_handler(c: Client, m: Message):
-    if await pause_music(m.chat.id):
+    if await pause_music(m.chat.id): # type: ignore
         await m.reply("⏸ Paused playback.")
     else:
         await m.reply("❌ Already paused or not playing.")
 
 @Tele.on_message(filters.command('resume') & filters.me)
 async def resume_cmd_handler(c: Client, m: Message):
-    if await resume_music(m.chat.id):
+    if await resume_music(m.chat.id): # type: ignore
         await m.reply("▶️ Resumed playback.")
     else:
         await m.reply("❌ Already playing or not playing.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
 async def queue_cmd_handler(c: Client, m: Message):
-    chat_id = m.chat.id
+    chat_id = m.chat.id # type: ignore
     if chat_id not in streaming_chats:
         return await m.reply("❌ Queue is empty.")
     

@@ -1,6 +1,7 @@
 from google import genai
 from google.genai.chats import Chat
-from pyrogram import filters, Client
+from pyrogram import filters
+from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele
 import logging
@@ -59,17 +60,17 @@ User Prompt: {}
 async def ai_cmd(c: Client, m: Message):
     if not API_KEY:
         return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
-    elif len(m.command) < 2:
+    elif len(m.command) < 2: # type: ignore
         return await m.edit("Usage: `.ai <your question>`")
     loading = await m.reply("...")
     reply = m.reply_to_message
 
     ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
-    name = m.from_user.first_name
-    chat_name = m.chat.full_name
+    name = m.from_user.first_name # type: ignore
+    chat_name = m.chat.full_name # type: ignore
     replied_msg = getattr(reply, 'text') if reply else "> SYS: User not replied any message"
     replied_msg_user = getattr(reply.from_user, 'first_name') if reply else "> SYS: User not replied any message"
-    query = m.text.split(None, 1)[1]
+    query = m.text.split(None, 1)[1] # type: ignore
     
 
     message = prompt.format(ist_time, name, chat_name, replied_msg, replied_msg_user, query)

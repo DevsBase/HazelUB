@@ -1,4 +1,5 @@
-from pyrogram import Client, filters
+from pyrogram import filters
+from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele
 import asyncio
@@ -17,11 +18,11 @@ async def purgeFunc(app: Client, m: Message):
     for x in range(start, end + 1, 100):
         try:
             x = list(range(x, x+101))
-            count += await app.delete_messages(m.chat.id, x)
+            count += await app.delete_messages(m.chat.id, x) # type: ignore
             await asyncio.sleep(2.5)
         except Exception as e:
             logger.error(f"Error deleting messages {x}: {str(e)}")
-    await app.send_message(m.chat.id, f'Deleted {count} messages.')
+    await app.send_message(m.chat.id, f'Deleted {count} messages.') # type: ignore
 
 MOD_NAME = "Purge"
 MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"

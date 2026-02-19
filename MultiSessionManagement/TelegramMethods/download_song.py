@@ -21,7 +21,7 @@ class DownloadSong:
         
         await asyncio.sleep(2)
         for _ in range(1, 20):
-            _m = await client.get_messages(m.chat.id, m.id)
+            _m = await client.get_messages(m.chat.id, m.id) # type: ignore
             if hasattr(_m, 'audio') and getattr(_m, 'audio'):
                 audio = getattr(_m, 'audio')
                 

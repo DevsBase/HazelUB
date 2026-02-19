@@ -4,7 +4,8 @@ import operator
 import logging
 from decimal import Decimal, getcontext
 from Hazel import Tele
-from pyrogram import Client, filters
+from pyrogram import filters
+from pyrogram.client import Client
 from pyrogram.types import Message
 
 logger = logging.getLogger("Mods.calculator")
@@ -51,7 +52,7 @@ def calculate(expression: str) -> Decimal:
 
 @Tele.on_message(filters.regex(r'^//') & filters.me)
 async def calculateFunc(c: Client, m: Message):
-    exp = m.text.strip()
+    exp = m.text.strip() # type: ignore
 
     if not exp.startswith('//'):
         return

@@ -25,7 +25,7 @@ async def main() -> Tuple[DBClient, tuple]:
         from asyncpg import create_pool
         from aiosqlite import connect
         from art import text2art
-        from pyrogram import Client
+        from pyrogram.client import Client
         from google import genai
     except ImportError:
         logger.critical("ImportError, Installing required packages...")

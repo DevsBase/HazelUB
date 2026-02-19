@@ -1,5 +1,6 @@
 from Hazel import Tele
-from pyrogram import filters, Client
+from pyrogram.client import Client
+from pyrogram import filters
 from pyrogram.types import (
     Message, 
     InlineKeyboardMarkup, 
@@ -83,11 +84,11 @@ def get_help_markup(page_num=0):
 @Tele.on_message(filters.command("help") & filters.me)
 async def help_userbot(c: Client, m: Message):
     try:
-        bot_username = (await Tele.bot.get_me()).username
+        bot_username = str((await Tele.bot.get_me()).username)
         results = await c.get_inline_bot_results(bot_username, "help")
         if results.results:
             await c.send_inline_bot_result(
-                m.chat.id,
+                m.chat.id, # type: ignore
                 results.query_id,
                 results.results[0].id
             )

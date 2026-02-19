@@ -219,7 +219,7 @@ async def pauseAndResumeFunc(c: Client, m: Message):
     if uid not in messageRepeater.events:
         return await m.reply("Cannot find this client Hazel.Tasks.messageRepeater.events")
     event = messageRepeater.events[uid]
-    if 'resume' in m.command[0].lower():
+    if 'resume' in m.command[0].lower(): # type: ignore
         if event.is_set():
             return await m.reply("Repeat tasks are not paused.")
         event.set()
