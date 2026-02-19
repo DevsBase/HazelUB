@@ -62,12 +62,13 @@ async def ai_cmd(c: Client, m: Message):
     elif len(m.command) < 2:
         return await m.edit("Usage: `.ai <your question>`")
     loading = await m.reply("...")
+    reply = m.reply_to_message
 
     ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
     name = m.from_user.first_name
     chat_name = m.chat.full_name
-    replied_msg = m.reply_to_message.text if m.reply_to_message.text else "> SYS: User not replied any message"
-    replied_msg_user = m.reply_to_message.from_user.first_name if m.reply_to_message.from_user.first_name else "> SYS: User not replied any message"
+    replied_msg = getattr(reply, 'text') if reply else "> SYS: User not replied any message"
+    replied_msg_user = getattr(reply.from_user, 'first_name') if reply else "> SYS: User not replied any message"
     query = m.text.split(None, 1)[1]
     
 
