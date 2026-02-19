@@ -9,7 +9,7 @@ class DownloadSong:
         if not results:
             return None
         m = await client.send_inline_bot_result(
-            self.bot.me.id, # type: ignore
+            self.bot.me.username, # type: ignore
             results.query_id,
             results.results[0].id
         )
