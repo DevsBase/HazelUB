@@ -63,7 +63,7 @@ def get_track_text(song: SongDict, status: str = "Now Playing", loop_mode: int =
 
 def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) -> InlineKeyboardMarkup:
     """Creates the control keyboard for the music player using standard emojis."""
-    # Using very standard Unicode emojis for maximum compatibility
+    
     pause_resume_text = "▶️ Resume" if is_paused else "⏸ Pause"
     pause_resume_cb = f"mus_resume_{chat_id}" if is_paused else f"mus_pause_{chat_id}"
     
@@ -74,7 +74,7 @@ def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) ->
         ],
         [
             InlineKeyboardButton("🔁 Loop", callback_data=f"mus_loop_{chat_id}"),
-            InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}", style=ButtonStyle.PRIMARY),
+            InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),
             InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
         ],
         [
@@ -443,30 +443,38 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
             except: pass
 
     elif action == "pause" and data:
+        if not data["current"]:
+            return await q.answer("❌ Nothing is playing to pause!", show_alert=True)
+        
         if await pause_music(chat_id):
-            await q.answer("⏸ Paused.")
-            if q.message:
-                try:
-                    await q.edit_message_text(
-                        get_track_text(data["current"], "⏸ Paused", data["loop"]), # type: ignore
-                        reply_markup=get_music_keyboard(chat_id, data["loop"], True)
-                    )
-                except: pass
+            try:
+                await q.edit_message_text(
+                    get_track_text(data["current"], "⏸ Paused", data["loop"]), # type: ignore
+                    reply_markup=get_music_keyboard(chat_id, data["loop"], True)
+                )
+                await q.answer("⏸ Paused.")
+            except Exception as e:
+                logger.debug(f"Edit failed on pause: {e}")
+                await q.answer("⏸ Paused.")
         else:
-            await q.answer("Already paused.", show_alert=True)
+            await q.answer("❌ Already paused or failed to pause.", show_alert=True)
 
     elif action == "resume" and data:
+        if not data["current"]:
+            return await q.answer("❌ Nothing is playing to resume!", show_alert=True)
+            
         if await resume_music(chat_id):
-            await q.answer("▶️ Resumed.")
-            if q.message:
-                try:
-                    await q.edit_message_text(
-                        get_track_text(data["current"], "Now Playing", data["loop"]), # type: ignore
-                        reply_markup=get_music_keyboard(chat_id, data["loop"], False)
-                    )
-                except: pass
+            try:
+                await q.edit_message_text(
+                    get_track_text(data["current"], "Now Playing", data["loop"]), # type: ignore
+                    reply_markup=get_music_keyboard(chat_id, data["loop"], False)
+                )
+                await q.answer("▶️ Resumed.")
+            except Exception as e:
+                logger.debug(f"Edit failed on resume: {e}")
+                await q.answer("▶️ Resumed.")
         else:
-            await q.answer("Already playing.", show_alert=True)
+            await q.answer("❌ Already playing or failed to resume.", show_alert=True)
 
     elif action == "close":
         try:
