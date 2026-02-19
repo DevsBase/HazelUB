@@ -1,8 +1,10 @@
 from Hazel import Tele
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, User
+from pyrogram.enums import MessageEntityType
 from pyrogram.errors import PeerIdInvalid
 import logging
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,11 @@ async def banFunc(c: Client, m: Message):
     
     if m.reply_to_message:
         user = m.reply_to_message.from_user.id # type: ignore
+    elif any(e.type == MessageEntityType.TEXT_MENTION for e in m.entities):
+        for entity in m.entities:
+            if entity.type != MessageEntityType.TEXT_MENTION:
+                continue
+            user = entity.user.id
     else:
         user = (m.text.split(None, 1)[1]).replace('@', '')
     
@@ -32,9 +39,9 @@ async def banFunc(c: Client, m: Message):
         return await m.reply("You are missing rights `can_restrict_members`.")
     
     try:
-        if str(user).isdigit():
+        if user and str(user).isdigit():
             user = int(user)
-        user = await c.get_chat_member(m.chat.id, user)
+        user = await c.get_chat_member(m.chat.id, user_id=user)
         user = user.user.id
     except PeerIdInvalid:
         return await m.reply('PeerId is invalid. You must interacted with that person once, otherwise use thier username.')
@@ -63,4 +70,4 @@ async def banFunc(c: Client, m: Message):
             await m.reply(f"Failed to kick user {user}\n\n**Error:** {e}")
 
 MOD_NAME = "Admins"
-MOD_HELP = "**Usage:**\n> .ban (reply/username)\n> .unban (reply/username)\n> .kick (reply/username)"
+MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)"

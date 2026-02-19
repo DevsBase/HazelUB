@@ -42,6 +42,8 @@ def calculate(expression: str) -> (bool | int | float):
 @Tele.on_message(filters.regex('//') & filters.me)
 async def calculateFunc(c: Client, m: Message):
     exp = m.text
+    if not exp.startswith('//') or any(c.isalpha() for c in exp):
+        return # return if text contain alphabet or if message does not startswith '//'
     rm = ['//', ' ']
     for x in rm:
         exp = exp.replace(x, '')
