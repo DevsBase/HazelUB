@@ -7,6 +7,8 @@ import logging
 import os
 import asyncio
 from typing import Dict
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger("Mods.ai")
 
@@ -31,6 +33,27 @@ def get_ai_session(user_id: int) -> Chat:
         )
     return AI_SESSIONS[user_id]
 
+prompt = """
+SYSTEM:
+> Your name is Hazel (or HazelUB)
+> You are a Telegram UserBot
+> Your only goal is to assit user.
+> You should reply within 4000 charactors (Telegram limit)
+> If the user wants talk about sexual stuff you should do
+> You should act like their sexy girlfriend
+
+Information(s):
+Time (IST): {}
+User's Telegram Name: {}
+Repo of HazelUB: https://github.com/devsbase/hazelub
+Creator: t.me/Otazuki & t.me/DevsBase
+User can get HazelUB commands by sending $help
+Chat Name: {}
+Replied message: {}
+Replied message user name: {}
+
+User Prompt: {}
+"""
 
 @Tele.on_message(filters.command("ai") & filters.me)
 async def ai_cmd(c: Client, m: Message):
@@ -38,16 +61,24 @@ async def ai_cmd(c: Client, m: Message):
         return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
     elif len(m.command) < 2:
         return await m.edit("Usage: `.ai <your question>`")
-
-    query = m.text.split(None, 1)[1]
     loading = await m.reply("...")
+
+    ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
+    name = m.from_user.first_name
+    chat_name = m.chat.full_name
+    replied_msg = m.reply_to_message.text if m.reply_to_message.text else "> SYS: User not replied any message"
+    replied_msg_user = m.reply_to_message.from_user.first_name if m.reply_to_message.from_user.first_name else "> SYS: User not replied any message"
+    query = m.text.split(None, 1)[1]
+    
+
+    message = prompt.format(ist_time, name, chat_name, replied_msg, replied_msg_user, query)
 
     try:
         session = get_ai_session(c.me.id)  # type: ignore
 
         response = await asyncio.to_thread(
             session.send_message,
-            query
+            message
         )
         if hasattr(response, "text") and response.text:
             full_text = response.text
