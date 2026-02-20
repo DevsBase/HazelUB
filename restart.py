@@ -1,9 +1,11 @@
 import os
 import sys
+import shutil
+
 
 def restart():
     try:
-        os.remove("Hazel/downloads")
+        shutil.rmtree("Hazel/downloads")
     except: pass
     os.execv(
         sys.executable,
