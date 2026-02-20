@@ -97,8 +97,8 @@ async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
         logger.debug(f"Admin check failed: {e}")
         return False
 
-async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing"):
-    """Sends the track UI, attempting inline buttons first, then falling back to text."""
+async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing", force_new: bool = True):
+    """Sends the track UI, attempting to edit existing if force_new is False."""
     data = streaming_chats.get(chat_id)
     if not data:
         return
@@ -107,6 +107,19 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     is_paused = data.get("is_paused", False)
     text = get_track_text(song, status, loop_mode)
     client = data["client"]
+
+    # Try to edit existing message if not forced to send new
+    if not force_new and data.get("ui_msg_id"):
+        try:
+            await client.edit_message_text(
+                chat_id,
+                data["ui_msg_id"],
+                text,
+                reply_markup=get_music_keyboard(chat_id, loop_mode, is_paused)
+            )
+            return
+        except Exception as e:
+            logger.debug(f"Edit failed (falling back to new message): {e}")
 
     # Delete previous UI if exists
     if data.get("ui_msg_id"):
@@ -409,11 +422,19 @@ async def loop_cmd_handler(c: Client, m: Message):
         data["loop"] = (data["loop"] + 1) % 3
     
     modes = {0: "Off", 1: "Track", 2: "Queue"}
-    await m.reply(f"🔄 Loop mode set to: **{modes[data['loop']]}**")
+    status_msg = await m.reply(f"🔄 Loop mode set to: **{modes[data['loop']]}**")
     
-    # Update UI if current song exists
+    # Update UI if current song exists (edit existing instead of new)
     if data["current"]:
-        await send_track_ui(chat_id, data["current"])
+        await send_track_ui(chat_id, data["current"], force_new=False)
+    
+    # Optional: Delete command and status message after 3 seconds
+    await asyncio.sleep(3)
+    try:
+        await m.delete()
+        await status_msg.delete()
+    except:
+        pass
 
 # --- Bot Inline & Callback Handlers ---
 @Tele.bot.on_inline_query(filters.regex(r"^mus_ui_(-?\d+)$"))
