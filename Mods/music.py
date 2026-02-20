@@ -12,8 +12,7 @@ from pyrogram.types import (
     CallbackQuery,
     InlineQuery,
     InlineQueryResultArticle,
-    InputTextMessageContent,
-    Chat
+    InputTextMessageContent
 )
 from pyrogram.enums import ButtonStyle
 from pyrogram.errors import BadRequest
@@ -46,6 +45,22 @@ class SessionData(TypedDict):
 streaming_chats: Dict[int, SessionData] = {}
 
 # --- Helper Functions ---
+def get_audio_duration(file_path: str) -> int:
+    """Helper to get audio duration using ffprobe."""
+    try:
+        import subprocess
+        cmd = [
+            'ffprobe', 
+            '-v', 'error', 
+            '-show_entries', 'format=duration', 
+            '-of', 'default=noprint_wrappers=1:nokey=1', 
+            file_path
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return int(float(result.stdout.strip()))
+    except Exception:
+        return 0
+
 def get_duration_str(seconds: int) -> str:
     """Converts seconds to MM:SS format."""
     minutes, seconds = divmod(seconds, 60)
@@ -310,27 +325,78 @@ async def stream_end_handler(c: PyTgCalls, update: Update):
 
 @Tele.on_message(filters.command('play') & filters.me)
 async def play_command(c: Client, m: Message):
-    if len(m.command) < 2: # type: ignore
-        return await m.reply("Please provide a song name or link.")
-    
-    chat_id = m.chat.id # type: ignore
-    query = " ".join(m.command[1:]) # type: ignore
-    loading = await m.reply('`🔍 Searching and downloading...`')
-    
+    if not m.chat or not m.command or m.chat.id is None:
+        return
+    chat_id: int = m.chat.id
     tgcalls = Tele.getClientPyTgCalls(c)
     if not tgcalls:
-        return await loading.edit("Voice chat client not initialized.")
+        return await m.reply("Voice chat client not initialized.")
+
+    song_data: Optional[SongDict] = None
+    loading = None
+
+    if m.reply_to_message:
+        rm = m.reply_to_message
+        media = rm.audio or rm.video or rm.voice
+        if media:
+            loading = await m.reply("`📥 Downloading replied media...`")
+            try:
+                import random
+                import string
+                import subprocess
+                
+                random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+                unique_name = f"hazel_{int(asyncio.get_event_loop().time())}_{random_str}"
+                
+                is_video = bool(rm.video)
+                ext = ".mp4" if is_video else ".mp3"
+                path = str(await c.download_media(rm, file_name=unique_name + ext)) # type: ignore
+                
+                final_path = path
+                if is_video:
+                    final_path = path.replace(".mp4", ".mp3")
+                    await loading.edit("`🎬 Converting video to audio...`")
+                    cmd = ['ffmpeg', '-i', path, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', final_path, '-y']
+                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if os.path.exists(path): os.remove(path)
+                
+                duration = getattr(media, 'duration', 0)
+                if duration == 0:
+                    duration = get_audio_duration(final_path)
+
+                song_data = {
+                    "path": final_path,
+                    "title": getattr(media, 'title', None) or getattr(media, 'file_name', None) or ("Voice Message" if rm.voice else "Replied Media"),
+                    "performer": getattr(media, 'performer', "Unknown Artist"),
+                    "duration": duration,
+                    "file_name": os.path.basename(final_path)
+                }
+            except Exception as e:
+                return await loading.edit(f"❌ Download failed: {e}")
+        else:
+            return await m.reply("❌ Replied message has no supported media (Audio/Video/Voice).")
     
-    try:
-        song_info = await Tele.download_song(query, c)
-        if not song_info:
-            return await loading.edit("❌ Song not found.")
-        song_data: SongDict = song_info  # type: ignore
-    except Exception as e:
-        return await loading.edit(f"❌ Error: {str(e)}")
-    
+    if not song_data:
+        m_command = m.command
+        if not m_command or len(m_command) < 2:
+            return await m.reply("Please provide a song name or link, or reply to a media file.")
+        
+        query = " ".join(m_command[1:])
+        loading = await m.reply('`🔍 Searching...`')
+        try:
+            song_info = await Tele.download_song(query, c)
+            if not song_info:
+                return await loading.edit("❌ Song not found.")
+            song_data = song_info  # type: ignore
+        except Exception as e:
+            if loading: return await loading.edit(f"❌ Error: {str(e)}")
+            else: return await m.reply(f"❌ Error: {str(e)}")
+
+    if not song_data: # Safety check
+        return
+
     if chat_id not in streaming_chats:
-        streaming_chats[chat_id] = { # type: ignore
+        streaming_chats[chat_id] = {
             "queue": [],
             "loop": 0,
             "current": None,
@@ -339,54 +405,63 @@ async def play_command(c: Client, m: Message):
             "ui_msg_id": None
         }
     
-    data = streaming_chats[chat_id] # type: ignore
+    data = streaming_chats[chat_id]
     data["client"] = c
 
     if not data["current"]:
         data["current"] = song_data
         try:
-            await tgcalls.play(chat_id, song_data["path"]) # type: ignore
-            await loading.delete()
-            await send_track_ui(chat_id, song_data) # type: ignore
+            current_chat_id = chat_id
+            await tgcalls.play(current_chat_id, song_data["path"])
+            if loading: await loading.delete()
+            await send_track_ui(current_chat_id, song_data)
         except Exception as e:
-            await loading.edit(f"❌ Error playing: {e}")
+            if loading: await loading.edit(f"❌ Error playing: {e}")
+            else: await m.reply(f"❌ Error playing: {e}")
             if os.path.exists(song_data["path"]): os.remove(song_data["path"])
             data["current"] = None
     else:
         data["queue"].append(song_data)
-        await loading.edit(get_track_text(song_data, f"📝 Queued (Position: {len(data['queue'])})", data["loop"]))
+        text = get_track_text(song_data, f"📝 Queued (Position: {len(data['queue'])})", data["loop"])
+        if loading: await loading.edit(text)
+        else: await m.reply(text)
 
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
 async def skip_cmd_handler(c: Client, m: Message):
-    if await skip_track(m.chat.id): # type: ignore
+    if not m.chat or m.chat.id is None: return
+    if await skip_track(m.chat.id):
         await m.reply("⏭ Skipped to next track.")
     else:
         await m.reply("❌ Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
 async def stop_cmd_handler(c: Client, m: Message):
-    if await stop_music(m.chat.id): # type: ignore
+    if not m.chat or m.chat.id is None: return
+    if await stop_music(m.chat.id):
         await m.reply("🛑 Stopped playback and cleared queue.")
     else:
         await m.reply("❌ Not in voice chat.")
 
 @Tele.on_message(filters.command('pause') & filters.me)
 async def pause_cmd_handler(c: Client, m: Message):
-    if await pause_music(m.chat.id): # type: ignore
+    if not m.chat or m.chat.id is None: return
+    if await pause_music(m.chat.id):
         await m.reply("⏸ Paused playback.")
     else:
         await m.reply("❌ Already paused or not playing.")
 
 @Tele.on_message(filters.command('resume') & filters.me)
 async def resume_cmd_handler(c: Client, m: Message):
-    if await resume_music(m.chat.id): # type: ignore
+    if not m.chat or m.chat.id is None: return
+    if await resume_music(m.chat.id):
         await m.reply("▶️ Resumed playback.")
     else:
         await m.reply("❌ Already playing or not playing.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
 async def queue_cmd_handler(c: Client, m: Message):
-    chat_id = m.chat.id # type: ignore
+    if not m.chat or m.chat.id is None: return
+    chat_id: int = m.chat.id
     if chat_id not in streaming_chats:
         return await m.reply("❌ Queue is empty.")
     
@@ -579,14 +654,9 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
                 await q.answer("❌ Could not delete player message.")
         else:
             try:
-                await q.message.delete()
-                await q.answer("Closed player.")
+                await q.edit_message_text("Player closed.")
             except:
-                # If bot can't delete, just clear the text/markup
-                try:
-                    await q.edit_message_text("Player closed.")
-                except:
-                    await q.answer("❌ Could not close player.")
+                await q.answer("❌ Could not close player.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
