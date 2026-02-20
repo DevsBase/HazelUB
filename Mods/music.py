@@ -109,11 +109,12 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     client = data["client"]
 
     # Try to edit existing message if not forced to send new
-    if not force_new and data.get("ui_msg_id"):
+    ui_msg_id = data.get("ui_msg_id")
+    if not force_new and ui_msg_id:
         try:
             await client.edit_message_text(
                 chat_id,
-                data["ui_msg_id"],
+                ui_msg_id,
                 text,
                 reply_markup=get_music_keyboard(chat_id, loop_mode, is_paused)
             )
@@ -122,9 +123,9 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
             logger.debug(f"Edit failed (falling back to new message): {e}")
 
     # Delete previous UI if exists
-    if data.get("ui_msg_id"):
+    if ui_msg_id:
         try:
-            await client.delete_messages(chat_id, data["ui_msg_id"])
+            await client.delete_messages(chat_id, ui_msg_id)
         except:
             pass
         data["ui_msg_id"] = None
@@ -132,16 +133,21 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     # Try to send via assistant bot (inline)
     try:
         bot_me = await Tele.bot.get_me()
-        results = await client.get_inline_bot_results(bot_me.username, f"mus_ui_{chat_id}") # type: ignore
-        if results.results:
+        bot_username = bot_me.username
+        if not bot_username:
+            raise ValueError("Bot username not found")
+
+        results = await client.get_inline_bot_results(bot_username, f"mus_ui_{chat_id}")
+        if results and results.results:
             await client.send_inline_bot_result(
                 chat_id,
                 results.query_id,
                 results.results[0].id
             )
             # Fetch the message ID of the sent inline result
-            async for msg in client.get_chat_history(chat_id, limit=3):
-                if msg.via_bot and msg.via_bot.username == bot_me.username:
+            # We look for a message sent by the userbot but marked as 'via_bot'
+            async for msg in client.get_chat_history(chat_id, limit=5):
+                if msg.via_bot and msg.via_bot.username == bot_username:
                     data["ui_msg_id"] = msg.id
                     break
             return
@@ -186,8 +192,9 @@ async def play_next(chat_id: int, tgcalls: PyTgCalls):
                 except: pass
         
         # Delete UI message
-        if data.get("ui_msg_id"):
-            try: await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+        ui_msg_id = data.get("ui_msg_id")
+        if ui_msg_id:
+            try: await data["client"].delete_messages(chat_id, ui_msg_id)
             except: pass
 
         data["current"] = None
@@ -248,8 +255,9 @@ async def stop_music(chat_id: int):
             except: pass
     
     # Delete UI message before clearing session
-    if data.get("ui_msg_id"):
-        try: await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+    ui_msg_id = data.get("ui_msg_id")
+    if ui_msg_id:
+        try: await data["client"].delete_messages(chat_id, ui_msg_id)
         except: pass
 
     if chat_id in streaming_chats:
@@ -402,12 +410,17 @@ async def queue_cmd_handler(c: Client, m: Message):
 
 @Tele.on_message(filters.command('loop') & filters.me)
 async def loop_cmd_handler(c: Client, m: Message):
+    if not m.chat or not m.command:
+        return
+        
     chat_id = m.chat.id
     if chat_id not in streaming_chats:
         return await m.reply("❌ No active music session in this chat.")
     
     data = streaming_chats[chat_id]
-    if len(m.command) > 1:
+    cmd_len = len(m.command)
+    
+    if cmd_len > 1:
         arg = m.command[1].lower()
         if arg in ['off', '0', 'none']:
             data["loop"] = 0
@@ -557,9 +570,10 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
             await q.answer("❌ Already playing or failed to resume.", show_alert=True)
 
     elif action == "close":
-        if data and data.get("ui_msg_id"):
+        ui_msg_id = data.get("ui_msg_id") if data else None
+        if data and ui_msg_id:
             try:
-                await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+                await data["client"].delete_messages(chat_id, ui_msg_id)
                 await q.answer("Closed player.")
             except:
                 await q.answer("❌ Could not delete player message.")
