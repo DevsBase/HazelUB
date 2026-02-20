@@ -44,21 +44,9 @@ class SessionData(TypedDict):
 # Structure: { client_user_id: { chat_id: SessionData } }
 streaming_chats: Dict[int, Dict[int, SessionData]] = {}
 
-def _get_client_id(client: Client) -> Optional[int]:
-    """Returns the user ID of the given client, or None if not logged in."""
-    return client.me.id if client.me else None
-
 def _get_session(client_id: int, chat_id: int) -> Optional[SessionData]:
     """Returns the SessionData for a given client + chat, or None."""
     return streaming_chats.get(client_id, {}).get(chat_id)
-
-def _all_sessions() -> List[tuple[int, int, SessionData]]:
-    """Yields all (client_id, chat_id, session) tuples across all clients."""
-    result: List[tuple[int, int, SessionData]] = []
-    for cid, chats in streaming_chats.items():
-        for chat_id, session in chats.items():
-            result.append((cid, chat_id, session))
-    return result
 
 # --- Helper Functions ---
 def get_audio_duration(file_path: str) -> int:
@@ -218,9 +206,10 @@ async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
 
         data["current"] = None
         try:
+            try: await tgcalls.play(chat_id)
+            except: pass
             await tgcalls.leave_call(chat_id)
-        except:
-            pass
+        except: pass
             
         if client_id in streaming_chats and chat_id in streaming_chats[client_id]:
             del streaming_chats[client_id][chat_id]
