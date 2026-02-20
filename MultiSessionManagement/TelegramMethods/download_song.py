@@ -9,6 +9,8 @@ import string
 import subprocess
 import logging
 
+logger = logging.getLogger(__name__)
+
 def get_audio_duration(file_path: str) -> int:
     """Helper to get audio duration using ffprobe."""
     try:
@@ -21,7 +23,8 @@ def get_audio_duration(file_path: str) -> int:
         ]
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         return int(float(result.stdout.strip()))
-    except Exception:
+    except Exception as e:
+        logging.debug(e)
         return 0
 
 class DownloadSong:
@@ -68,8 +71,7 @@ class DownloadSong:
                         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         if os.path.exists(temp_path): os.remove(temp_path)
                     except Exception as e:
-                        _logger = logging.getLogger("Mods.Music")
-                        _logger.error(f"Video conversion failed: {e}")
+                        logger.error(f"Video conversion failed: {e}")
                 
                 duration = getattr(media, 'duration', 0)
                 if duration == 0:

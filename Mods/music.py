@@ -61,10 +61,10 @@ def get_audio_duration(file_path: str) -> int:
     except Exception:
         return 0
 
-def get_duration_str(seconds: int) -> str:
+def get_duration_str(seconds: Union[int, float]) -> str:
     """Converts seconds to MM:SS format."""
-    minutes, seconds = divmod(seconds, 60)
-    return f"{minutes:02d}:{seconds:02d}"
+    minutes, sec = divmod(int(seconds), 60)
+    return f"{minutes:02d}:{sec:02d}"
 
 def get_track_text(song: SongDict, status: str = "Now Playing", loop_mode: int = 0) -> str:
     """Generates the formatted text for a track."""
@@ -429,7 +429,8 @@ async def play_command(c: Client, m: Message):
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
 async def skip_cmd_handler(c: Client, m: Message):
     if not m.chat or m.chat.id is None: return
-    if await skip_track(m.chat.id):
+    chat_id: int = m.chat.id
+    if await skip_track(chat_id):
         await m.reply("⏭ Skipped to next track.")
     else:
         await m.reply("❌ Nothing is playing to skip.")
@@ -437,7 +438,8 @@ async def skip_cmd_handler(c: Client, m: Message):
 @Tele.on_message(filters.command('mstop') & filters.me)
 async def stop_cmd_handler(c: Client, m: Message):
     if not m.chat or m.chat.id is None: return
-    if await stop_music(m.chat.id):
+    chat_id: int = m.chat.id
+    if await stop_music(chat_id):
         await m.reply("🛑 Stopped playback and cleared queue.")
     else:
         await m.reply("❌ Not in voice chat.")
@@ -445,7 +447,8 @@ async def stop_cmd_handler(c: Client, m: Message):
 @Tele.on_message(filters.command('pause') & filters.me)
 async def pause_cmd_handler(c: Client, m: Message):
     if not m.chat or m.chat.id is None: return
-    if await pause_music(m.chat.id):
+    chat_id: int = m.chat.id
+    if await pause_music(chat_id):
         await m.reply("⏸ Paused playback.")
     else:
         await m.reply("❌ Already paused or not playing.")
@@ -453,7 +456,8 @@ async def pause_cmd_handler(c: Client, m: Message):
 @Tele.on_message(filters.command('resume') & filters.me)
 async def resume_cmd_handler(c: Client, m: Message):
     if not m.chat or m.chat.id is None: return
-    if await resume_music(m.chat.id):
+    chat_id: int = m.chat.id
+    if await resume_music(chat_id):
         await m.reply("▶️ Resumed playback.")
     else:
         await m.reply("❌ Already playing or not playing.")
