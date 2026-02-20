@@ -2,7 +2,7 @@ import re
 import ast
 import operator
 import logging
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, DivisionByZero
 from Hazel import Tele
 from pyrogram import filters
 from pyrogram.client import Client
@@ -19,6 +19,14 @@ allowed_operators = {
     ast.Div: operator.truediv,
     ast.Mod: operator.mod,
 }
+
+
+def clean_decimal(d: Decimal) -> str:
+    s = format(d, "f")
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    return s
+
 
 def calculate(expression: str) -> Decimal:
     expression = re.sub(r'\b0+(\d+)', r'\1', expression)
@@ -37,6 +45,9 @@ def calculate(expression: str) -> Decimal:
             left = evaluate(node.left)
             right = evaluate(node.right)
 
+            if isinstance(node.op, ast.Div) and right == 0:
+                raise DivisionByZero("Division by zero")
+
             return allowed_operators[type(node.op)](left, right)
 
         elif isinstance(node, ast.UnaryOp):
@@ -52,7 +63,7 @@ def calculate(expression: str) -> Decimal:
 
 @Tele.on_message(filters.regex(r'^//') & filters.me)
 async def calculateFunc(c: Client, m: Message):
-    exp = m.text.strip() # type: ignore
+    exp = m.text.strip()  # type: ignore
 
     if not exp.startswith('//'):
         return
@@ -62,15 +73,20 @@ async def calculateFunc(c: Client, m: Message):
     if not re.fullmatch(r'[0-9+\-*/%.() ]+', exp):
         return
 
-    if not exp: return
+    if not exp:
+        return
 
     try:
         result = calculate(exp)
-        result_str = str(result.normalize())
+        result_str = clean_decimal(result)
+
         await m.reply(f'» {exp} = `{result_str}`')
 
+    except DivisionByZero:
+        await m.reply("❌ Division by zero is not allowed.")
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
+        await m.reply("❌ Invalid expression.")
 
 
 MOD_NAME = "Calculator"
@@ -82,5 +98,5 @@ MOD_HELP = """**Usage:**
 > //(2+3)*4
 > //1.1-1.2
 
-Only `//` prefix is allowed. Defualt prefixes will NOT work.
+Only `//` prefix is allowed. Default prefixes will NOT work.
 """

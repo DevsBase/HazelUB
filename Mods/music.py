@@ -15,7 +15,6 @@ from pyrogram.types import (
     InputTextMessageContent
 )
 from pyrogram.enums import ButtonStyle
-from pyrogram.errors import BadRequest
 from pytgcalls import filters as call_filters
 from pytgcalls import PyTgCalls
 from pytgcalls.types import Update
@@ -42,7 +41,24 @@ class SessionData(TypedDict):
     ui_msg_id: Optional[int]
 
 # --- Global State ---
-streaming_chats: Dict[int, SessionData] = {}
+# Structure: { client_user_id: { chat_id: SessionData } }
+streaming_chats: Dict[int, Dict[int, SessionData]] = {}
+
+def _get_client_id(client: Client) -> Optional[int]:
+    """Returns the user ID of the given client, or None if not logged in."""
+    return client.me.id if client.me else None
+
+def _get_session(client_id: int, chat_id: int) -> Optional[SessionData]:
+    """Returns the SessionData for a given client + chat, or None."""
+    return streaming_chats.get(client_id, {}).get(chat_id)
+
+def _all_sessions() -> List[tuple[int, int, SessionData]]:
+    """Yields all (client_id, chat_id, session) tuples across all clients."""
+    result: List[tuple[int, int, SessionData]] = []
+    for cid, chats in streaming_chats.items():
+        for chat_id, session in chats.items():
+            result.append((cid, chat_id, session))
+    return result
 
 # --- Helper Functions ---
 def get_audio_duration(file_path: str) -> int:
@@ -78,8 +94,7 @@ def get_track_text(song: SongDict, status: str = "Now Playing", loop_mode: int =
     )
 
 def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) -> InlineKeyboardMarkup:
-    """Creates the control keyboard for the music player using standard emojis."""
-    
+    """Creates the control keyboard for the music player."""
     pause_resume_text = "▶️ Resume" if is_paused else "⏸ Pause"
     pause_resume_cb = f"mus_resume_{chat_id}" if is_paused else f"mus_pause_{chat_id}"
     
@@ -100,21 +115,18 @@ def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) ->
 
 async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
     """Checks if a user is authorized to control the music (sudo or admin)."""
-    # 1. Check if the user is one of our own accounts (Sudo)
     for ub_client in Tele._allClients:
         if ub_client.me and ub_client.me.id == user_id:
             return True
-    
-    # 2. Check if the user is a chat administrator
     try:
         return await Tele.is_admin(client, chat_id, user_id)
     except Exception as e:
         logger.debug(f"Admin check failed: {e}")
         return False
 
-async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing", force_new: bool = True):
+async def send_track_ui(client_id: int, chat_id: int, song: SongDict, status: str = "Now Playing", force_new: bool = True) -> None:
     """Sends the track UI, attempting to edit existing if force_new is False."""
-    data = streaming_chats.get(chat_id)
+    data = _get_session(client_id, chat_id)
     if not data:
         return
     
@@ -123,7 +135,6 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     text = get_track_text(song, status, loop_mode)
     client = data["client"]
 
-    # Try to edit existing message if not forced to send new
     ui_msg_id = data.get("ui_msg_id")
     if not force_new and ui_msg_id:
         try:
@@ -137,7 +148,6 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
         except Exception as e:
             logger.debug(f"Edit failed (falling back to new message): {e}")
 
-    # Delete previous UI if exists
     if ui_msg_id:
         try:
             await client.delete_messages(chat_id, ui_msg_id)
@@ -159,8 +169,6 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
                 results.query_id,
                 results.results[0].id
             )
-            # Fetch the message ID of the sent inline result
-            # We look for a message sent by the userbot but marked as 'via_bot'
             async for msg in client.get_chat_history(chat_id, limit=5):
                 if msg.via_bot and msg.via_bot.username == bot_username:
                     data["ui_msg_id"] = msg.id
@@ -169,44 +177,40 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     except Exception as e:
         logger.debug(f"Inline fallback triggered for chat {chat_id}: {e}")
 
-    # Fallback to plain text if bot/inline fails
+    # Fallback to plain text
     msg = await client.send_message(chat_id, text)
     data["ui_msg_id"] = msg.id
 
 # --- Logic Core Functions ---
-async def play_next(chat_id: int, tgcalls: PyTgCalls):
+async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
     """Plays the next song in the queue or cleans up if empty."""
-    if chat_id not in streaming_chats:
+    data = _get_session(client_id, chat_id)
+    if not data:
         return
     
-    data = streaming_chats[chat_id]
     current = data["current"]
     loop = data["loop"]
     queue = data["queue"]
     data["is_paused"] = False
 
-    # Cleanup or re-queue current song
     if current:
-        if loop == 0:  # No loop
+        if loop == 0:
             if os.path.exists(current["path"]):
                 try: os.remove(current["path"])
                 except: pass
-        elif loop == 2:  # Loop queue
+        elif loop == 2:
             queue.append(current)
 
-    # Determine next track
     if loop == 1 and current:
         next_song = current
     elif queue:
         next_song = queue.pop(0)
     else:
-        # End of playback
         if current and loop != 2:
             if os.path.exists(current["path"]):
                 try: os.remove(current["path"])
                 except: pass
         
-        # Delete UI message
         ui_msg_id = data.get("ui_msg_id")
         if ui_msg_id:
             try: await data["client"].delete_messages(chat_id, ui_msg_id)
@@ -218,25 +222,27 @@ async def play_next(chat_id: int, tgcalls: PyTgCalls):
         except:
             pass
             
-        if chat_id in streaming_chats:
-            del streaming_chats[chat_id]
+        if client_id in streaming_chats and chat_id in streaming_chats[client_id]:
+            del streaming_chats[client_id][chat_id]
+            if not streaming_chats[client_id]:
+                del streaming_chats[client_id]
         return
 
     data["current"] = next_song
     try:
         await tgcalls.play(chat_id, next_song["path"])
-        await send_track_ui(chat_id, next_song)
+        await send_track_ui(client_id, chat_id, next_song)
     except Exception as e:
         logger.error(f"Error playing next song: {e}")
         data["current"] = None
-        await play_next(chat_id, tgcalls)
+        await play_next(client_id, chat_id, tgcalls)
 
-async def skip_track(chat_id: int):
+async def skip_track(client_id: int, chat_id: int) -> bool:
     """Internal function to skip a track."""
-    if chat_id not in streaming_chats:
+    data = _get_session(client_id, chat_id)
+    if not data:
         return False
     
-    data = streaming_chats[chat_id]
     tgcalls = Tele.getClientPyTgCalls(data["client"])
     if not tgcalls or not data["current"]:
         return False
@@ -245,18 +251,18 @@ async def skip_track(chat_id: int):
     if old_loop == 1:
         data["loop"] = 0
         
-    await play_next(chat_id, tgcalls)
+    await play_next(client_id, chat_id, tgcalls)
     
     if old_loop == 1:
         data["loop"] = 1
     return True
 
-async def stop_music(chat_id: int):
+async def stop_music(client_id: int, chat_id: int) -> bool:
     """Internal function to stop music and clean up."""
-    if chat_id not in streaming_chats:
+    data = _get_session(client_id, chat_id)
+    if not data:
         return False
         
-    data = streaming_chats[chat_id]
     tgcalls = Tele.getClientPyTgCalls(data["client"])
     if not tgcalls:
         return False
@@ -269,14 +275,15 @@ async def stop_music(chat_id: int):
             try: os.remove(song["path"])
             except: pass
     
-    # Delete UI message before clearing session
     ui_msg_id = data.get("ui_msg_id")
     if ui_msg_id:
         try: await data["client"].delete_messages(chat_id, ui_msg_id)
         except: pass
 
-    if chat_id in streaming_chats:
-        del streaming_chats[chat_id]
+    if client_id in streaming_chats and chat_id in streaming_chats[client_id]:
+        del streaming_chats[client_id][chat_id]
+        if not streaming_chats[client_id]:
+            del streaming_chats[client_id]
     
     try:
         await tgcalls.leave_call(chat_id)
@@ -284,16 +291,15 @@ async def stop_music(chat_id: int):
         pass
     return True
 
-async def pause_music(chat_id: int) -> bool:
-    """Internal function to pause music using pytgcalls 2.x methods."""
-    if chat_id not in streaming_chats:
+async def pause_music(client_id: int, chat_id: int) -> bool:
+    """Internal function to pause music."""
+    data = _get_session(client_id, chat_id)
+    if not data:
         return False
-    data = streaming_chats[chat_id]
     tgcalls = Tele.getClientPyTgCalls(data["client"])
     if not tgcalls or data.get("is_paused"):
         return False
     try:
-        # In pytgcalls v2.2.8, the method is pause()
         await tgcalls.pause(chat_id)
         data["is_paused"] = True
         return True
@@ -301,16 +307,15 @@ async def pause_music(chat_id: int) -> bool:
         logger.error(f"Pause failed: {e}")
         return False
 
-async def resume_music(chat_id: int) -> bool:
-    """Internal function to resume music using pytgcalls 2.x methods."""
-    if chat_id not in streaming_chats:
+async def resume_music(client_id: int, chat_id: int) -> bool:
+    """Internal function to resume music."""
+    data = _get_session(client_id, chat_id)
+    if not data:
         return False
-    data = streaming_chats[chat_id]
     tgcalls = Tele.getClientPyTgCalls(data["client"])
     if not tgcalls or not data.get("is_paused"):
         return False
     try:
-        # In pytgcalls v2.2.8, the method is resume()
         await tgcalls.resume(chat_id)
         data["is_paused"] = False
         return True
@@ -320,26 +325,32 @@ async def resume_music(chat_id: int) -> bool:
 
 # --- Userbot Handlers ---
 @Tele.on_update(call_filters.stream_end())
-async def stream_end_handler(c: PyTgCalls, update: Update):
-    await play_next(update.chat_id, c)
+async def stream_end_handler(c: PyTgCalls, update: Update) -> None:
+    # Find which client owns this tgcalls instance
+    for ub_client in Tele._allClients:
+        tc = Tele.getClientPyTgCalls(ub_client)
+        if tc is c and ub_client.me:
+            await play_next(ub_client.me.id, update.chat_id, c)
+            return
 
 @Tele.on_message(filters.command('play') & filters.me)
-async def play_command(c: Client, m: Message):
-    if not m.chat or not m.command or m.chat.id is None:
+async def play_command(c: Client, m: Message) -> None:
+    if not m.chat or not m.command or m.chat.id is None or not c.me:
         return
     chat_id: int = m.chat.id
+    client_id: int = c.me.id
     tgcalls = Tele.getClientPyTgCalls(c)
     if not tgcalls:
-        return await m.reply("Voice chat client not initialized.")
+        return await m.reply("Voice chat client not initialized.")  # type: ignore
 
     song_data: Optional[SongDict] = None
-    loading = None
+    loading: Optional[Message] = None
 
     if m.reply_to_message:
         rm = m.reply_to_message
         media = rm.audio or rm.video or rm.voice
         if media:
-            loading = await m.reply("`📥 Downloading replied media...`")
+            loading = await m.reply("`📥 Downloading...`")
             try:
                 import random
                 import string
@@ -348,49 +359,57 @@ async def play_command(c: Client, m: Message):
                 random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
                 unique_name = f"hazel_{int(asyncio.get_event_loop().time())}_{random_str}"
                 
-                is_video = bool(rm.video)
-                ext = ".mp4" if is_video else ".mp3"
-                path = str(await c.download_media(rm, file_name=unique_name + ext)) # type: ignore
-                
+                ext = ".mp4" if rm.video else ".mp3"
+                path = str(await c.download_media(rm, file_name=unique_name + ext))  # type: ignore
                 final_path = path
                 
-                duration = getattr(media, 'duration', 0)
-                if duration == 0:
+                duration = getattr(media, 'duration', 0) or 0
+                if not duration:
                     duration = get_audio_duration(final_path)
 
                 song_data = {
                     "path": final_path,
                     "title": getattr(media, 'title', None) or getattr(media, 'file_name', None) or ("Voice Message" if rm.voice else "Replied Media"),
-                    "performer": getattr(media, 'performer', "Unknown Artist"),
+                    "performer": getattr(media, 'performer', None) or "Unknown Artist",
                     "duration": duration,
                     "file_name": os.path.basename(final_path)
                 }
             except Exception as e:
-                return await loading.edit(f"❌ Download failed: {e}")
+                if loading: await loading.edit(f"Download failed: {e}")
+                return
         else:
-            return await m.reply("❌ Replied message has no supported media (Audio/Video/Voice).")
+            await m.reply("Please reply to an audio, video, or voice message.")
+            return
     
     if not song_data:
         m_command = m.command
         if not m_command or len(m_command) < 2:
-            return await m.reply("Please provide a song name or link, or reply to a media file.")
+            await m.reply("Provide a song name or reply to a media file.")
+            return
         
         query = " ".join(m_command[1:])
-        loading = await m.reply('`🔍 Searching...`')
+        loading = await m.reply('🔍 Searching...')
         try:
             song_info = await Tele.download_song(query, c)
             if not song_info:
-                return await loading.edit("❌ Song not found.")
+                await loading.edit("Song not found.")
+                return
             song_data = song_info  # type: ignore
         except Exception as e:
-            if loading: return await loading.edit(f"❌ Error: {str(e)}")
-            else: return await m.reply(f"❌ Error: {str(e)}")
+            msg = f"Error: {str(e)}"
+            if loading: await loading.edit(msg)
+            else: await m.reply(msg)
+            return
 
-    if not song_data: # Safety check
+    if not song_data:
         return
 
-    if chat_id not in streaming_chats:
-        streaming_chats[chat_id] = {
+    # Create session bucket for this client if not exists
+    if client_id not in streaming_chats:
+        streaming_chats[client_id] = {}
+    
+    if chat_id not in streaming_chats[client_id]:
+        streaming_chats[client_id][chat_id] = {
             "queue": [],
             "loop": 0,
             "current": None,
@@ -399,19 +418,18 @@ async def play_command(c: Client, m: Message):
             "ui_msg_id": None
         }
     
-    data = streaming_chats[chat_id]
+    data = streaming_chats[client_id][chat_id]
     data["client"] = c
 
     if not data["current"]:
         data["current"] = song_data
         try:
-            current_chat_id = chat_id
-            await tgcalls.play(current_chat_id, song_data["path"])
+            await tgcalls.play(chat_id, song_data["path"])
             if loading: await loading.delete()
-            await send_track_ui(current_chat_id, song_data)
+            await send_track_ui(client_id, chat_id, song_data)
         except Exception as e:
-            if loading: await loading.edit(f"❌ Error playing: {e}")
-            else: await m.reply(f"❌ Error playing: {e}")
+            if loading: await loading.edit(f"Error playing: {e}")
+            else: await m.reply(f"Error playing: {e}")
             if os.path.exists(song_data["path"]): os.remove(song_data["path"])
             data["current"] = None
     else:
@@ -421,50 +439,70 @@ async def play_command(c: Client, m: Message):
         else: await m.reply(text)
 
 @Tele.on_message(filters.command(['skip', 'next']) & filters.me)
-async def skip_cmd_handler(c: Client, m: Message):
-    if not m.chat or m.chat.id is None: return
+async def skip_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
-    if await skip_track(chat_id):
+    client_id: int = c.me.id
+    if await skip_track(client_id, chat_id):
         await m.reply("⏭ Skipped to next track.")
     else:
         await m.reply("❌ Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
-async def stop_cmd_handler(c: Client, m: Message):
-    if not m.chat or m.chat.id is None: return
+async def stop_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
-    if await stop_music(chat_id):
+    client_id: int = c.me.id
+    if await stop_music(client_id, chat_id):
         await m.reply("🛑 Stopped playback and cleared queue.")
     else:
         await m.reply("❌ Not in voice chat.")
 
 @Tele.on_message(filters.command('pause') & filters.me)
-async def pause_cmd_handler(c: Client, m: Message):
-    if not m.chat or m.chat.id is None: return
+async def pause_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
-    if await pause_music(chat_id):
+    client_id: int = c.me.id
+    if await pause_music(client_id, chat_id):
         await m.reply("⏸ Paused playback.")
     else:
         await m.reply("❌ Already paused or not playing.")
 
 @Tele.on_message(filters.command('resume') & filters.me)
-async def resume_cmd_handler(c: Client, m: Message):
-    if not m.chat or m.chat.id is None: return
+async def resume_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
-    if await resume_music(chat_id):
+    client_id: int = c.me.id
+    if await resume_music(client_id, chat_id):
         await m.reply("▶️ Resumed playback.")
     else:
         await m.reply("❌ Already playing or not playing.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
-async def queue_cmd_handler(c: Client, m: Message):
-    if not m.chat or m.chat.id is None: return
+async def queue_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
-    if chat_id not in streaming_chats:
-        return await m.reply("❌ Queue is empty.")
-    
-    data = streaming_chats[chat_id]
+    client_id: int = c.me.id
+
+    # Allow looking up another userbot's queue: .queue <other_user_id>
+    m_command = m.command
+    target_client_id = client_id
+    if m_command and len(m_command) > 1:
+        try:
+            target_client_id = int(m_command[1])
+        except ValueError:
+            pass
+
+    sessions = streaming_chats.get(target_client_id, {})
+    data = sessions.get(chat_id)
+    if not data:
+        await m.reply("❌ Queue is empty.")
+        return
+
     res = "**🎶 Current Queue:**\n\n"
+    if target_client_id != client_id:
+        res = f"**🎶 Queue (user `{target_client_id}`):**\n\n"
+
     if data["current"]:
         curr = data["current"]
         res += f"▶️ **Now Playing:** `{curr['title']}` - `{curr['performer']}`\n"
@@ -475,24 +513,24 @@ async def queue_cmd_handler(c: Client, m: Message):
             res += f"{i}. `{song['title']}` - `{song['performer']}`\n"
         if len(data["queue"]) > 10:
             res += f"... and {len(data['queue']) - 10} more."
-    else:
-        if not data["current"]:
-            return await m.reply("❌ Queue is empty.")
-                
+    elif not data["current"]:
+        await m.reply("❌ Queue is empty.")
+        return
+            
     await m.reply(res)
 
 @Tele.on_message(filters.command('loop') & filters.me)
-async def loop_cmd_handler(c: Client, m: Message):
-    if not m.chat or not m.command or m.chat.id is None:
+async def loop_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or not m.command or m.chat.id is None or not c.me:
         return
-        
     chat_id: int = m.chat.id
-    if chat_id not in streaming_chats:
-        return await m.reply("❌ No active music session in this chat.")
+    client_id: int = c.me.id
+    data = _get_session(client_id, chat_id)
+    if not data:
+        await m.reply("❌ No active music session in this chat.")
+        return
     
-    data = streaming_chats[chat_id]
     cmd_len = len(m.command)
-    
     if cmd_len > 1:
         arg = m.command[1].lower()
         if arg in ['off', '0', 'none']:
@@ -502,19 +540,17 @@ async def loop_cmd_handler(c: Client, m: Message):
         elif arg in ['queue', '2', 'all']:
             data["loop"] = 2
         else:
-            return await m.reply("❌ Invalid loop mode. Use: `off`, `track`, or `queue`.")
+            await m.reply("❌ Invalid loop mode. Use: `off`, `track`, or `queue`.")
+            return
     else:
-        # Toggle cycle
         data["loop"] = (data["loop"] + 1) % 3
     
     modes = {0: "Off", 1: "Track", 2: "Queue"}
     status_msg = await m.reply(f"🔄 Loop mode set to: **{modes[data['loop']]}**")
     
-    # Update UI if current song exists (edit existing instead of new)
     if data["current"]:
-        await send_track_ui(chat_id, data["current"], force_new=False)
+        await send_track_ui(client_id, chat_id, data["current"], force_new=False)
     
-    # Optional: Delete command and status message after 3 seconds
     await asyncio.sleep(3)
     try:
         await m.delete()
@@ -524,60 +560,78 @@ async def loop_cmd_handler(c: Client, m: Message):
 
 # --- Bot Inline & Callback Handlers ---
 @Tele.bot.on_inline_query(filters.regex(r"^mus_ui_(-?\d+)$"))
-async def music_inline_handler(c: Client, q: InlineQuery):
+async def music_inline_handler(c: Client, q: InlineQuery) -> None:
     chat_id = int(q.matches[0].group(1))
-    if chat_id not in streaming_chats:
-        return await q.answer([
+    # Find any active session for this chat across all clients
+    song: Optional[SongDict] = None
+    loop_mode = 0
+    is_paused = False
+    for _, sessions in streaming_chats.items():
+        if chat_id in sessions:
+            d = sessions[chat_id]
+            song = d["current"]
+            loop_mode = d["loop"]
+            is_paused = d.get("is_paused", False)
+            break
+
+    if not song:
+        await q.answer([
             InlineQueryResultArticle(
                 title="No Audio",
                 input_message_content=InputTextMessageContent("No music active in this chat.")
             )
         ], cache_time=1)
-    
-    data = streaming_chats[chat_id]
-    song = data["current"]
-    if not song:
-        return await q.answer([])
+        return
 
     await q.answer([
         InlineQueryResultArticle(
             title="Music Player",
-            input_message_content=InputTextMessageContent(get_track_text(song, "Now Playing", data["loop"])),
-            reply_markup=get_music_keyboard(chat_id, data["loop"], data.get("is_paused", False))
+            input_message_content=InputTextMessageContent(get_track_text(song, "Now Playing", loop_mode)),
+            reply_markup=get_music_keyboard(chat_id, loop_mode, is_paused)
         )
     ], cache_time=1)
 
 @Tele.bot.on_callback_query(filters.regex(r"^mus_(skip|loop|queue|stop|close|pause|resume)_(-?\d+)$"))
-async def music_callback_handler(c: Client, q: CallbackQuery):
+async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
     action = q.matches[0].group(1)
     chat_id = int(q.matches[0].group(2))
 
     if not q.from_user:
-        return await q.answer("❌ Error: User info not found.")
+        await q.answer("❌ Error: User info not found.")
+        return
 
-    if chat_id not in streaming_chats and action != "close":
-        return await q.answer("❌ No active music session in this chat.", show_alert=True)
+    # Find session for this chat (any client)
+    data: Optional[SessionData] = None
+    owner_client_id: Optional[int] = None
+    for cid, sessions in streaming_chats.items():
+        if chat_id in sessions:
+            data = sessions[chat_id]
+            owner_client_id = cid
+            break
 
-    data = streaming_chats.get(chat_id)
-    
-    # Permission Check
+    if not data and action != "close":
+        await q.answer("❌ No active music session in this chat.", show_alert=True)
+        return
+
     if data and not await is_authorized(data["client"], chat_id, q.from_user.id):
-        return await q.answer("❌ No permission! Only admins or the owner can do this.", show_alert=True)
+        await q.answer("❌ No permission! Only admins or the owner can do this.", show_alert=True)
+        return
 
-    if action == "skip" and data:
+    if action == "skip" and data and owner_client_id:
         if not data["current"]:
-            return await q.answer("❌ Nothing is playing!", show_alert=True)
+            await q.answer("❌ Nothing is playing!", show_alert=True)
+            return
             
         if not data["queue"] and data["loop"] != 2:
-            await q.answer("👋 This was the last song. Leaving...", show_alert=True)
-            await stop_music(chat_id)
+            await q.answer("👋 Last song. Leaving...", show_alert=True)
+            await stop_music(owner_client_id, chat_id)
             if q.message:
-                try: await q.edit_message_text("🛑 Music playback stopped.")
+                try: await q.edit_message_text("🛑 Stopped.")
                 except: pass
             return
 
-        if await skip_track(chat_id):
-            await q.answer("⏭ Skipped track!")
+        if await skip_track(owner_client_id, chat_id):
+            await q.answer("⏭ Skipped!")
         else:
             await q.answer("❌ Failed to skip.", show_alert=True)
 
@@ -601,21 +655,22 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
             res += f"{i}. {s['title']}\n"
         await q.answer(res, show_alert=True)
 
-    elif action == "stop" and data:
-        await stop_music(chat_id)
+    elif action == "stop" and data and owner_client_id:
+        await stop_music(owner_client_id, chat_id)
         await q.answer("🛑 Stopped.")
         if q.message:
-            try: await q.edit_message_text("🛑 Music playback stopped.")
+            try: await q.edit_message_text("🛑 Stopped.")
             except: pass
 
-    elif action == "pause" and data:
+    elif action == "pause" and data and owner_client_id:
         if not data["current"]:
-            return await q.answer("❌ Nothing is playing to pause!", show_alert=True)
+            await q.answer("❌ Nothing is playing to pause!", show_alert=True)
+            return
         
-        if await pause_music(chat_id):
+        if await pause_music(owner_client_id, chat_id):
             try:
                 await q.edit_message_text(
-                    get_track_text(data["current"], "⏸ Paused", data["loop"]), # type: ignore
+                    get_track_text(data["current"], "⏸ Paused", data["loop"]),
                     reply_markup=get_music_keyboard(chat_id, data["loop"], True)
                 )
                 await q.answer("⏸ Paused.")
@@ -623,16 +678,17 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
                 logger.debug(f"Edit failed on pause: {e}")
                 await q.answer("⏸ Paused.")
         else:
-            await q.answer("❌ Already paused or failed to pause.", show_alert=True)
+            await q.answer("❌ Already paused.", show_alert=True)
 
-    elif action == "resume" and data:
+    elif action == "resume" and data and owner_client_id:
         if not data["current"]:
-            return await q.answer("❌ Nothing is playing to resume!", show_alert=True)
+            await q.answer("❌ Nothing is playing to resume!", show_alert=True)
+            return
             
-        if await resume_music(chat_id):
+        if await resume_music(owner_client_id, chat_id):
             try:
                 await q.edit_message_text(
-                    get_track_text(data["current"], "Now Playing", data["loop"]), # type: ignore
+                    get_track_text(data["current"], "Now Playing", data["loop"]),
                     reply_markup=get_music_keyboard(chat_id, data["loop"], False)
                 )
                 await q.answer("▶️ Resumed.")
@@ -640,7 +696,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
                 logger.debug(f"Edit failed on resume: {e}")
                 await q.answer("▶️ Resumed.")
         else:
-            await q.answer("❌ Already playing or failed to resume.", show_alert=True)
+            await q.answer("❌ Already playing.", show_alert=True)
 
     elif action == "close":
         ui_msg_id = data.get("ui_msg_id") if data else None
@@ -673,12 +729,13 @@ Stop playback and clear the queue.
 > `.loop [off|track|queue]`
 Set or cycle music loop mode.
 
-> `.queue`
-Show the list of upcoming songs.
+> `.queue [user_id]`
+Show the queue. Pass another userbot's user ID to view their queue in this chat.
 
 **Features:**
-- **Inline Controls**: Easy buttons to manage playback via assistant bot.
+- **Multi-Client**: Each userbot has its own isolated session (`{user_id: {chat_id: session}}`).
+- **Cross-View**: Any account can view another account's queue with `.queue <user_id>`.
+- **Inline Controls**: Buttons work for the owning client regardless of who pressed them.
 - **Loop Modes**: Off, Track (🔂), or Queue (🔁).
 - **Auto-Cleanup**: Temporary files are deleted after use.
-- **Metadata**: Full title, artist, and duration display.
 """
