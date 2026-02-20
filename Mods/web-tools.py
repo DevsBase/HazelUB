@@ -24,8 +24,3 @@ async def openCommand(client, m):
 MOD_NAME = "Web-Tools"
 MOD_HELP = """**Usage:**
 > .open (link) - Open a link in server/machine browser."""
-
-
-"""
-Try on your machine. It won't work on servers untill broswer is installed.
-"""

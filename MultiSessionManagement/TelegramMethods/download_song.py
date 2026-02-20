@@ -6,6 +6,22 @@ import os
 import time
 import random
 import string
+import subprocess
+
+def get_audio_duration(file_path: str) -> int:
+    """Helper to get audio duration using ffprobe."""
+    try:
+        cmd = [
+            'ffprobe', 
+            '-v', 'error', 
+            '-show_entries', 'format=duration', 
+            '-of', 'default=noprint_wrappers=1:nokey=1', 
+            file_path
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return int(float(result.stdout.strip()))
+    except Exception:
+        return 0
 
 class DownloadSong:
     async def download_song(self: "MultiSessionManagement.telegram.Telegram", query: str, client: pyrogram.Client) -> dict | None: # type: ignore
@@ -31,11 +47,15 @@ class DownloadSong:
                 
                 path = str(await client.download_media(_m, file_name=unique_name)) # type: ignore
                 
+                duration = audio.duration or 0
+                if duration == 0:
+                    duration = get_audio_duration(path)
+
                 return {
                     "path": path,
                     "title": audio.title or "Unknown Title",
                     "performer": audio.performer or "Unknown Artist",
-                    "duration": audio.duration or 0,
+                    "duration": duration,
                     "file_name": unique_name
                 }
             await asyncio.sleep(1.5)

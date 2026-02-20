@@ -40,6 +40,7 @@ class SessionData(TypedDict):
     current: Optional[SongDict]
     client: Client
     is_paused: bool
+    ui_msg_id: Optional[int]
 
 # --- Global State ---
 streaming_chats: Dict[int, SessionData] = {}
@@ -107,6 +108,14 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
     text = get_track_text(song, status, loop_mode)
     client = data["client"]
 
+    # Delete previous UI if exists
+    if data.get("ui_msg_id"):
+        try:
+            await client.delete_messages(chat_id, data["ui_msg_id"])
+        except:
+            pass
+        data["ui_msg_id"] = None
+
     # Try to send via assistant bot (inline)
     try:
         bot_me = await Tele.bot.get_me()
@@ -117,12 +126,18 @@ async def send_track_ui(chat_id: int, song: SongDict, status: str = "Now Playing
                 results.query_id,
                 results.results[0].id
             )
+            # Fetch the message ID of the sent inline result
+            async for msg in client.get_chat_history(chat_id, limit=3):
+                if msg.via_bot and msg.via_bot.username == bot_me.username:
+                    data["ui_msg_id"] = msg.id
+                    break
             return
     except Exception as e:
         logger.debug(f"Inline fallback triggered for chat {chat_id}: {e}")
 
     # Fallback to plain text if bot/inline fails
-    await client.send_message(chat_id, text)
+    msg = await client.send_message(chat_id, text)
+    data["ui_msg_id"] = msg.id
 
 # --- Logic Core Functions ---
 async def play_next(chat_id: int, tgcalls: PyTgCalls):
@@ -156,11 +171,20 @@ async def play_next(chat_id: int, tgcalls: PyTgCalls):
             if os.path.exists(current["path"]):
                 try: os.remove(current["path"])
                 except: pass
+        
+        # Delete UI message
+        if data.get("ui_msg_id"):
+            try: await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+            except: pass
+
         data["current"] = None
         try:
             await tgcalls.leave_call(chat_id)
         except:
             pass
+            
+        if chat_id in streaming_chats:
+            del streaming_chats[chat_id]
         return
 
     data["current"] = next_song
@@ -210,7 +234,13 @@ async def stop_music(chat_id: int):
             try: os.remove(song["path"])
             except: pass
     
-    del streaming_chats[chat_id]
+    # Delete UI message before clearing session
+    if data.get("ui_msg_id"):
+        try: await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+        except: pass
+
+    if chat_id in streaming_chats:
+        del streaming_chats[chat_id]
     
     try:
         await tgcalls.leave_call(chat_id)
@@ -284,7 +314,8 @@ async def play_command(c: Client, m: Message):
             "loop": 0,
             "current": None,
             "client": c,
-            "is_paused": False
+            "is_paused": False,
+            "ui_msg_id": None
         }
     
     data = streaming_chats[chat_id] # type: ignore
@@ -355,6 +386,34 @@ async def queue_cmd_handler(c: Client, m: Message):
             return await m.reply("❌ Queue is empty.")
                 
     await m.reply(res)
+
+@Tele.on_message(filters.command('loop') & filters.me)
+async def loop_cmd_handler(c: Client, m: Message):
+    chat_id = m.chat.id
+    if chat_id not in streaming_chats:
+        return await m.reply("❌ No active music session in this chat.")
+    
+    data = streaming_chats[chat_id]
+    if len(m.command) > 1:
+        arg = m.command[1].lower()
+        if arg in ['off', '0', 'none']:
+            data["loop"] = 0
+        elif arg in ['track', '1', 'single']:
+            data["loop"] = 1
+        elif arg in ['queue', '2', 'all']:
+            data["loop"] = 2
+        else:
+            return await m.reply("❌ Invalid loop mode. Use: `off`, `track`, or `queue`.")
+    else:
+        # Toggle cycle
+        data["loop"] = (data["loop"] + 1) % 3
+    
+    modes = {0: "Off", 1: "Track", 2: "Queue"}
+    await m.reply(f"🔄 Loop mode set to: **{modes[data['loop']]}**")
+    
+    # Update UI if current song exists
+    if data["current"]:
+        await send_track_ui(chat_id, data["current"])
 
 # --- Bot Inline & Callback Handlers ---
 @Tele.bot.on_inline_query(filters.regex(r"^mus_ui_(-?\d+)$"))
@@ -477,10 +536,22 @@ async def music_callback_handler(c: Client, q: CallbackQuery):
             await q.answer("❌ Already playing or failed to resume.", show_alert=True)
 
     elif action == "close":
-        try:
-            await q.message.delete()
-        except:
-            await q.answer("❌ Could not delete player message.")
+        if data and data.get("ui_msg_id"):
+            try:
+                await data["client"].delete_messages(chat_id, data["ui_msg_id"])
+                await q.answer("Closed player.")
+            except:
+                await q.answer("❌ Could not delete player message.")
+        else:
+            try:
+                await q.message.delete()
+                await q.answer("Closed player.")
+            except:
+                # If bot can't delete, just clear the text/markup
+                try:
+                    await q.edit_message_text("Player closed.")
+                except:
+                    await q.answer("❌ Could not close player.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
@@ -495,6 +566,9 @@ Pause or Resume playback.
 
 > `.mstop`
 Stop playback and clear the queue.
+
+> `.loop [off|track|queue]`
+Set or cycle music loop mode.
 
 > `.queue`
 Show the list of upcoming songs.

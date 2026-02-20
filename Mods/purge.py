@@ -18,7 +18,7 @@ async def purgeFunc(app: Client, m: Message):
     for x in range(start, end + 1, 100):
         try:
             x = list(range(x, x+101))
-            count += await app.delete_messages(m.chat.id, x) # type: ignore
+            count += await app.delete_messages(m.chat.id, x, revoke=True) # type: ignore
             await asyncio.sleep(2.5)
         except Exception as e:
             logger.error(f"Error deleting messages {x}: {str(e)}")
