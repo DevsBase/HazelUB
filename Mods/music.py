@@ -353,12 +353,6 @@ async def play_command(c: Client, m: Message):
                 path = str(await c.download_media(rm, file_name=unique_name + ext)) # type: ignore
                 
                 final_path = path
-                if is_video:
-                    final_path = path.replace(".mp4", ".mp3")
-                    await loading.edit("`🎬 Converting video to audio...`")
-                    cmd = ['ffmpeg', '-i', path, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', final_path, '-y']
-                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    if os.path.exists(path): os.remove(path)
                 
                 duration = getattr(media, 'duration', 0)
                 if duration == 0:
