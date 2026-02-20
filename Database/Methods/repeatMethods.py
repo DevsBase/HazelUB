@@ -1,102 +1,92 @@
-from sqlalchemy import select, delete
-from Database.Tables.repeatMessage import RepeatMessage
-from Database.Tables.repeatMessageGroup import RepeatMessageGroup
-from Database.Tables.repeatMessageGroupChat import RepeatMessageGroupChat
-
-
 class RepeatMethods:
     # ---------- Groups ----------
 
-    async def create_group(self, name: str, user_id: int) -> RepeatMessageGroup:
-        name = (name.replace(' ', '')).lower() # remove spaces and change to lower case
-        async with self.get_pg() as session: # type: ignore
-            group = RepeatMessageGroup(userId=user_id, name=name)
-            session.add(group)
-            await session.commit()
-            await session.refresh(group)
-            return group
+    async def create_group(self, name: str, user_id: int):
+        name = (name.replace(' ', '')).lower()
+        group = {
+            "userId": user_id,
+            "name": name
+        }
+        result = await self.repeat_groups.insert_one(group)
+        group["_id"] = result.inserted_id
+        return group
 
-    async def get_group(self, group_id: int, user_id: int):
-        async with self.get_pg() as session: # type: ignore
-            x = await session.get(RepeatMessageGroup, group_id)
-            if x.userId == user_id: # Check if the group belongs to the user.
-                return x
+    async def get_group(self, group_id: str, user_id: int):
+        # Note: Using string IDs for Mongo compatibility or ObjectId if needed
+        from bson import ObjectId
+        try:
+            gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
+        except:
+            return None
+        x = await self.repeat_groups.find_one({"_id": gid})
+        if x and x.get("userId") == user_id:
+            return x
 
     async def get_group_by_name(self, name: str, user_id: int):
-        name = (name.replace(' ', '')).lower() # remove spaces and change to lower case
-        async with self.get_pg() as session: # type: ignore
-            q = await session.execute(
-                select(RepeatMessageGroup).where(
-                    RepeatMessageGroup.name == name
-                )
-            )
-            x = q.scalar_one_or_none()
-            if x and x.userId == user_id: # Check if the group belongs to the user.
-                return x
+        name = (name.replace(' ', '')).lower()
+        x = await self.repeat_groups.find_one({"name": name, "userId": user_id})
+        return x
     
     async def get_groups(self, user_id: int):
-        async with self.get_pg() as session:  # type: ignore
-            q = await session.execute(
-                select(RepeatMessageGroup)
-                .where(RepeatMessageGroup.userId == user_id)
-            )
-            return q.scalars().all()
+        cursor = self.repeat_groups.find({"userId": user_id})
+        return await cursor.to_list(length=None)
 
-    async def delete_group(self, group_id: int, user_id: int):
+    async def delete_group(self, group_id: str, user_id: int):
+        from bson import ObjectId
+        try:
+            gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
+        except:
+            raise Exception('Invalid Group ID')
+            
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
-            await session.execute(
-                delete(RepeatMessageGroupChat)
-                .where(RepeatMessageGroupChat.group_id == group_id)
-            )
-            await session.execute(
-                delete(RepeatMessageGroup)
-                .where(RepeatMessageGroup.id == group_id)
-            )
-            await session.commit()
+            
+        await self.repeat_group_chats.delete_many({"group_id": gid})
+        await self.repeat_groups.delete_one({"_id": gid})
 
     # ---------- Group Chats ----------
 
-    async def add_chat_to_group(self, group_id: int, chat_id: int, user_id: int):
+    async def add_chat_to_group(self, group_id: str, chat_id: int, user_id: int):
+        from bson import ObjectId
+        gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
+        
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
-            row = RepeatMessageGroupChat(
-                group_id=group_id,
-                chat_id=chat_id,
-                userId=user_id
-            )
-            session.add(row)
-            await session.commit()
-            return row
+            
+        row = {
+            "group_id": gid,
+            "chat_id": chat_id,
+            "userId": user_id
+        }
+        await self.repeat_group_chats.insert_one(row)
+        return row
 
-    async def remove_chat_from_group(self, group_id: int, chat_id: int, user_id: int):
-        group = await self.get_group(group_id, user_id)
-        if not group:
-            raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
-            await session.execute(
-                delete(RepeatMessageGroupChat)
-                .where(
-                    RepeatMessageGroupChat.group_id == group_id,
-                    RepeatMessageGroupChat.chat_id == chat_id
-                )
-            )
-            await session.commit()
+    async def remove_chat_from_group(self, group_id: str, chat_id: int, user_id: int):
+        from bson import ObjectId
+        gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
 
-    async def get_group_chats(self, group_id: int, user_id: int) -> list[int]:
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
-            q = await session.execute(
-                select(RepeatMessageGroupChat.chat_id)
-                .where(RepeatMessageGroupChat.group_id == group_id)
-            )
-            return [x[0] for x in q.all()]
+            
+        await self.repeat_group_chats.delete_one({
+            "group_id": gid,
+            "chat_id": chat_id
+        })
+
+    async def get_group_chats(self, group_id: str, user_id: int) -> list[int]:
+        from bson import ObjectId
+        gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
+
+        group = await self.get_group(group_id, user_id)
+        if not group:
+            raise Exception('The group is not found or it does not belongs to you')
+            
+        cursor = self.repeat_group_chats.find({"group_id": gid})
+        chats = await cursor.to_list(length=None)
+        return [x["chat_id"] for x in chats]
 
     # ---------- Repeat Messages ----------
 
@@ -106,32 +96,27 @@ class RepeatMethods:
         userId: int,
         message_id: int,
         source_chat_id: int,
-        group_id: int
+        group_id: str
     ):
-        async with self.get_pg() as session: # type: ignore
-            row = RepeatMessage(
-                repeatTime=repeatTime,
-                userId=userId,
-                message_id=message_id,
-                source_chat_id=source_chat_id,
-                group_id=group_id
-            )
-            session.add(row)
-            await session.commit()
-            await session.refresh(row)
-            return row
+        from bson import ObjectId
+        gid = ObjectId(group_id) if isinstance(group_id, str) else group_id
+        
+        row = {
+            "repeatTime": repeatTime,
+            "userId": userId,
+            "message_id": message_id,
+            "source_chat_id": source_chat_id,
+            "group_id": gid
+        }
+        result = await self.repeat_messages.insert_one(row)
+        row["_id"] = result.inserted_id
+        return row
 
-    async def get_repeat_messages(self) -> list[RepeatMessage]:
-        async with self.get_pg() as session: # type: ignore
-            q = await session.execute(
-                select(RepeatMessage)
-            )
-            return q.scalars().all()
+    async def get_repeat_messages(self):
+        cursor = self.repeat_messages.find({})
+        return await cursor.to_list(length=None)
 
-    async def delete_repeat_message(self, repeat_id: int):
-        async with self.get_pg() as session: # type: ignore
-            await session.execute(
-                delete(RepeatMessage)
-                .where(RepeatMessage.id == repeat_id)
-            )
-            await session.commit()
+    async def delete_repeat_message(self, repeat_id: str):
+        from bson import ObjectId
+        rid = ObjectId(repeat_id) if isinstance(repeat_id, str) else repeat_id
+        await self.repeat_messages.delete_one({"_id": rid})

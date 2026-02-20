@@ -45,12 +45,13 @@ def load_config() -> tuple:
     API_ID = config.API_ID or os.getenv('API_ID') or _ask_missing("API_ID")
     API_HASH = config.API_HASH or os.getenv('API_HASH') or _ask_missing("API_HASH")
     SESSION = config.SESSION or os.getenv('SESSION') or _ask_missing("SESSION")
-    DB_URL = config.DB_URL or os.getenv('DB_URL') or _ask_missing("DB_URL")
+    MONGO_URL = getattr(config, 'MONGO_URL', None) or os.getenv('MONGO_URL') or _ask_missing("MONGO_URL")
+    REDIS_URL = getattr(config, 'REDIS_URL', None) or os.getenv('REDIS_URL')
     # ---------- Optional ----------
-    OtherSessions = config.OtherSessions or list(os.getenv('OtherSessions', []))
-    PREFIX = list(config.PREFIX) or os.getenv('PREFIX', [])
-    GEMINI_API_KEY = config.GEMINI_API_KEY or os.getenv('GEMINI_API_KEY', '')
-    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
+    OtherSessions = getattr(config, 'OtherSessions', []) or list(os.getenv('OtherSessions', []))
+    PREFIX = list(getattr(config, 'PREFIX', [])) or os.getenv('PREFIX', [])
+    GEMINI_API_KEY = getattr(config, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
+    return (BOT_TOKEN, API_ID, API_HASH, SESSION, MONGO_URL, REDIS_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
 
 def startup_popup():
     from plyer import notification

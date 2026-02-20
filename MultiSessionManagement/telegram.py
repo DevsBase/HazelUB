@@ -13,7 +13,7 @@ class Telegram(Methods, Decorators):
     def __init__(self, config: tuple) -> None:
         # ----------- Config---------
         self.session: str = config[3]
-        self.othersessions: List[str] = config[5]
+        self.othersessions: List[str] = config[6]
         self.api_id: int = int(config[1])
         self.api_hash: str = config[2]
         self.bot_token: str = config[0]
@@ -27,7 +27,7 @@ class Telegram(Methods, Decorators):
         self._clientPrivileges: Dict[Client, str] = {}
         self._clientPyTgCalls: Dict[Client, PyTgCalls] = {}
 
-        filters.command = partial(filters.command, prefixes=config[6]) # Override filters.command to set defualt prefixes
+        filters.command = partial(filters.command, prefixes=config[7]) # Override filters.command to set defualt prefixes
     
     async def create_pyrogram_clients(self) -> None:
         if len(self.bot_token) > 50: # Bot Client
