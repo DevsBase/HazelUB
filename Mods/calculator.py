@@ -83,10 +83,10 @@ async def calculateFunc(c: Client, m: Message):
         await m.reply(f'» {exp} = `{result_str}`')
 
     except DivisionByZero:
-        await m.reply("❌ Division by zero is not allowed.")
+        await m.reply("Division by zero is not allowed.")
     except Exception as e:
         logger.error(f'Failed to calculate: {exp}. Error: {e}')
-        await m.reply("❌ Invalid expression.")
+        return
 
 
 MOD_NAME = "Calculator"

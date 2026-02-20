@@ -446,7 +446,7 @@ async def skip_cmd_handler(c: Client, m: Message) -> None:
     if await skip_track(client_id, chat_id):
         await m.reply("⏭ Skipped to next track.")
     else:
-        await m.reply("❌ Nothing is playing to skip.")
+        await m.reply("Nothing is playing to skip.")
 
 @Tele.on_message(filters.command('mstop') & filters.me)
 async def stop_cmd_handler(c: Client, m: Message) -> None:
@@ -456,7 +456,7 @@ async def stop_cmd_handler(c: Client, m: Message) -> None:
     if await stop_music(client_id, chat_id):
         await m.reply("🛑 Stopped playback and cleared queue.")
     else:
-        await m.reply("❌ Not in voice chat.")
+        await m.reply("Not in voice chat.")
 
 @Tele.on_message(filters.command('pause') & filters.me)
 async def pause_cmd_handler(c: Client, m: Message) -> None:
@@ -466,7 +466,7 @@ async def pause_cmd_handler(c: Client, m: Message) -> None:
     if await pause_music(client_id, chat_id):
         await m.reply("⏸ Paused playback.")
     else:
-        await m.reply("❌ Already paused or not playing.")
+        await m.reply("Already paused or not playing.")
 
 @Tele.on_message(filters.command('resume') & filters.me)
 async def resume_cmd_handler(c: Client, m: Message) -> None:
@@ -476,7 +476,7 @@ async def resume_cmd_handler(c: Client, m: Message) -> None:
     if await resume_music(client_id, chat_id):
         await m.reply("▶️ Resumed playback.")
     else:
-        await m.reply("❌ Already playing or not playing.")
+        await m.reply("Already playing or not playing.")
 
 @Tele.on_message(filters.command('queue') & filters.me)
 async def queue_cmd_handler(c: Client, m: Message) -> None:
@@ -484,25 +484,12 @@ async def queue_cmd_handler(c: Client, m: Message) -> None:
     chat_id: int = m.chat.id
     client_id: int = c.me.id
 
-    # Allow looking up another userbot's queue: .queue <other_user_id>
-    m_command = m.command
-    target_client_id = client_id
-    if m_command and len(m_command) > 1:
-        try:
-            target_client_id = int(m_command[1])
-        except ValueError:
-            pass
-
-    sessions = streaming_chats.get(target_client_id, {})
-    data = sessions.get(chat_id)
+    data = _get_session(client_id, chat_id)
     if not data:
-        await m.reply("❌ Queue is empty.")
+        await m.reply("Queue is empty.")
         return
 
     res = "**🎶 Current Queue:**\n\n"
-    if target_client_id != client_id:
-        res = f"**🎶 Queue (user `{target_client_id}`):**\n\n"
-
     if data["current"]:
         curr = data["current"]
         res += f"▶️ **Now Playing:** `{curr['title']}` - `{curr['performer']}`\n"
@@ -514,7 +501,7 @@ async def queue_cmd_handler(c: Client, m: Message) -> None:
         if len(data["queue"]) > 10:
             res += f"... and {len(data['queue']) - 10} more."
     elif not data["current"]:
-        await m.reply("❌ Queue is empty.")
+        await m.reply("Queue is empty.")
         return
             
     await m.reply(res)
@@ -527,7 +514,7 @@ async def loop_cmd_handler(c: Client, m: Message) -> None:
     client_id: int = c.me.id
     data = _get_session(client_id, chat_id)
     if not data:
-        await m.reply("❌ No active music session in this chat.")
+        await m.reply("No active music session in this chat.")
         return
     
     cmd_len = len(m.command)
@@ -540,7 +527,7 @@ async def loop_cmd_handler(c: Client, m: Message) -> None:
         elif arg in ['queue', '2', 'all']:
             data["loop"] = 2
         else:
-            await m.reply("❌ Invalid loop mode. Use: `off`, `track`, or `queue`.")
+            await m.reply("Invalid loop mode. Use: `off`, `track`, or `queue`.")
             return
     else:
         data["loop"] = (data["loop"] + 1) % 3
@@ -597,7 +584,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
     chat_id = int(q.matches[0].group(2))
 
     if not q.from_user:
-        await q.answer("❌ Error: User info not found.")
+        await q.answer("Error: User info not found.")
         return
 
     # Find session for this chat (any client)
@@ -610,16 +597,16 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
             break
 
     if not data and action != "close":
-        await q.answer("❌ No active music session in this chat.", show_alert=True)
+        await q.answer("No active music session in this chat.", show_alert=True)
         return
 
     if data and not await is_authorized(data["client"], chat_id, q.from_user.id):
-        await q.answer("❌ No permission! Only admins or the owner can do this.", show_alert=True)
+        await q.answer("No permission! Only admins or the owner can do this.", show_alert=True)
         return
 
     if action == "skip" and data and owner_client_id:
         if not data["current"]:
-            await q.answer("❌ Nothing is playing!", show_alert=True)
+            await q.answer("Nothing is playing!", show_alert=True)
             return
             
         if not data["queue"] and data["loop"] != 2:
@@ -633,7 +620,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
         if await skip_track(owner_client_id, chat_id):
             await q.answer("⏭ Skipped!")
         else:
-            await q.answer("❌ Failed to skip.", show_alert=True)
+            await q.answer("Failed to skip.", show_alert=True)
 
     elif action == "loop" and data:
         data["loop"] = (data["loop"] + 1) % 3
@@ -664,7 +651,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
 
     elif action == "pause" and data and owner_client_id:
         if not data["current"]:
-            await q.answer("❌ Nothing is playing to pause!", show_alert=True)
+            await q.answer("Nothing is playing to pause!", show_alert=True)
             return
         
         if await pause_music(owner_client_id, chat_id):
@@ -678,11 +665,11 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 logger.debug(f"Edit failed on pause: {e}")
                 await q.answer("⏸ Paused.")
         else:
-            await q.answer("❌ Already paused.", show_alert=True)
+            await q.answer("Already paused.", show_alert=True)
 
     elif action == "resume" and data and owner_client_id:
         if not data["current"]:
-            await q.answer("❌ Nothing is playing to resume!", show_alert=True)
+            await q.answer("Nothing is playing to resume!", show_alert=True)
             return
             
         if await resume_music(owner_client_id, chat_id):
@@ -696,7 +683,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 logger.debug(f"Edit failed on resume: {e}")
                 await q.answer("▶️ Resumed.")
         else:
-            await q.answer("❌ Already playing.", show_alert=True)
+            await q.answer("Already playing.", show_alert=True)
 
     elif action == "close":
         ui_msg_id = data.get("ui_msg_id") if data else None
@@ -705,12 +692,12 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 await data["client"].delete_messages(chat_id, ui_msg_id)
                 await q.answer("Closed player.")
             except:
-                await q.answer("❌ Could not delete player message.")
+                await q.answer("Could not delete player message.")
         else:
             try:
                 await q.edit_message_text("Player closed.")
             except:
-                await q.answer("❌ Could not close player.")
+                await q.answer("Could not close player.")
 
 # --- Module Metadata ---
 MOD_NAME = "Music"
@@ -731,11 +718,4 @@ Set or cycle music loop mode.
 
 > `.queue [user_id]`
 Show the queue. Pass another userbot's user ID to view their queue in this chat.
-
-**Features:**
-- **Multi-Client**: Each userbot has its own isolated session (`{user_id: {chat_id: session}}`).
-- **Cross-View**: Any account can view another account's queue with `.queue <user_id>`.
-- **Inline Controls**: Buttons work for the owning client regardless of who pressed them.
-- **Loop Modes**: Off, Track (🔂), or Queue (🔁).
-- **Auto-Cleanup**: Temporary files are deleted after use.
 """
