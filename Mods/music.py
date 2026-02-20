@@ -485,10 +485,10 @@ async def queue_cmd_handler(c: Client, m: Message):
 
 @Tele.on_message(filters.command('loop') & filters.me)
 async def loop_cmd_handler(c: Client, m: Message):
-    if not m.chat or not m.command:
+    if not m.chat or not m.command or m.chat.id is None:
         return
         
-    chat_id = m.chat.id
+    chat_id: int = m.chat.id
     if chat_id not in streaming_chats:
         return await m.reply("❌ No active music session in this chat.")
     
