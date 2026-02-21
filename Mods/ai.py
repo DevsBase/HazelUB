@@ -7,31 +7,44 @@ from Hazel import Tele
 import logging
 import os
 import asyncio
-from typing import Dict
+from typing import Dict, Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
+import config
 
 logger = logging.getLogger("Mods.ai")
 
 # Load API key
-import config
 API_KEY = config.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
 
-if not API_KEY:
-    logger.critical("GEMINI_API_KEY not found in config or environment. Ai features will not work.")
+# Global client, initialized only if API_KEY exists
+GENAI_CLIENT: Optional[genai.Client] = None
 
-# Create client 
-GENAI_CLIENT = genai.Client(api_key=API_KEY)
+if not API_KEY:
+    logger.warning("GEMINI_API_KEY not found. AI features will be disabled.")
+else:
+    try:
+        GENAI_CLIENT = genai.Client(api_key=API_KEY)
+    except Exception as e:
+        logger.error(f"Failed to initialize Gemini Client: {e}")
+        GENAI_CLIENT = None
 
 # Store chat sessions per user
 AI_SESSIONS: Dict[int, Chat] = {}
 
 
-def get_ai_session(user_id: int) -> Chat:
+def get_ai_session(user_id: int) -> Optional[Chat]:
+    if not GENAI_CLIENT:
+        return None
+        
     if user_id not in AI_SESSIONS:
-        AI_SESSIONS[user_id] = GENAI_CLIENT.chats.create(
-            model="models/gemini-2.5-flash"
-        )
+        try:
+            AI_SESSIONS[user_id] = GENAI_CLIENT.chats.create(
+                model="models/gemini-2.0-flash"
+            )
+        except Exception as e:
+            logger.error(f"Failed to create AI session for {user_id}: {e}")
+            return None
     return AI_SESSIONS[user_id]
 
 prompt = """
@@ -58,18 +71,20 @@ User Prompt: {}
 
 @Tele.on_message(filters.command("ai") & filters.me)
 async def ai_cmd(c: Client, m: Message):
-    if not API_KEY:
-        return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
-    elif len(m.command) < 2: # type: ignore
+    if not GENAI_CLIENT or not API_KEY:
+        return await m.reply("GEMINI_API_KEY not found or AI Client failed to initialize. Please check your config.")
+        
+    if len(m.command) < 2: # type: ignore
         return await m.edit("Usage: `.ai <your question>`")
-    loading = await m.reply("...")
+        
+    loading = await m.reply("Thinking...")
     reply = m.reply_to_message
 
     ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
-    name = m.from_user.first_name # type: ignore
-    chat_name = m.chat.full_name # type: ignore
-    replied_msg = getattr(reply, 'text') if reply else "> SYS: User not replied any message"
-    replied_msg_user = getattr(reply.from_user, 'first_name') if reply else "> SYS: User not replied any message"
+    name = m.from_user.first_name if m.from_user else "User"
+    chat_name = m.chat.title or m.chat.first_name or "Private Chat"
+    replied_msg = getattr(reply, 'text', None) or getattr(reply, 'caption', None) if reply else "> SYS: User not replied any message"
+    replied_msg_user = getattr(reply.from_user, 'first_name', "Unknown") if reply else "> SYS: User not replied any message"
     query = m.text.split(None, 1)[1] # type: ignore
     
 
@@ -77,11 +92,15 @@ async def ai_cmd(c: Client, m: Message):
 
     try:
         session = get_ai_session(c.me.id)  # type: ignore
+        if not session:
+             return await loading.edit("Failed to create AI session.")
 
         response = await asyncio.to_thread(
             session.send_message,
             message
         )
+        
+        full_text = ""
         if hasattr(response, "text") and response.text:
             full_text = response.text
         else:
@@ -104,7 +123,7 @@ async def ai_clear(c: Client, m: Message):
     uid = c.me.id  # type: ignore
 
     if AI_SESSIONS.pop(uid, None):
-        await m.edit("Cleared.")
+        await m.edit("Cleared AI chat session.")
     else:
         await m.edit("No active AI session to clear.")
 
