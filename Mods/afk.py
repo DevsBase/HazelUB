@@ -55,31 +55,20 @@ async def afk_stop_listener(c: Client, m: Message):
     if afk_data:
         duration = get_readable_time(int(time.time() - afk_data["time"]))
         await SQLClient.remove_afk(c.me.id)
-        await m.reply(f"✅ **I'm back!**\nI was AFK for `{duration}`.", quote=True)
+        await m.reply(f"✅ **I'm back!**\nI was AFK for `{duration}`.")
 
-# --- AFK Mention/Reply Listener ---
-@Tele.on_message((filters.mentioned | filters.reply) & ~filters.me & filters.incoming)
+# --- AFK Mention Listener ---
+@Tele.on_message(filters.incoming & filters.mentioned & ~filters.me)
 async def afk_mention_listener(c: Client, m: Message):
-    target_user_id = None
-    
-    # Check if mentioned
-    if filters.mentioned(c, m):
-        target_user_id = c.me.id
-    # Check if reply to me
-    elif m.reply_to_message and m.reply_to_message.from_user and m.reply_to_message.from_user.id == c.me.id:
-        target_user_id = c.me.id
-
-    if target_user_id:
-        afk_data = await SQLClient.get_afk(target_user_id)
-        if afk_data:
-            duration = get_readable_time(int(time.time() - afk_data["time"]))
-            reason = afk_data["reason"]
-            await m.reply(
-                f"👤 **{c.me.first_name} is AFK.**\n"
-                f"📝 **Reason:** `{reason}`\n"
-                f"🕒 **Away for:** `{duration}`",
-                quote=True
-            )
+    afk_data = await SQLClient.get_afk(c.me.id)
+    if afk_data:
+        duration = get_readable_time(int(time.time() - afk_data["time"]))
+        reason = afk_data["reason"]
+        await m.reply(
+            f"👤 **{c.me.first_name} is AFK.**\n"
+            f"📝 **Reason:** `{reason}`\n"
+            f"🕒 **Away for:** `{duration}`"
+        )
 
 # --- Inline Handlers ---
 
