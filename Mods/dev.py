@@ -5,6 +5,7 @@ from pyrogram import filters
 from pyrogram.types import Message
 from pathlib import Path
 import restart
+import asyncio
 import subprocess
 import os
 
@@ -129,7 +130,7 @@ async def shellFunc(c: Client, m: Message):
     
     import subprocess
     s = await m.reply("Executing...")
-    result = subprocess.run(
+    result = await asyncio.to_thread(subprocess.run,
         cmd[1],
         shell=True,
         capture_output=True,

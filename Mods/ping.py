@@ -51,7 +51,7 @@ async def pingFunc(c: Client, m: Message):
 
     return await m.reply(
         f"**Pong:**\n"
-        f"Latency: - `{latency}` ms\n"
+        f"Latency: `{latency}` ms\n"
         f"Uptime: `{uptime}`"
     )
 
