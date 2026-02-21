@@ -57,9 +57,22 @@ async def afk_stop_listener(c: Client, m: Message):
         await SQLClient.remove_afk(c.me.id)
         await m.reply(f"✅ **I'm back!**\nI was AFK for `{duration}`.")
 
-# --- AFK Mention Listener ---
-@Tele.on_message(filters.incoming & filters.mentioned & ~filters.me)
+# --- AFK Mention/Reply Listener ---
+@Tele.on_message(filters.incoming & ~filters.me)
 async def afk_mention_listener(c: Client, m: Message):
+    # We check if:
+    # 1. The message mentions the user (c.me.id)
+    # 2. The message is a reply to the user (c.me.id)
+    
+    is_mentioned = False
+    if m.mentioned:
+         is_mentioned = True
+    elif m.reply_to_message and m.reply_to_message.from_user and m.reply_to_message.from_user.id == c.me.id:
+         is_mentioned = True
+         
+    if not is_mentioned:
+        return
+
     afk_data = await SQLClient.get_afk(c.me.id)
     if afk_data:
         duration = get_readable_time(int(time.time() - afk_data["time"]))
