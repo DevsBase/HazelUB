@@ -12,3 +12,4 @@ motor
 redis
 websockets
 google-genai
+tzdata

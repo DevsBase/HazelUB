@@ -40,7 +40,7 @@ def get_ai_session(user_id: int) -> Optional[Chat]:
     if user_id not in AI_SESSIONS:
         try:
             AI_SESSIONS[user_id] = GENAI_CLIENT.chats.create(
-                model="models/gemini-2.0-flash"
+                model="models/gemini-1.5-flash"
             )
         except Exception as e:
             logger.error(f"Failed to create AI session for {user_id}: {e}")
@@ -69,15 +69,18 @@ Replied message user name: {}
 User Prompt: {}
 """
 
-@Tele.on_message(filters.command("ai") & filters.me)
+@Tele.on_message(filters.command("ai"), sudo=True)
 async def ai_cmd(c: Client, m: Message):
     if not GENAI_CLIENT or not API_KEY:
         return await m.reply("GEMINI_API_KEY not found or AI Client failed to initialize. Please check your config.")
         
     if len(m.command) < 2: # type: ignore
-        return await m.edit("Usage: `.ai <your question>`")
+        return await m.reply("Usage: `.ai <your question>`")
         
     loading = await m.reply("Thinking...")
+    if m.from_user and m.from_user.id == c.me.id:
+        try: await m.delete()
+        except: pass
     reply = m.reply_to_message
 
     ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
@@ -115,17 +118,24 @@ async def ai_cmd(c: Client, m: Message):
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await loading.edit(f"Error: `{e}`")
+        if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+             await loading.edit("❌ **Quota Exhausted!**\nYour Gemini API free tier has reached its daily limit. Please try again tomorrow or use a different key.")
+        else:
+             await loading.edit(f"Error: `{e}`")
 
 
-@Tele.on_message(filters.command("aiclr") & filters.me)
+@Tele.on_message(filters.command("aiclr"), sudo=True)
 async def ai_clear(c: Client, m: Message):
     uid = c.me.id  # type: ignore
 
     if AI_SESSIONS.pop(uid, None):
-        await m.edit("Cleared AI chat session.")
+        await m.reply("Cleared AI chat session.")
     else:
-        await m.edit("No active AI session to clear.")
+        await m.reply("No active AI session to clear.")
+    
+    if m.from_user and m.from_user.id == c.me.id:
+        try: await m.delete()
+        except: pass
 
 
 MOD_NAME = "AI"

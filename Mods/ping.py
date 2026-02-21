@@ -2,79 +2,126 @@ from Hazel import Tele, START_TIME
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import (
-    Message, 
-    InlineKeyboardMarkup, 
-    InlineKeyboardButton, 
+    Message,
     InlineQuery,
     InlineQueryResultArticle,
     InputTextMessageContent
 )
 import time
-from datetime import datetime
+import logging
+
+logger = logging.getLogger("Hazel.Ping")
 
 def get_readable_time(seconds: int) -> str:
     count = 0
+    ping_time = ""
     time_list = []
-    time_suffix_list = ["s", "m", "h", "d", "w"] # Adding week support for the requested format
+    time_suffix_list = ["s", "m", "h", "days"]
 
-    # Years
-    # ... ignoring years for now as boot time is unlikely to be that long 
+    while count < 4:
+        count += 1
+        if count < 3:
+            remainder, result = divmod(seconds, 60)
+        else:
+            remainder, result = divmod(seconds, 24)
+        if seconds == 0 and remainder == 0:
+            break
+        time_list.append(int(result))
+        seconds = int(remainder)
 
-    # Weeks
-    weeks, seconds = divmod(seconds, 604800)
-    # Days
-    days, seconds = divmod(seconds, 86400)
-    # Hours
-    hours, seconds = divmod(seconds, 3600)
-    # Minutes
-    minutes, seconds = divmod(seconds, 60)
-    
-    parts = []
-    if weeks: parts.append(f"{int(weeks)}w")
-    if days: parts.append(f"{int(days)}d")
-    if hours: parts.append(f"{int(hours)}h")
-    if minutes: parts.append(f"{int(minutes)}m")
-    parts.append(f"{int(seconds)}s")
-    
-    return ":".join(parts)
+    for i in range(len(time_list)):
+        time_list[i] = str(time_list[i]) + time_suffix_list[i]
+    if len(time_list) == 4:
+        ping_time += time_list.pop() + ", "
 
-@Tele.on_message(filters.command("ping") & filters.me)
+    time_list.reverse()
+    ping_time += ":".join(time_list)
+
+    return ping_time
+
+@Tele.on_message(filters.command("ping"), sudo=True)
 async def ping_cmd(c: Client, m: Message):
-    bot_username = (await Tele.bot.get_me()).username
-    results = await c.get_inline_bot_results(bot_username, "ping")
-    if results.results:
-        await c.send_inline_bot_result(
-            m.chat.id,
-            results.query_id,
-            results.results[0].id
+    start = time.time()
+    bot_me = await Tele.bot.get_me()
+    bot_username = bot_me.username
+    
+    # Calculate latency
+    end = time.time()
+    latency = int((end - start) * 1000)
+    uptime = get_readable_time(int(time.time() - START_TIME))
+    
+    try:
+        results = await c.get_inline_bot_results(bot_username, f"ping {latency} {uptime}")
+        if results.results:
+            await c.send_inline_bot_result(
+                m.chat.id,
+                results.query_id,
+                results.results[0].id
+            )
+            if m.from_user and m.from_user.id == c.me.id:
+                try: await m.delete()
+                except: pass
+        else:
+            raise ValueError("No results")
+    except Exception as e:
+        logger.error(f"Inline ping failed: {e}")
+        await m.reply(
+            f"**Pong !!**\n"
+            f"**Latency -** `{latency}ms`\n"
+            f"**Uptime -** `{uptime}`"
         )
-        await m.delete()
 
-@Tele.on_message(filters.command("uptime") & filters.me)
+@Tele.on_message(filters.command("uptime"), sudo=True)
 async def uptime_cmd(c: Client, m: Message):
     uptime = get_readable_time(int(time.time() - START_TIME))
-    await m.edit(f"**Uptime -** `{uptime}`")
+    bot_me = await Tele.bot.get_me()
+    bot_username = bot_me.username
+    
+    try:
+        results = await c.get_inline_bot_results(bot_username, f"uptime {uptime}")
+        if results.results:
+            await c.send_inline_bot_result(
+                m.chat.id,
+                results.query_id,
+                results.results[0].id
+            )
+            if m.from_user and m.from_user.id == c.me.id:
+                try: await m.delete()
+                except: pass
+        else:
+            raise ValueError("No results")
+    except Exception as e:
+        logger.error(f"Inline uptime failed: {e}")
+        await m.reply(f"**Uptime -** `{uptime}`")
 
 # --- Inline Handlers ---
 
-@Tele.bot.on_inline_query(filters.regex("^ping$"))
+@Tele.bot.on_inline_query(filters.regex(r"^ping (\d+) (.*)"))
 async def ping_inline(c: Client, q: InlineQuery):
-    start = time.time()
-    # We use a dummy wait or just calculate current latency to show something
-    uptime = get_readable_time(int(time.time() - START_TIME))
-    end = time.time()
-    ms = round((end - start) * 1000, 2)
-    
+    latency = q.matches[0].group(1)
+    uptime = q.matches[0].group(2)
     await q.answer([
         InlineQueryResultArticle(
             title="Ping",
-            description="Check bot status.",
+            description=f"Latency: {latency}ms | Uptime: {uptime}",
             input_message_content=InputTextMessageContent(
-                f"**Pong !!** `{ms}ms`\n"
+                f"**Pong !!**\n"
+                f"**Latency -** `{latency}ms`\n"
                 f"**Uptime -** `{uptime}`"
             )
         )
     ], cache_time=0)
 
+@Tele.bot.on_inline_query(filters.regex(r"^uptime (.*)"))
+async def uptime_inline(c: Client, q: InlineQuery):
+    uptime = q.matches[0].group(1)
+    await q.answer([
+        InlineQueryResultArticle(
+            title="Uptime",
+            description=f"Uptime: {uptime}",
+            input_message_content=InputTextMessageContent(f"**Uptime -** `{uptime}`")
+        )
+    ], cache_time=0)
+
 MOD_NAME = "Ping"
-MOD_HELP = "Check bot status.\n\nUsage:\n> .ping - Show Pong and Uptime in the requested format."
+MOD_HELP = "**Usage:**\n> .ping - Check bot latency.\n> .uptime - Check bot uptime."

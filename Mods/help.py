@@ -1,23 +1,24 @@
-from Hazel import Tele
+import Hazel
 from pyrogram.client import Client
 from pyrogram import filters
 from pyrogram.types import (
     Message, 
     InlineKeyboardMarkup, 
     InlineKeyboardButton, 
-    CallbackQuery,
+    CallbackQuery, 
     InlineQuery,
     InlineQueryResultArticle,
     InputTextMessageContent
 )
-from pyrogram.errors import BadRequest
 import os
 import importlib
 import logging
+import sys
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("Hazel.Help")
 
 MODS_HELP = {}
+BOT_INFO = {"username": None}
 
 def load_mods_help():
     global MODS_HELP
@@ -30,8 +31,6 @@ def load_mods_help():
             mod_name_id = file[:-3]
             module_path = f"Mods.{mod_name_id}"
             try:
-                # Use sys.modules to avoid re-importing if already loaded
-                import sys
                 if module_path in sys.modules:
                     module = sys.modules[module_path]
                 else:
@@ -45,15 +44,12 @@ def load_mods_help():
                 logger.error(f"Error loading help for {module_path}: {e}")
     return MODS_HELP
 
-
 def get_help_markup(page_num=0):
     mods = load_mods_help()
     mod_names = sorted(mods.keys())
     page_size = 10
     total_pages = (len(mod_names) + page_size - 1) // page_size
-    
-    if total_pages == 0:
-        return None, 0
+    if total_pages == 0: return None, 0
     
     if page_num < 0: page_num = 0
     if page_num >= total_pages: page_num = total_pages - 1
@@ -72,41 +68,52 @@ def get_help_markup(page_num=0):
     nav = []
     if page_num > 0:
         nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"hpage_{page_num-1}"))
-    
     nav.append(InlineKeyboardButton(f"Page {page_num+1}/{total_pages}", callback_data="none"))
-    
     if page_num < total_pages - 1:
         nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"hpage_{page_num+1}"))
     
-    buttons.append(nav)
+    if nav:
+        buttons.append(nav)
     return InlineKeyboardMarkup(buttons), len(mods)
 
-@Tele.on_message(filters.command("help") & filters.me)
+@Hazel.Tele.on_message(filters.command("help"), sudo=True)
 async def help_userbot(c: Client, m: Message):
+    global BOT_INFO
     try:
-        bot_username = str((await Tele.bot.get_me()).username)
+        if not BOT_INFO["username"]:
+             me = Hazel.Tele.bot.me or await Hazel.Tele.bot.get_me()
+             BOT_INFO["username"] = str(me.username)
+             
+        bot_username = BOT_INFO["username"]
         results = await c.get_inline_bot_results(bot_username, "help")
         if results.results:
             await c.send_inline_bot_result(
-                m.chat.id, # type: ignore
+                m.chat.id,
                 results.query_id,
                 results.results[0].id
             )
-            await m.delete()
+            if m.from_user and m.from_user.id == c.me.id:
+                 try: await m.delete()
+                 except: pass
         else:
-            await m.edit("No results from bot. Make sure inline mode is enabled.")
+            await m.reply("❌ **Error:** No results from the help bot. Ensure inline mode is ON.")
     
     except Exception as e:       
-        if 'CHAT_SEND_INLINE_FORBIDDEN' in str(e):
-            return await m.reply("Sending inline messages is not allowed in this chat.")
-        elif "BOT_INLINE_DISABLED" in str(e):
-            return await m.reply(f'Please enable inline mode for @{Tele.bot.me.username} in @BotFather') # type: ignore
+        error_msg = str(e)
+        if 'CHAT_SEND_INLINE_FORBIDDEN' in error_msg:
+             markup, count = get_help_markup(0)
+             await m.reply(f"**HazelUB Help Menu**\n\nTotal Modules: {count}\n\n*Note: Inline is forbidden here.*", reply_markup=markup)
+        elif "BOT_INLINE_DISABLED" in error_msg:
+            await m.reply(f'❌ **Inline Disabled!**\nPlease enable inline mode for bot in @BotFather')
         else:
-            logging.error(f"Error while sending help menu: {e}")
-            await m.edit(f"**HazelUB Help**\n\nError: {e}\nMake sure inline mode is enabled for the bot.")
- 
+            logger.error(f"Error in help command: {e}")
+            await m.reply(f"⚠️ **HazelUB Help Error**\n\n`{e}`")
+            
+        if m.from_user and m.from_user.id == c.me.id:
+            try: await m.delete()
+            except: pass
 
-@Tele.bot.on_inline_query(filters.regex("help"))
+@Hazel.Tele.bot.on_inline_query(filters.regex("^help$"))
 async def help_inline(c: Client, q: InlineQuery):
     markup, count = get_help_markup(0)
     if not markup:
@@ -126,7 +133,7 @@ async def help_inline(c: Client, q: InlineQuery):
         )
     ], cache_time=1)
 
-@Tele.bot.on_callback_query(filters.regex(r"^hpage_(\d+)$"))
+@Hazel.Tele.bot.on_callback_query(filters.regex(r"^hpage_(\d+)$"))
 async def help_page_cb(c: Client, q: CallbackQuery):
     page_num = int(q.matches[0].group(1))
     markup, count = get_help_markup(page_num)
@@ -135,7 +142,7 @@ async def help_page_cb(c: Client, q: CallbackQuery):
         reply_markup=markup # type: ignore
     )
 
-@Tele.bot.on_callback_query(filters.regex(r"^hmod_(.*)_(\d+)$"))
+@Hazel.Tele.bot.on_callback_query(filters.regex(r"^hmod_(.*)_(\d+)$"))
 async def help_mod_cb(c: Client, q: CallbackQuery):
     mod_name = q.matches[0].group(1)
     page_num = int(q.matches[0].group(2))
@@ -148,9 +155,9 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         reply_markup=InlineKeyboardMarkup(buttons) # type: ignore
     )
 
-@Tele.bot.on_callback_query(filters.regex("none"))
+@Hazel.Tele.bot.on_callback_query(filters.regex("none"))
 async def none_cb(c, q):
     await q.answer()
 
 MOD_NAME = "Help"
-MOD_HELP = "Shows this help menu.\n\nUsage: `.help`"
+MOD_HELP = "Shows the bot help menu.\n\nUsage: `.help`"

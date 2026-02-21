@@ -12,7 +12,7 @@ from pyrogram.types import (
 import time
 import logging
 
-logger = logging.getLogger("Mods.afk")
+logger = logging.getLogger("Hazel.AFK")
 
 def get_readable_time(seconds: int) -> str:
     # Weeks support for the user's requested style
@@ -49,21 +49,21 @@ async def afk_cmd(c: Client, m: Message):
         await m.delete()
 
 # --- AFK Cancellation Listener ---
-@Tele.on_message(filters.me & ~filters.command(["afk", "ping", "uptime"]))
+@Tele.on_message(filters.me & ~filters.command(["afk", "ping", "uptime", "help"]), group=-1)
 async def afk_stop_listener(c: Client, m: Message):
     afk_data = await SQLClient.get_afk(c.me.id)
     if afk_data:
         duration = get_readable_time(int(time.time() - afk_data["time"]))
         await SQLClient.remove_afk(c.me.id)
         await m.reply(f"✅ **I'm back!**\nI was AFK for `{duration}`.")
+    
+    # Crucial: Let other handlers (like .help) process this message too
+    m.continue_propagation()
 
 # --- AFK Mention/Reply Listener ---
-@Tele.on_message(filters.incoming & ~filters.me)
+@Tele.on_message(filters.incoming & ~filters.me, group=1, allow_all=True)
 async def afk_mention_listener(c: Client, m: Message):
-    # We check if:
-    # 1. The message mentions the user (c.me.id)
-    # 2. The message is a reply to the user (c.me.id)
-    
+    m.continue_propagation()
     is_mentioned = False
     if m.mentioned:
          is_mentioned = True

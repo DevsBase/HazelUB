@@ -31,6 +31,9 @@ async def main(install_packages: bool=True):
         logger.info("Loading Mods...")
         import Mods; Mods.load_mods()
         
+        if Hazel.SQLClient:
+             await Hazel.SQLClient.reload_sudo_cache()
+             
         logger.info("HazelUB is now running!")
         await asyncio.to_thread(startup_popup)
     except Exception as e:

@@ -48,10 +48,18 @@ def load_config() -> tuple:
     MONGO_URL = getattr(config, 'MONGO_URL', None) or os.getenv('MONGO_URL') or _ask_missing("MONGO_URL")
     REDIS_URL = getattr(config, 'REDIS_URL', None) or os.getenv('REDIS_URL')
     # ---------- Optional ----------
-    OtherSessions = getattr(config, 'OtherSessions', []) or list(os.getenv('OtherSessions', []))
-    PREFIX = list(getattr(config, 'PREFIX', [])) or os.getenv('PREFIX', [])
+    OtherSessions = getattr(config, 'OtherSessions', [])
+    if not OtherSessions:
+        env_others = os.getenv('OtherSessions', "")
+        OtherSessions = env_others.split() if env_others else []
+
+    PREFIX = getattr(config, 'PREFIX', [])
+    if not PREFIX:
+        env_prefix = os.getenv('PREFIX', ". ~ $ ^")
+        PREFIX = env_prefix.split() if env_prefix else [".", "~", "$", "^"]
+    
     GEMINI_API_KEY = getattr(config, 'GEMINI_API_KEY', '') or os.getenv('GEMINI_API_KEY', '')
-    return (BOT_TOKEN, API_ID, API_HASH, SESSION, MONGO_URL, REDIS_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
+    return (BOT_TOKEN, API_ID, API_HASH, SESSION, MONGO_URL, REDIS_URL, list(OtherSessions), list(PREFIX), GEMINI_API_KEY)
 
 def startup_popup():
     from plyer import notification

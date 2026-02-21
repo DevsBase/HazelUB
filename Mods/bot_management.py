@@ -13,8 +13,8 @@ async def login_handler(c: Client, m: Message):
         return await m.reply("Userbot is not fully started yet. Please wait.")
         
     owner_id = Tele.mainClient.me.id
-    if m.from_user.id != owner_id:
-        return await m.reply("Only the owner of the main userbot session can use this command.")
+    if m.from_user.id != owner_id and not await SQLClient.is_fsudo(m.from_user.id):
+        return await m.reply("Only the owner or FSudo users can use this command.")
 
     if len(m.command) < 2:
         return await m.reply("Usage: /login session_string")
@@ -49,7 +49,7 @@ async def sessions_handler(c: Client, m: Message):
         return await m.reply("Userbot is not fully started yet.")
         
     owner_id = Tele.mainClient.me.id
-    if m.from_user.id != owner_id:
+    if m.from_user.id != owner_id and not await SQLClient.is_fsudo(m.from_user.id):
         return await m.reply("Unauthorized.")
 
     txt = "**Active HazelUB Sessions:**\n\n"
