@@ -29,9 +29,26 @@ class Telegram(Methods, Decorators):
         self._allPyTgCalls: List[PyTgCalls] = []
         self._clientPrivileges: Dict[Client, str] = {}
         self._clientPyTgCalls: Dict[Client, PyTgCalls] = {}
+        
+        # Initializing handler lists on the instance
+        self._message_handlers = []
+        self._update_handlers = []
 
-        filters.command = partial(filters.command, prefixes=self.prefixes) # Override filters.command to set defualt prefixes
+        # Safer filters.command override
+        self._patch_filters_command()
     
+    def _patch_filters_command(self):
+        """Standardize prefixes for all command filters."""
+        if not hasattr(filters, "_original_command"):
+            filters._original_command = filters.command
+            
+        def custom_command(commands: str | List[str], prefixes: str | List[str] = None, case_sensitive: bool = False):
+            if prefixes is None:
+                prefixes = self.prefixes
+            return filters._original_command(commands, prefixes, case_sensitive)
+        
+        filters.command = custom_command
+
     async def create_pyrogram_clients(self) -> None:
         if len(self.bot_token) > 50: # Bot Client
             self.bot = Client(
@@ -103,8 +120,8 @@ class Telegram(Methods, Decorators):
             )
             
             # Apply stored handlers
-            for filters, group, func in self._message_handlers:
-                client.on_message(filters, group=group)(func)
+            for f, group, func in self._message_handlers:
+                client.on_message(f, group=group)(func)
             
             await client.start()
             
@@ -115,7 +132,7 @@ class Telegram(Methods, Decorators):
             
             for args, func in self._update_handlers:
                 clientPyTgCalls.on_update(*args)(func)
-            
+                
             await clientPyTgCalls.start()
             
             # Update lists
