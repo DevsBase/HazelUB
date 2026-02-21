@@ -8,7 +8,9 @@ PREFIX = [".","~","$","^"]
 GEMINI_API_KEY = "" # Get it from https://aistudio.google.com/app/api-keys
 
 # No need to change (almost all time)
+import time
 DazzerBot = "@Dazzerbot" # This bot allows us to download songs
+START_TIME: float = time.time()
 
 """
 * Pyrogram session(s) are only allowed.

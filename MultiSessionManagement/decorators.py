@@ -6,7 +6,7 @@ else:
     Telegram = None
 
 class Decorators:
-    def on_message(self: Telegram, filters=None, group=0): # type: ignore
+    def on_message(self: Telegram, filters=None, sudo=False, group=0): # type: ignore
         def decorator(func):
             for i in self._allClients: 
                 i.on_message(filters, group=group)(func)

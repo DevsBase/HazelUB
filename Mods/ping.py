@@ -1,9 +1,10 @@
-from Hazel import Tele, START_TIME
+from Hazel import Tele
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 import time
 import logging
+from config import START_TIME
 
 logger = logging.getLogger("Hazel.Ping")
 
