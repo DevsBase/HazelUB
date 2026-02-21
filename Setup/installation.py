@@ -1,17 +1,21 @@
 import Hazel
+import os
 from logging import getLogger
 from restart import restart
 from typing import TYPE_CHECKING, Tuple
 from .utils import install_requirements, load_config, clear
+from dotenv import load_dotenv
 
 if TYPE_CHECKING:
-    from Database.client import DBClient
+    from Database.mongo_client import MongoClient
+    from Database.redis_client import RedisClient
 else:
-    DBClient = None
+    MongoClient = None
+    RedisClient = None
 
 logger = getLogger(__name__)
 
-async def main() -> Tuple[DBClient, tuple]:
+async def main() -> Tuple[MongoClient, tuple]:
     clear()
     print(
         "HazelUB is now booting...\n"
@@ -20,10 +24,8 @@ async def main() -> Tuple[DBClient, tuple]:
     )
     
     try: # Checking once if essential packages are installed.
-        from dotenv import load_dotenv
-        from sqlalchemy import create_engine
-        from asyncpg import create_pool
-        from aiosqlite import connect
+        from motor.motor_asyncio import AsyncIOMotorClient
+        from redis import asyncio as redis
         from art import text2art
         from pyrogram.client import Client
         from google import genai
@@ -36,13 +38,21 @@ async def main() -> Tuple[DBClient, tuple]:
         else:
             raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
     
-    from Database.client import DBClient
+    from Database.mongo_client import MongoClient
+    from Database.redis_client import RedisClient
 
     load_dotenv()
     config = load_config()
-    db = DBClient(config[4])
+    
+    # Init Mongo
+    db = MongoClient(config[4])
     await db.init()
-    Hazel.SQLClient = db # Override SQLClient in Hazel.__init__
+    Hazel.SQLClient = db 
+
+    # Init Redis
+    redis_url = config[5]
+    if redis_url:
+        Hazel.Redis = RedisClient(redis_url)
 
     is_installed = await db.is_installed()
     if not is_installed:

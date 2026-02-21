@@ -3,20 +3,37 @@ from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
 from pyrogram.types import Message, ChatPrivileges
-from functools import partial
-from typing import List, Dict, Optional, Protocol
+from typing import List, Dict, Optional
 from pyrogram.enums import ChatMemberStatus
 from .TelegramMethods import Methods
 import logging
+import pyrogram
+
+logger = logging.getLogger("Hazel.Telegram")
+
+# --- Global Prefix Patching ---
+if not hasattr(filters, "_original_command"):
+    filters._original_command = filters.command
 
 class Telegram(Methods, Decorators):
     def __init__(self, config: tuple) -> None:
         # ----------- Config---------
         self.session: str = config[3]
-        self.othersessions: List[str] = config[5]
+        self.othersessions: List[str] = config[6]
         self.api_id: int = int(config[1])
         self.api_hash: str = config[2]
         self.bot_token: str = config[0]
+        
+        # Robust prefix parsing
+        raw_prefixes = config[7]
+        if isinstance(raw_prefixes, str):
+            self.prefixes = raw_prefixes.split()
+        else:
+            self.prefixes = list(raw_prefixes)
+            
+        if not self.prefixes:
+            self.prefixes = [".", "~", "$", "^"]
+
         # ----------- Clients ------------
         self.bot: Client = Client("HazelUB-Bot")
         self.mainClient: Client = Client("HazelUB")
@@ -26,9 +43,24 @@ class Telegram(Methods, Decorators):
         self._allPyTgCalls: List[PyTgCalls] = []
         self._clientPrivileges: Dict[Client, str] = {}
         self._clientPyTgCalls: Dict[Client, PyTgCalls] = {}
+        
+        # Instance-level handler tracking
+        self._message_handlers = []
+        self._update_handlers = []
 
-        filters.command = partial(filters.command, prefixes=config[6]) # Override filters.command to set defualt prefixes
+        # Force the global patch
+        self._apply_global_patch()
     
+    def _apply_global_patch(self):
+        """Standardize prefixes for all command filters globally."""
+        current_prefixes = self.prefixes
+        
+        def custom_command(commands: str | List[str], prefixes: str | List[str] = None, case_sensitive: bool = False):
+            p = prefixes if prefixes is not None else current_prefixes
+            return filters._original_command(commands, p, case_sensitive)
+        
+        filters.command = custom_command
+
     async def create_pyrogram_clients(self) -> None:
         if len(self.bot_token) > 50: # Bot Client
             self.bot = Client(
@@ -44,6 +76,7 @@ class Telegram(Methods, Decorators):
                 api_hash=self.api_hash,
                 api_id=self.api_id
              )
+             
         # User Accounts ---------------------------------
         self.mainClient = Client( 
             name="HazelUB",
@@ -55,44 +88,96 @@ class Telegram(Methods, Decorators):
         self._clientPrivileges[self.mainClient] = "sudo"
         self._clientPyTgCalls[self.mainClient] = mainClientPyTgCalls
 
-        for session in self.othersessions: # Other clients
+        # Load extra sessions from config/db
+        all_other_sessions = list(self.othersessions)
+        from Hazel import SQLClient
+        if SQLClient:
+            db_sessions = await SQLClient.get_all_sessions()
+            for s in db_sessions:
+                if s not in all_other_sessions:
+                    all_other_sessions.append(s)
+
+        for session in all_other_sessions:
             client = Client(
-                name=f"HazelUB-{session:5}",
+                name=f"HazelUB-{session[:10]}",
                 session_string=session,
                 api_id=self.api_id,
                 api_hash=self.api_hash
             )
             clientPyTgCalls = PyTgCalls(client)
-            
             self._clientPrivileges[client] = "user"
             self._clientPyTgCalls[client] = clientPyTgCalls
-
             self._allPyTgCalls.append(clientPyTgCalls)
             self.otherClients.append(client)
         
         self._allClients = [self.mainClient, *self.otherClients]
         self._allPyTgCalls.append(mainClientPyTgCalls)
 
-    async def start(self) -> None:
-        # HazelUB
-        await self.bot.start()
-        
-        for client in self._allClients:
+    async def add_and_start_client(self, session_string: str) -> bool:
+        """Dynamically add and start a new userbot client."""
+        try:
+            for c in self._allClients:
+                if c.session_string == session_string:
+                    return False
+
+            client = Client(
+                name=f"HazelUB-{session_string[:10]}",
+                session_string=session_string,
+                api_id=self.api_id,
+                api_hash=self.api_hash
+            )
+            
+            # Re-register ALL message handlers
+            for f, group, func in self._message_handlers:
+                client.add_handler(pyrogram.handlers.MessageHandler(func, f), group)
+            
             await client.start()
-            pytgcalls = self.getClientPyTgCalls(client)
-            if pytgcalls:
-                await pytgcalls.start()
+            
+            # Setup privileges and calls
+            self._clientPrivileges[client] = "user"
+            clientPyTgCalls = PyTgCalls(client)
+            self._clientPyTgCalls[client] = clientPyTgCalls
+            
+            # Re-register ALL update handlers
+            for args, func in self._update_handlers:
+                clientPyTgCalls.on_update(*args)(func)
+                
+            await clientPyTgCalls.start()
+            
+            self.otherClients.append(client)
+            self._allClients.append(client)
+            self._allPyTgCalls.append(clientPyTgCalls)
+            
+            from Hazel import __channel__
+            try: await client.join_chat(__channel__)
+            except: pass
+                
+            return True
+        except Exception as e:
+            logger.error(f"Failed to dynamically start client: {e}")
+            return False
+
+    async def start(self) -> None:
+        await self.bot.start()
+        for client in self._allClients:
+            try:
+                await client.start()
+                pytgcalls = self.getClientPyTgCalls(client)
+                if pytgcalls: await pytgcalls.start()
+            except Exception as e:
+                logger.error(f"Failed to start client {client.name}: {e}")
 
         from Hazel import __channel__
         try:
             for client in self._allClients:
-                await client.join_chat(__channel__)
-        except:
-            pass
+                if client.is_connected:
+                    await client.join_chat(__channel__)
+        except: pass
     
     async def stop(self) -> None:
         for client in self._allClients:
-            await client.stop()
+            if client.is_connected: await client.stop()
+        if self.bot.is_connected: await self.bot.stop()
     
     def getClientById(self, id: int | None = 0, m: Message | None = None) -> Optional[Client]:
         if m and isinstance(m, Message):
@@ -111,25 +196,18 @@ class Telegram(Methods, Decorators):
     
     async def is_admin(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> bool:
         try:
-            if not user_id:
-                user_id = client.me.id # type: ignore
+            if not user_id: user_id = client.me.id # type: ignore
             member = await client.get_chat_member(chat_id, user_id)
-            return member.status in (
-                ChatMemberStatus.ADMINISTRATOR,
-                ChatMemberStatus.OWNER,
-            )
+            return member.status in (ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER)
         except Exception as e:
-            logger = logging.getLogger("Telegram.is_admin")
             logger.error(f"Error checking admin status: {str(e)}")
             return False
     
     async def get_chat_member_privileges(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> Optional[ChatPrivileges]:
         try:
-            if not user_id:
-                user_id = client.me.id # type: ignore
+            if not user_id: user_id = client.me.id # type: ignore
             member = await client.get_chat_member(chat_id, user_id)
             return member.privileges
         except Exception as e:
-            logger = logging.getLogger("Telegram.get_chat_member_privileges")
             logger.error(f"Error getting chat member privileges: {str(e)}")
             return None

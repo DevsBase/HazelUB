@@ -1,15 +1,19 @@
 import logging
 import time
+START_TIME = time.time()
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
-    import Database.client as Database
+    from Database.mongo_client import MongoClient
+    from Database.redis_client import RedisClient
     Tele: Telegram
-    SQLClient: Database.DBClient
+    SQLClient: MongoClient
+    Redis: RedisClient
 else:
     Tele = None
     SQLClient = None
+    Redis = None
     
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 
@@ -21,4 +25,4 @@ logging.basicConfig(
 )
 
 __version__ = "02.2026"
-__channel__ = "DevsBase"
+__channel__ = "dragbots"

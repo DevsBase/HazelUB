@@ -9,7 +9,7 @@ from pyrogram.client import Client
 
 logger = logging.getLogger(__name__)
 
-@Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.me & filters.group)
+@Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.group, fsudo=True)
 async def banFunc(c: Client, m: Message): 
     ban_or_unban_or_kick = m.command[0]  # type: ignore
     if len(m.command) < 2 and not m.reply_to_message: # type: ignore

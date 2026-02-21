@@ -5,11 +5,8 @@ from pyrogram import filters
 import webbrowser
 import asyncio
 
-@Tele.on_message(filters.command('open') & filters.me)
+@Tele.on_message(filters.command('open'), sudo=True)
 async def openCommand(client, m):
-    if Tele.getClientPrivilege(client) != 'sudo':
-        return await m.reply("You don't have permission.")
-    
     link = m.text.split(None, 1)
     if len(link) == 1:
        return await m.reply('Provide a link to open.')

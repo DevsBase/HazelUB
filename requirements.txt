@@ -8,8 +8,8 @@ google
 numpy
 python-dotenv
 plyer
-SQLAlchemy[asyncio]
-asyncpg
-aiosqlite
+motor
+redis
 websockets
 google-genai
+tzdata

@@ -322,7 +322,7 @@ async def stream_end_handler(c: PyTgCalls, update: Update) -> None:
             await play_next(ub_client.me.id, update.chat_id, c)
             return
 
-@Tele.on_message(filters.command('play') & filters.me)
+@Tele.on_message(filters.command('play'), sudo=True)
 async def play_command(c: Client, m: Message) -> None:
     if not m.chat or not m.command or m.chat.id is None or not c.me:
         return
@@ -427,7 +427,7 @@ async def play_command(c: Client, m: Message) -> None:
         if loading: await loading.edit(text)
         else: await m.reply(text)
 
-@Tele.on_message(filters.command(['skip', 'next']) & filters.me)
+@Tele.on_message(filters.command(['skip', 'next']), sudo=True)
 async def skip_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
@@ -437,7 +437,7 @@ async def skip_cmd_handler(c: Client, m: Message) -> None:
     else:
         await m.reply("Nothing is playing to skip.")
 
-@Tele.on_message(filters.command('mstop') & filters.me)
+@Tele.on_message(filters.command('mstop'), sudo=True)
 async def stop_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
@@ -447,7 +447,7 @@ async def stop_cmd_handler(c: Client, m: Message) -> None:
     else:
         await m.reply("Not in voice chat.")
 
-@Tele.on_message(filters.command('pause') & filters.me)
+@Tele.on_message(filters.command('pause'), sudo=True)
 async def pause_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
@@ -457,7 +457,7 @@ async def pause_cmd_handler(c: Client, m: Message) -> None:
     else:
         await m.reply("Already paused or not playing.")
 
-@Tele.on_message(filters.command('resume') & filters.me)
+@Tele.on_message(filters.command('resume'), sudo=True)
 async def resume_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
@@ -467,7 +467,7 @@ async def resume_cmd_handler(c: Client, m: Message) -> None:
     else:
         await m.reply("Already playing or not playing.")
 
-@Tele.on_message(filters.command('queue') & filters.me)
+@Tele.on_message(filters.command('queue'), sudo=True)
 async def queue_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me: return
     chat_id: int = m.chat.id
@@ -495,7 +495,7 @@ async def queue_cmd_handler(c: Client, m: Message) -> None:
             
     await m.reply(res)
 
-@Tele.on_message(filters.command('loop') & filters.me)
+@Tele.on_message(filters.command('loop'), sudo=True)
 async def loop_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or not m.command or m.chat.id is None or not c.me:
         return

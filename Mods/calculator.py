@@ -61,8 +61,11 @@ def calculate(expression: str) -> Decimal:
     return evaluate(node)
 
 
-@Tele.on_message(filters.regex(r'^//') & filters.me)
+@Tele.on_message(filters.regex(r'^//'), sudo=True)
 async def calculateFunc(c: Client, m: Message):
+    if m.from_user and m.from_user.id == c.me.id:
+        try: await m.delete()
+        except: pass
     exp = m.text.strip()  # type: ignore
 
     if not exp.startswith('//'):
