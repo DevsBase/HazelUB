@@ -2,11 +2,13 @@ from Hazel import Tele
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
+from pyrogram.raw.functions.ping import Ping
 import time
 import logging
 from config import START_TIME
 
 logger = logging.getLogger("Hazel.Ping")
+
 
 def get_readable_time(seconds: int) -> str:
     count = 0
@@ -35,18 +37,24 @@ def get_readable_time(seconds: int) -> str:
 
     return ping_time
 
+
 @Tele.on_message(filters.command("ping"), sudo=True)
 async def pingFunc(c: Client, m: Message):
-    start = time.time()
-    end = time.time()
-    latency = int((end - start) * 1000)
+
+    # Measure MTProto RTT
+    start = time.perf_counter()
+    await c.invoke(Ping(ping_id=int(time.time())))
+    end = time.perf_counter()
+
+    latency = round((end - start) * 1000, 2)
     uptime = get_readable_time(int(time.time() - START_TIME))
-    
+
     return await m.reply(
         f"**Pong !!**\n"
-        f"**Latency -** `{latency}ms`\n" # need change
+        f"**Latency -** `{latency} ms`\n"
         f"**Uptime -** `{uptime}`"
     )
+
 
 MOD_NAME = "Ping"
 MOD_HELP = "**Usage:**\n> .ping - Check Hazel's latency & uptime."
