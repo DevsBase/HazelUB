@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger("Mods.bot_management")
 
-@Tele.bot.on_message(filters.command("login", prefixes=["/", ""]) & filters.private)
+@Tele.bot.on_message(filters.command("login", prefixes=["/"]) & filters.private)
 async def login_handler(c: Client, m: Message):
     # Owner Check
     if not Tele.mainClient or not Tele.mainClient.me:
@@ -17,7 +17,7 @@ async def login_handler(c: Client, m: Message):
         return await m.reply("Only the owner of the main userbot session can use this command.")
 
     if len(m.command) < 2:
-        return await m.reply("Usage: `/login <session_string>`")
+        return await m.reply("Usage: /login session_string")
 
     session_string = m.text.split(None, 1)[1]
     
@@ -34,16 +34,15 @@ async def login_handler(c: Client, m: Message):
         success_start = await Tele.add_and_start_client(session_string)
         
         if success_start:
-            await status.edit("✅ **Session Logged In Successfully!**\n\nThe new client is now active and will be loaded automatically on next restart.")
+            await status.edit("✅ **Session Logged In Successfully!**\n\nThe new client is now active.")
         else:
-            # If start fails, maybe remove from DB? Or just notify
-            await status.edit("⚠️ **Session saved to DB, but failed to start now.**\n\nIt will be attempted again on next bot restart. Check the logs for errors.")
+            await status.edit("⚠️ **Session saved to DB, but failed to start now.**\n\nIt will be attempted again on next bot restart.")
             
     except Exception as e:
         logger.error(f"Error in /login handler: {e}")
         await status.edit(f"❌ **Error:** `{e}`")
 
-@Tele.bot.on_message(filters.command("sessions", prefixes=["/", ""]) & filters.private)
+@Tele.bot.on_message(filters.command("sessions", prefixes=["/"]) & filters.private)
 async def sessions_handler(c: Client, m: Message):
     # Owner Check
     if not Tele.mainClient or not Tele.mainClient.me:
@@ -56,7 +55,9 @@ async def sessions_handler(c: Client, m: Message):
     txt = "**Active HazelUB Sessions:**\n\n"
     for i, client in enumerate(Tele._allClients):
         try:
-            me = client.me or await client.get_me()
+            # me info might be cached
+            me = client.me
+            if not me: me = await client.get_me()
             txt += f"{i+1}. **{me.first_name}** (`{me.id}`)\n"
         except:
             txt += f"{i+1}. *[Unknown/Disconnected]*\n"
