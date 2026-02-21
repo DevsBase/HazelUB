@@ -6,7 +6,7 @@ import logging
 
 logger = logging.getLogger("Mods.bot_management")
 
-@Tele.bot.on_message(filters.command("login") & filters.private)
+@Tele.bot.on_message(filters.command("login", prefixes=["/", ""]) & filters.private)
 async def login_handler(c: Client, m: Message):
     # Owner Check
     if not Tele.mainClient or not Tele.mainClient.me:
@@ -43,7 +43,7 @@ async def login_handler(c: Client, m: Message):
         logger.error(f"Error in /login handler: {e}")
         await status.edit(f"❌ **Error:** `{e}`")
 
-@Tele.bot.on_message(filters.command("sessions") & filters.private)
+@Tele.bot.on_message(filters.command("sessions", prefixes=["/", ""]) & filters.private)
 async def sessions_handler(c: Client, m: Message):
     # Owner Check
     if not Tele.mainClient or not Tele.mainClient.me:
