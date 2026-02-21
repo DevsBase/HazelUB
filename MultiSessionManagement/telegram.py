@@ -102,12 +102,20 @@ class Telegram(Methods, Decorators):
                 api_hash=self.api_hash
             )
             
+            # Apply stored handlers
+            for filters, group, func in self._message_handlers:
+                client.on_message(filters, group=group)(func)
+            
             await client.start()
             
             # Setup privileges and calls
             self._clientPrivileges[client] = "user"
             clientPyTgCalls = PyTgCalls(client)
             self._clientPyTgCalls[client] = clientPyTgCalls
+            
+            for args, func in self._update_handlers:
+                clientPyTgCalls.on_update(*args)(func)
+            
             await clientPyTgCalls.start()
             
             # Update lists
