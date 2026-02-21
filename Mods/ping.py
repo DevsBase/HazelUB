@@ -38,7 +38,7 @@ def get_readable_time(seconds: int) -> str:
     return ping_time
 
 
-@Tele.on_message(filters.command("ping"), sudo=True)
+@Tele.on_message(filters.command("ping") & filters.me, sudo=True)
 async def pingFunc(c: Client, m: Message):
 
     # Measure MTProto RTT
@@ -50,11 +50,10 @@ async def pingFunc(c: Client, m: Message):
     uptime = get_readable_time(int(time.time() - START_TIME))
 
     return await m.reply(
-        f"**Pong !!**\n"
-        f"**Latency -** `{latency} ms`\n"
-        f"**Uptime -** `{uptime}`"
+        f"**Pong:**\n"
+        f"Latency: - `{latency}` ms\n"
+        f"Uptime: `{uptime}`"
     )
-
 
 MOD_NAME = "Ping"
 MOD_HELP = "**Usage:**\n> .ping - Check Hazel's latency & uptime."
