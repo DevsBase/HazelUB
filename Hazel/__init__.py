@@ -25,4 +25,4 @@ logging.basicConfig(
 )
 
 __version__ = "02.2026"
-__channel__ = "DevsBase"
+__channel__ = "dragbots"

@@ -1,8 +1,9 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from .Methods.repeatMethods import RepeatMethods
 from .Methods.sessionMethods import SessionMethods
+from .Methods.afkMethods import AFKMethods
 
-class MongoClient(RepeatMethods, SessionMethods):
+class MongoClient(RepeatMethods, SessionMethods, AFKMethods):
     def __init__(self, mongo_url: str):
         self._client = AsyncIOMotorClient(mongo_url)
         self.db = self._client["UBdrag"]
