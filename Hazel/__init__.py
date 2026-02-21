@@ -1,5 +1,5 @@
-import logging
 import time
+START_TIME = time.time()
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
