@@ -1,13 +1,19 @@
-from pyrogram import Client, filters
+from pyrogram import filters
+from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient
 
 @Tele.on_message(filters.command("addsudo"), sudo=True)
 async def addsudo_handler(c: Client, m: Message):
     if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
-        user_id = m.reply_to_message.from_user.id
+        user_id = m.reply_to_message.from_user.id # type: ignore
     else:
         return await m.reply("Reply to a user to add sudo.")
+    
+    for client in Tele._allClients:
+        if hasattr(client.me, 'id'):
+            if getattr(client.me, 'id') == user_id:
+                return await m.reply("This user is already a HazelUB user. please remove their session in config.py or .env to use this command.")
         
     added = await SQLClient.add_sudo(user_id)
     if added:
@@ -18,9 +24,9 @@ async def addsudo_handler(c: Client, m: Message):
 @Tele.on_message(filters.command("delsudo"), sudo=True)
 async def delsudo_handler(c: Client, m: Message):
     if m.reply_to_message:
-        user_id = m.reply_to_message.from_user.id
+        user_id = m.reply_to_message.from_user.id # type: ignore
     else:
-        args = m.text.split()
+        args = m.text.split() # type: ignore
         if len(args) < 2:
             return await m.reply("Reply to a user or provide user ID.")
         try:

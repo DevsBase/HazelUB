@@ -99,7 +99,7 @@ async def ai_cmd(c: Client, m: Message):
         await loading.edit(f"Error: `{e}`")
 
 
-@Tele.on_message(filters.command("aiclr") & filters.me)
+@Tele.on_message(filters.command("aiclr"), sudo=True)
 async def ai_clear(c: Client, m: Message):
     uid = c.me.id  # type: ignore
 
