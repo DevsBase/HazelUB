@@ -1,13 +1,13 @@
 import logging
 import time
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient
-    sudoers: List[int]
+    sudoers: Dict[int, List[int]]
 else:
     Tele = None
     SQLClient = None

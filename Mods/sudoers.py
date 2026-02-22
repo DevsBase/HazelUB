@@ -10,12 +10,13 @@ async def addsudo_handler(c: Client, m: Message):
     else:
         return await m.reply("Reply to a user to add sudo.")
     
-    owner_id = c.me.id # type: ignore
+    if not c.me:
+        return
+    owner_id = c.me.id
     
     for client in Tele._allClients:
-        if hasattr(client.me, 'id'):
-            if getattr(client.me, 'id') == user_id:
-                return await m.reply("This user is already a HazelUB user. Please remove their session in config.py or .env to use this command.")
+        if client.me and client.me.id == user_id:
+            return await m.reply("This user is already a HazelUB user. Please remove their session in config.py or .env to use this command.")
         
     added = await SQLClient.add_sudo(owner_id, user_id)
     if added:
@@ -29,17 +30,22 @@ async def addsudo_handler(c: Client, m: Message):
 
 @Tele.on_message(filters.command("delsudo"), sudo=True)
 async def delsudo_handler(c: Client, m: Message):
-    owner_id = c.me.id # type: ignore
+    if not c.me:
+        return
+    owner_id = c.me.id
     if m.reply_to_message:
-        user_id = m.reply_to_message.from_user.id # type: ignore
+        user_id = m.reply_to_message.from_user.id if m.reply_to_message.from_user else 0
     else:
-        args = m.text.split() # type: ignore
+        args = m.text.split() if m.text else []
         if len(args) < 2:
             return await m.reply("Reply to a user or provide user ID.")
         try:
             user_id = int(args[1])
         except ValueError:
             return await m.reply("Invalid User ID.")
+    
+    if not user_id:
+        return await m.reply("Could not get user ID.")
             
     await SQLClient.remove_sudo(owner_id, user_id)
     if owner_id in sudoers and user_id in sudoers[owner_id]:
@@ -48,7 +54,9 @@ async def delsudo_handler(c: Client, m: Message):
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
-    owner_id = c.me.id # type: ignore
+    if not c.me:
+        return
+    owner_id = c.me.id
     client_sudoers = await SQLClient.get_sudoers(owner_id)
     if not client_sudoers:
         return await m.reply("No sudo users found for this client.")

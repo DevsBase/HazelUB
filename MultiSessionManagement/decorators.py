@@ -4,6 +4,7 @@ from Hazel import sudoers
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
+    from pyrogram.types import Message
 else:
     Telegram = None
 
