@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 from pyrogram import filters
 from Hazel import sudoers
+from pyrogram.types import Message
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
-    from pyrogram.types import Message
 else:
     Telegram = None
 
