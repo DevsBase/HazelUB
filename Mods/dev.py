@@ -9,7 +9,7 @@ import asyncio
 import subprocess
 import os
 
-@Tele.on_message(filters.command(["e", "eval"]) & filters.me)
+@Tele.on_message(filters.command(["e", "eval"]), sudo=True)
 async def evalFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
@@ -39,7 +39,7 @@ async def evalFunc(c: Client, m: Message):
     else:
         await m.reply(f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```")
     
-@Tele.on_message(filters.command("stop") & filters.me)
+@Tele.on_message(filters.command("stop"), sudo=True)
 async def stopFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
@@ -47,14 +47,14 @@ async def stopFunc(c: Client, m: Message):
     import os
     os._exit(0)
 
-@Tele.on_message(filters.command("restart") & filters.me)
+@Tele.on_message(filters.command("restart"))
 async def restartFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
     await m.reply("Restarting...")
     restart.restart()
 
-@Tele.on_message(filters.command("update") & filters.me)
+@Tele.on_message(filters.command("update"), sudo=True)
 async def updateFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permission.")
@@ -103,7 +103,7 @@ async def updateFunc(c: Client, m: Message):
     )
     restart.restart()
 
-@Tele.on_message(filters.command(["logs", "log", "flogs"]) & filters.me)
+@Tele.on_message(filters.command(["logs", "log", "flogs"]), sudo=True)
 async def logsFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo': 
         return await m.reply("You don't have permission.")
@@ -119,7 +119,7 @@ async def logsFunc(c: Client, m: Message):
     else:
         await m.reply_document(document='log.txt')
 
-@Tele.on_message(filters.command("sh") & filters.me)
+@Tele.on_message(filters.command("sh"), sudo=True)
 async def shellFunc(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo': 
         return await m.reply("You don't have permission.")

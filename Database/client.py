@@ -10,55 +10,55 @@ from .Methods import Methods
 
 class DBClient(Methods):
     def __init__(self, pg_url: str, sqlite_path="HazelUB.db"):
-        self.pg_url = pg_url
-        self.sqlite_url = f"sqlite+aiosqlite:///{sqlite_path}"
+        # If DB_URL is not set it fallsback to sqllite
+        self.db_url = pg_url if pg_url else f"sqlite+aiosqlite:///{sqlite_path}"
         
         load_models()
         
-        # Engines
-        self.pg_engine = create_async_engine(pg_url, echo=False)
-        self.local_engine = create_async_engine(self.sqlite_url, echo=False)
+        # Main Engine
+        self.engine = create_async_engine(self.db_url, echo=False)
 
-        # Sessions
-        self.pg_session = async_sessionmaker(
-            self.pg_engine, expire_on_commit=False
-        )
-        self.local_session = async_sessionmaker(
-            self.local_engine, expire_on_commit=False
+        # Main Session
+        self.session_factory = async_sessionmaker(
+            self.engine, expire_on_commit=False
         )
 
     async def init(self):
-        # Create tables on both DBs
-        async with self.pg_engine.begin() as conn:
+        # Create tables on the DB
+        async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        async with self.local_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-
-        # Ensure local row exists
-        async with self.local_session() as session:
+        # Ensure local row exists in the now-unified DB
+        async with self.session_factory() as session:
             res = await session.get(LocalState, 1)
             if not res:
                 session.add(LocalState(id=1, installed=False))
                 await session.commit()
 
+    # ---------- Session helpers ----------
+
+    def get_db(self) -> AsyncSession:
+        """Returns the main database session."""
+        return self.session_factory()
+
+    def get_pg(self) -> AsyncSession:
+        """Alias for get_db (deprecated)"""
+        return self.get_db()
+
+    def get_local(self) -> AsyncSession:
+        """Alias for get_db (deprecated)"""
+        return self.get_db()
+
     # ---------- Local helpers ----------
 
     async def is_installed(self) -> bool:
-        async with self.local_session() as session:
+        async with self.get_db() as session:
             row = await session.get(LocalState, 1)
-            return row.installed # type: ignore
+            return row.installed if row else False # type: ignore
 
     async def set_installed(self, value: bool):
-        async with self.local_session() as session:
+        async with self.get_db() as session:
             row = await session.get(LocalState, 1)
-            row.installed = value # type: ignore
-            await session.commit()
-
-    # ---------- Generic access ----------
-
-    def get_pg(self) -> AsyncSession:
-        return self.pg_session()
-
-    def get_local(self) -> AsyncSession:
-        return self.local_session()
+            if row:
+                row.installed = value # type: ignore
+                await session.commit()

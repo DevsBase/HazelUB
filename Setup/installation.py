@@ -43,6 +43,7 @@ async def main() -> Tuple[DBClient, tuple]:
     db = DBClient(config[4])
     await db.init()
     Hazel.SQLClient = db # Override SQLClient in Hazel.__init__
+    Hazel.sudoers = await db.get_sudoers() # overide sudoers
 
     is_installed = await db.is_installed()
     if not is_installed:

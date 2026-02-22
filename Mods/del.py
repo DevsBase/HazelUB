@@ -3,7 +3,7 @@ from pyrogram import filters
 import pyrogram.types as types
 from Hazel import Tele
 
-@Tele.on_message(filters.command(['d','del','delete']) & filters.me)
+@Tele.on_message(filters.command(['d','del','delete']), sudo=True)
 async def delCommand(client: Client, m: types.Message):
     if (not m.reply_to_message):
        return await m.reply('Reply to a message.')

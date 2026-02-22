@@ -45,7 +45,7 @@ def load_config() -> tuple:
     API_ID = config.API_ID or os.getenv('API_ID') or _ask_missing("API_ID")
     API_HASH = config.API_HASH or os.getenv('API_HASH') or _ask_missing("API_HASH")
     SESSION = config.SESSION or os.getenv('SESSION') or _ask_missing("SESSION")
-    DB_URL = config.DB_URL or os.getenv('DB_URL') or _ask_missing("DB_URL")
+    DB_URL = config.DB_URL or os.getenv('DB_URL', '')
     # ---------- Optional ----------
     OtherSessions = config.OtherSessions or list(os.getenv('OtherSessions', []))
     PREFIX = list(config.PREFIX) or os.getenv('PREFIX', [])

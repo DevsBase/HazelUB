@@ -40,8 +40,6 @@ def get_readable_time(seconds: int) -> str:
 
 @Tele.on_message(filters.command("ping") & filters.me, sudo=True)
 async def pingFunc(c: Client, m: Message):
-
-    # Measure MTProto RTT
     start = time.perf_counter()
     await c.invoke(Ping(ping_id=int(time.time())))
     end = time.perf_counter()

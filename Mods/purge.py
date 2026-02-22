@@ -7,7 +7,7 @@ import logging
 
 logger = logging.getLogger("Hazel.Mods.purge")
 
-@Tele.on_message(filters.command("purge") & filters.me & filters.group)
+@Tele.on_message(filters.command("purge") & filters.group, sudo=True)
 async def purgeFunc(app: Client, m: Message):
     if not m.reply_to_message:
         return await m.reply("Reply to the message you want to delete from.")

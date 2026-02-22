@@ -18,7 +18,7 @@ infoTxt = """
 ![🖱](tg://emoji?id=4970107898341360413) **Privilege:** {}
 """
 
-@Tele.on_message(filters.command('clients') & filters.me)
+@Tele.on_message(filters.command('clients'), sudo=True)
 async def clientsFunc(c: Client, m: Message):
     txt = "**Clients informations**\n"
     for client in Tele._allClients:
@@ -27,7 +27,7 @@ async def clientsFunc(c: Client, m: Message):
     txt += f"**HazelUB v{__version__}**"
     await m.reply(txt)
 
-@Tele.on_message(filters.command('asudo') & filters.me)
+@Tele.on_message(filters.command('cpromote'), sudo=True)
 async def add_sudo(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
@@ -48,7 +48,7 @@ async def add_sudo(c: Client, m: Message):
     return await m.reply("Client not found. You should add their session in OtherSessions in config.py or env.")
         
 
-@Tele.on_message(filters.command('rsudo') & filters.me)
+@Tele.on_message(filters.command('cdemote'), sudo=True)
 async def remove_sudo(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
@@ -71,5 +71,5 @@ async def remove_sudo(c: Client, m: Message):
 MOD_NAME = "Clients"
 MOD_HELP = """**Usage:**
 > .clients - Info about all sessions.
-> .asudo - Add sudo (reply).
-> .rsudo - Remove sudo (reply)."""
+> .cpromote - Add sudo (reply).
+> .cdemote - Remove sudo (reply)."""

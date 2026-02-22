@@ -56,7 +56,7 @@ Replied message user name: {}
 User Prompt: {}
 """
 
-@Tele.on_message(filters.command("ai") & filters.me)
+@Tele.on_message(filters.command("ai"), sudo=True)
 async def ai_cmd(c: Client, m: Message):
     if not API_KEY:
         return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")

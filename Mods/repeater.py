@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 # ---------------- Repeat ----------------
 
-@Tele.on_message(filters.command('repeat') & filters.me)
+@Tele.on_message(filters.command('repeat'), sudo=True)
 async def repeatFunc(c: Client, m: Message):
     if 'help' in str(m.text): 
         return await m.reply(MOD_HELP)
@@ -54,7 +54,7 @@ async def repeatFunc(c: Client, m: Message):
 
 # ---------------- Groups ----------------
 
-@Tele.on_message(filters.command('rgroup') & filters.me)
+@Tele.on_message(filters.command('rgroup'), sudo=True)
 async def groupCreate(c: Client, m: Message):
     text = m.text.split(maxsplit=2)  # type: ignore
 
@@ -74,7 +74,7 @@ async def groupCreate(c: Client, m: Message):
     return await m.reply(f"Group created: `{group.name}` (id: {group.id})")
 
 
-@Tele.on_message(filters.command('rgroup_add') & filters.me)
+@Tele.on_message(filters.command('rgroup_add'), sudo=True)
 async def groupAdd(c: Client, m: Message):
     text = m.text.split(maxsplit=1)  # type: ignore
 
@@ -105,7 +105,7 @@ async def groupAdd(c: Client, m: Message):
     return await m.reply(f"Chat added to group `{group.name}`.")
 
 
-@Tele.on_message(filters.command('rgroup_remove') & filters.me)
+@Tele.on_message(filters.command('rgroup_remove'), sudo=True)
 async def groupRemove(c: Client, m: Message):
     text = m.text.split(maxsplit=1)  # type: ignore
 
@@ -131,7 +131,7 @@ async def groupRemove(c: Client, m: Message):
     return await m.reply(f"Chat removed from group `{group.name}`.")
 
 
-@Tele.on_message(filters.command('rgroup_list') & filters.me)
+@Tele.on_message(filters.command('rgroup_list'), sudo=True)
 async def groupList(c: Client, m: Message):
     text = m.text.split(maxsplit=1)  # type: ignore
 
@@ -160,7 +160,7 @@ async def groupList(c: Client, m: Message):
     msg += "\n".join(str(x) for x in chats)
     return await m.reply(msg)
 
-@Tele.on_message(filters.command('rgroup_list_all') & filters.me)
+@Tele.on_message(filters.command('rgroup_list_all') , sudo=True)
 async def groupListAll(c: Client, m: Message):
     groups = await SQLClient.get_groups( 
         c.me.id  # type: ignore
@@ -179,7 +179,7 @@ async def groupListAll(c: Client, m: Message):
 
 # ---------------- Repeat Management ----------------
 
-@Tele.on_message(filters.command('repeat_delete') & filters.me)
+@Tele.on_message(filters.command('repeat_delete'), sudo=True)
 async def repeatDelete(c: Client, m: Message):
     text = m.text.split()  # type: ignore
 
@@ -191,7 +191,7 @@ async def repeatDelete(c: Client, m: Message):
     return await m.reply("Repeat task deleted. Restart required.")
 
 
-@Tele.on_message(filters.command('repeat_list') & filters.me)
+@Tele.on_message(filters.command('repeat_list'), sudo=True)
 async def repeatList(c: Client, m: Message):
     rows = await SQLClient.get_repeat_messages()
 
@@ -212,7 +212,7 @@ async def repeatList(c: Client, m: Message):
 
     return await m.reply(msg)
 
-@Tele.on_message(filters.command(['rpause', 'rresume']) & filters.me)
+@Tele.on_message(filters.command(['rpause', 'rresume']), sudo=True)
 async def pauseAndResumeFunc(c: Client, m: Message):
     import Hazel.Tasks.messageRepeater as messageRepeater
     uid = c.me.id # type: ignore

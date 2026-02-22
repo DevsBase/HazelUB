@@ -9,7 +9,7 @@ class RepeatMethods:
 
     async def create_group(self, name: str, user_id: int) -> RepeatMessageGroup:
         name = (name.replace(' ', '')).lower() # remove spaces and change to lower case
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             group = RepeatMessageGroup(userId=user_id, name=name)
             session.add(group)
             await session.commit()
@@ -17,14 +17,14 @@ class RepeatMethods:
             return group
 
     async def get_group(self, group_id: int, user_id: int):
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             x = await session.get(RepeatMessageGroup, group_id)
             if x.userId == user_id: # Check if the group belongs to the user.
                 return x
 
     async def get_group_by_name(self, name: str, user_id: int):
         name = (name.replace(' ', '')).lower() # remove spaces and change to lower case
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             q = await session.execute(
                 select(RepeatMessageGroup).where(
                     RepeatMessageGroup.name == name
@@ -35,7 +35,7 @@ class RepeatMethods:
                 return x
     
     async def get_groups(self, user_id: int):
-        async with self.get_pg() as session:  # type: ignore
+        async with self.get_db() as session:  # type: ignore
             q = await session.execute(
                 select(RepeatMessageGroup)
                 .where(RepeatMessageGroup.userId == user_id)
@@ -46,7 +46,7 @@ class RepeatMethods:
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             await session.execute(
                 delete(RepeatMessageGroupChat)
                 .where(RepeatMessageGroupChat.group_id == group_id)
@@ -63,7 +63,7 @@ class RepeatMethods:
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             row = RepeatMessageGroupChat(
                 group_id=group_id,
                 chat_id=chat_id,
@@ -77,7 +77,7 @@ class RepeatMethods:
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             await session.execute(
                 delete(RepeatMessageGroupChat)
                 .where(
@@ -91,7 +91,7 @@ class RepeatMethods:
         group = await self.get_group(group_id, user_id)
         if not group:
             raise Exception('The group is not found or it does not belongs to you')
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             q = await session.execute(
                 select(RepeatMessageGroupChat.chat_id)
                 .where(RepeatMessageGroupChat.group_id == group_id)
@@ -108,7 +108,7 @@ class RepeatMethods:
         source_chat_id: int,
         group_id: int
     ):
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             row = RepeatMessage(
                 repeatTime=repeatTime,
                 userId=userId,
@@ -122,14 +122,14 @@ class RepeatMethods:
             return row
 
     async def get_repeat_messages(self) -> list[RepeatMessage]:
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             q = await session.execute(
                 select(RepeatMessage)
             )
             return q.scalars().all()
 
     async def delete_repeat_message(self, repeat_id: int):
-        async with self.get_pg() as session: # type: ignore
+        async with self.get_db() as session: # type: ignore
             await session.execute(
                 delete(RepeatMessage)
                 .where(RepeatMessage.id == repeat_id)

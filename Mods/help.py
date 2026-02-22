@@ -81,7 +81,7 @@ def get_help_markup(page_num=0):
     buttons.append(nav)
     return InlineKeyboardMarkup(buttons), len(mods)
 
-@Tele.on_message(filters.command("help") & filters.me)
+@Tele.on_message(filters.command("help"), sudo=True)
 async def help_userbot(c: Client, m: Message):
     try:
         bot_username = str((await Tele.bot.get_me()).username)

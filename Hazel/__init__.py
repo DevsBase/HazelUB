@@ -7,9 +7,11 @@ if TYPE_CHECKING:
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient
+    sudoers: List[int]
 else:
     Tele = None
     SQLClient = None
+    sudoers = []
     
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 

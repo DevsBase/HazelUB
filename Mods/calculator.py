@@ -61,7 +61,7 @@ def calculate(expression: str) -> Decimal:
     return evaluate(node)
 
 
-@Tele.on_message(filters.regex(r'^//') & filters.me)
+@Tele.on_message(filters.regex(r'^//'), sudo=True)
 async def calculateFunc(c: Client, m: Message):
     exp = m.text.strip()  # type: ignore
 
