@@ -2,7 +2,6 @@ import os
 import sys
 import shutil
 
-
 def restart():
     try:
         shutil.rmtree("Hazel/downloads")

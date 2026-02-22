@@ -20,7 +20,7 @@ class Decorators:
                 else: _filters = filters_param
                 
                 for i in self._allClients: 
-                    i.on_message(filters, group=group)(func)
+                    i.on_message(_filters, group=group)(func)
                 return func
             
         return decorator
