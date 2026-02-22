@@ -3,7 +3,7 @@ from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient, sudoers
 
-@Tele.on_message(filters.command("addsudo"), sudo=True)
+@Tele.on_message(filters.command("asudo"), sudo=True)
 async def addsudo_handler(c: Client, m: Message):
     if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
         user_id = m.reply_to_message.from_user.id # type: ignore
@@ -24,11 +24,11 @@ async def addsudo_handler(c: Client, m: Message):
             sudoers[owner_id] = []
         if user_id not in sudoers[owner_id]:
             sudoers[owner_id].append(user_id)
-        await m.reply(f"Added user `{user_id}` as sudo for this client.")
+        await m.reply(f"Added user `{user_id}` as sudo for this client. Restart required.")
     else:
         await m.reply(f"User `{user_id}` is already a sudoer for this client.")
 
-@Tele.on_message(filters.command("delsudo"), sudo=True)
+@Tele.on_message(filters.command("rsudo"), sudo=True)
 async def delsudo_handler(c: Client, m: Message):
     if not c.me:
         return
@@ -50,7 +50,7 @@ async def delsudo_handler(c: Client, m: Message):
     await SQLClient.remove_sudo(owner_id, user_id)
     if owner_id in sudoers and user_id in sudoers[owner_id]:
         sudoers[owner_id].remove(user_id)
-    await m.reply(f"Removed user `{user_id}` from sudoers for this client.")
+    await m.reply(f"Removed user `{user_id}` from sudoers for this client. Restart required.")
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
@@ -68,6 +68,6 @@ async def sudoers_handler(c: Client, m: Message):
 
 MOD_NAME = "Sudoers"
 MOD_HELP = """**Usage:**
-> .addsudo (reply) - Add a user to sudoers for the current client.
-> .delsudo (ID/reply) - Remove a user from sudoers for the current client.
-> .sudoers - List all sudoers for the current client."""
+> .asudo (reply) - Add a user to sudoers. Restart required.
+> .dsudo (ID/reply) - Remove a user from sudoers. Restart required.
+> .sudoers - List all sudoers."""

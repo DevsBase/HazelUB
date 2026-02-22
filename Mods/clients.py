@@ -15,7 +15,7 @@ from Hazel import Tele, __version__
 infoTxt = """
 ![👤](tg://emoji?id=5258011929993026890) **Name:** - **{}**
 ![ℹ️](tg://emoji?id=4967518033061872209) **User ID:** `{}`
-![🖱](tg://emoji?id=4970107898341360413) **Privilege:** {}
+![👮](tg://emoji?id=4970107898341360413) **Privilege:** {}
 """
 
 @Tele.on_message(filters.command('clients'), sudo=True)

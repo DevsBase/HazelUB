@@ -10,7 +10,6 @@ from pyrogram.types import (
     InlineQueryResultArticle,
     InputTextMessageContent
 )
-from pyrogram.errors import BadRequest
 import os
 import importlib
 import logging
@@ -84,8 +83,8 @@ def get_help_markup(page_num=0):
 @Tele.on_message(filters.command("help"), sudo=True)
 async def help_userbot(c: Client, m: Message):
     try:
-        bot_username = str((await Tele.bot.get_me()).username)
-        results = await c.get_inline_bot_results(bot_username, "help")
+        bot_username = Tele.bot.me.username  # type: ignore
+        results = await c.get_inline_bot_results(bot_username, "help")  # type: ignore
         if results.results:
             await c.send_inline_bot_result(
                 m.chat.id, # type: ignore

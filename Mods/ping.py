@@ -38,7 +38,7 @@ def get_readable_time(seconds: int) -> str:
     return ping_time
 
 
-@Tele.on_message(filters.command("ping") & filters.me, sudo=True)
+@Tele.on_message(filters.command("ping"), sudo=True)
 async def pingFunc(c: Client, m: Message):
     start = time.perf_counter()
     await c.invoke(Ping(ping_id=int(time.time())))
