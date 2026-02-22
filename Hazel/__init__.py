@@ -8,10 +8,12 @@ if TYPE_CHECKING:
     Tele: Telegram
     SQLClient: Database.DBClient
     sudoers: Dict[int, List[int]]
+    start_time: float
 else:
     Tele = None
     SQLClient = None
     sudoers = {}
+    start_time = time.time()
     
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 

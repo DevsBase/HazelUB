@@ -1,11 +1,10 @@
-from Hazel import Tele
+from Hazel import Tele, start_time
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from pyrogram.raw.functions.ping import Ping
 import time
 import logging
-from config import START_TIME
 
 logger = logging.getLogger("Hazel.Ping")
 
@@ -45,7 +44,7 @@ async def pingFunc(c: Client, m: Message):
     end = time.perf_counter()
 
     latency = round((end - start) * 1000, 2)
-    uptime = get_readable_time(int(time.time() - START_TIME))
+    uptime = get_readable_time(int(time.time() - start_time))
 
     return await m.reply(
         f"**Pong:**\n"
