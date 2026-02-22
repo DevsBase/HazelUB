@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 else:
     Tele = None
     SQLClient = None
-    sudoers = []
+    sudoers = {}
     
 logging.Formatter.converter = lambda *args: time.gmtime(time.time() + 19800)
 
