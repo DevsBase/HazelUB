@@ -2,6 +2,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient, sudoers
+import Hazel
 
 @Tele.on_message(filters.command("asudo"), sudo=True)
 async def addsudo_handler(c: Client, m: Message):
@@ -21,10 +22,10 @@ async def addsudo_handler(c: Client, m: Message):
     added = await SQLClient.add_sudo(owner_id, user_id)
     if added:
         if owner_id not in sudoers:
-            sudoers[owner_id] = []
+            Hazel.sudoers[owner_id] = []
         if user_id not in sudoers[owner_id]:
-            sudoers[owner_id].append(user_id)
-        await m.reply(f"Added user `{user_id}` as sudo for this client. Restart required.")
+            Hazel.sudoers[owner_id].append(user_id)
+        await m.reply(f"Added user `{user_id}` as sudo for this client.")
     else:
         await m.reply(f"User `{user_id}` is already a sudoer for this client.")
 
@@ -49,8 +50,8 @@ async def delsudo_handler(c: Client, m: Message):
             
     await SQLClient.remove_sudo(owner_id, user_id)
     if owner_id in sudoers and user_id in sudoers[owner_id]:
-        sudoers[owner_id].remove(user_id)
-    await m.reply(f"Removed user `{user_id}` from sudoers for this client. Restart required.")
+        Hazel.sudoers[owner_id].remove(user_id)
+    await m.reply(f"Removed user `{user_id}` from sudoers for this client.")
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
