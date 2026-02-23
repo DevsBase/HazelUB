@@ -82,7 +82,9 @@ async def bridge_func(app: Client, m: Message) -> None:
         await m.reply("Invalid target chat.")
         return
 
-    call_py = cast(PyTgCalls, getattr(app, "pytgcalls"))
+    _callpy = Tele.getClientPyTgCalls(app)
+    if isinstance(_callpy, PyTgCalls):
+        call_py: PyTgCalls = _callpy
 
     audio_parameters = AudioParameters(
         bitrate=48000,
