@@ -445,7 +445,7 @@ async def stop_cmd_handler(c: Client, m: Message) -> None:
     chat_id: int = m.chat.id
     client_id: int = c.me.id
     if await stop_music(client_id, chat_id):
-        await m.reply("🛑 Stopped playback and cleared queue.")
+        await m.reply("Stopped.")
     else:
         await m.reply("Not in voice chat.")
 
@@ -455,7 +455,7 @@ async def pause_cmd_handler(c: Client, m: Message) -> None:
     chat_id: int = m.chat.id
     client_id: int = c.me.id
     if await pause_music(client_id, chat_id):
-        await m.reply("⏸ Paused playback.")
+        await m.reply("Paused playback.")
     else:
         await m.reply("Already paused or not playing.")
 
@@ -465,7 +465,7 @@ async def resume_cmd_handler(c: Client, m: Message) -> None:
     chat_id: int = m.chat.id
     client_id: int = c.me.id
     if await resume_music(client_id, chat_id):
-        await m.reply("▶️ Resumed playback.")
+        await m.reply("Resumed playback.")
     else:
         await m.reply("Already playing or not playing.")
 
@@ -540,7 +540,6 @@ async def loop_cmd_handler(c: Client, m: Message) -> None:
 @Tele.bot.on_inline_query(filters.regex(r"^mus_ui_(-?\d+)$"))
 async def music_inline_handler(c: Client, q: InlineQuery) -> None:
     chat_id = int(q.matches[0].group(1))
-    # Find any active session for this chat across all clients
     song: Optional[SongDict] = None
     loop_mode = 0
     is_paused = False
@@ -604,12 +603,12 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
             await q.answer("👋 Last song. Leaving...", show_alert=True)
             await stop_music(owner_client_id, chat_id)
             if q.message:
-                try: await q.edit_message_text("🛑 Stopped.")
+                try: await q.edit_message_text("Stopped.")
                 except: pass
             return
 
         if await skip_track(owner_client_id, chat_id):
-            await q.answer("⏭ Skipped!")
+            await q.answer("Skipped!")
         else:
             await q.answer("Failed to skip.", show_alert=True)
 
@@ -635,9 +634,9 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
 
     elif action == "stop" and data and owner_client_id:
         await stop_music(owner_client_id, chat_id)
-        await q.answer("🛑 Stopped.")
+        await q.answer("Stopped.")
         if q.message:
-            try: await q.edit_message_text("🛑 Stopped.")
+            try: await q.edit_message_text("Stopped.")
             except: pass
 
     elif action == "pause" and data and owner_client_id:
@@ -651,10 +650,10 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                     get_track_text(data["current"], "⏸ Paused", data["loop"]),
                     reply_markup=get_music_keyboard(chat_id, data["loop"], True)
                 )
-                await q.answer("⏸ Paused.")
+                await q.answer("Paused.")
             except Exception as e:
                 logger.debug(f"Edit failed on pause: {e}")
-                await q.answer("⏸ Paused.")
+                await q.answer("Paused.")
         else:
             await q.answer("Already paused.", show_alert=True)
 
@@ -669,10 +668,10 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                     get_track_text(data["current"], "Now Playing", data["loop"]),
                     reply_markup=get_music_keyboard(chat_id, data["loop"], False)
                 )
-                await q.answer("▶️ Resumed.")
+                await q.answer("Resumed.")
             except Exception as e:
                 logger.debug(f"Edit failed on resume: {e}")
-                await q.answer("▶️ Resumed.")
+                await q.answer("Resumed.")
         else:
             await q.answer("Already playing.", show_alert=True)
 
@@ -681,12 +680,12 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
         if data and ui_msg_id:
             try:
                 await data["client"].delete_messages(chat_id, ui_msg_id)
-                await q.answer("Closed player.")
+                await q.answer("Closed.")
             except:
                 await q.answer("Could not delete player message.")
         else:
             try:
-                await q.edit_message_text("Player closed.")
+                await q.edit_message_text("Closed.")
             except:
                 await q.answer("Could not close player.")
 
@@ -707,6 +706,6 @@ Stop playback and clear the queue.
 > `.loop [off|track|queue]`
 Set or cycle music loop mode.
 
-> `.queue [user_id]`
-Show the queue. Pass another userbot's user ID to view their queue in this chat.
+> `.queue`
+Show the queue.
 """

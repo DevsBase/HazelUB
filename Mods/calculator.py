@@ -92,8 +92,6 @@ async def calculateFunc(c: Client, m: Message) -> None:
 
     if not exp:
         return
-
-    # Strict validation (digits, operators, parentheses, spaces, decimal point)
     if not all(ch in "0123456789+-*/%.() " for ch in exp):
         return
 
