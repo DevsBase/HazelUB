@@ -2,10 +2,10 @@ from pyrogram.client import Client
 from .decorators import Decorators
 from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
-from pyrogram.types import Message, ChatPrivileges
+from pyrogram.types import Message, ChatPrivileges, ChatMember, User
 from functools import partial
 from typing import List, Dict, Optional, Protocol
-from pyrogram.enums import ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus, MessageEntityType
 from .TelegramMethods import Methods
 import logging
 
@@ -133,3 +133,28 @@ class Telegram(Methods, Decorators):
             logger = logging.getLogger("Telegram.get_chat_member_privileges")
             logger.error(f"Error getting chat member privileges: {str(e)}")
             return None
+    
+    async def get_user(self, client: Client, message: Message, chat_id: Optional[int] = None, chat_member: bool = False) -> ChatMember | User | None | List[User]:
+        user = None
+        if not chat_id and chat_member:
+            raise ValueError("chat_id is required. when chat_member is True")
+        if message.reply_to_message and message.reply_to_message.from_user:
+            user = message.reply_to_message.from_user.id
+        elif message.entities and any(e.type == MessageEntityType.TEXT_MENTION for e in message.entities):
+            for entity in message.entities: 
+                if entity.type != MessageEntityType.TEXT_MENTION:
+                    continue
+                user = entity.user.id
+                break
+        elif message.text:
+            user = (message.text.split(None, 1)[1]).replace('@', '')
+        
+        if isinstance(user, str) and user.isdigit():
+            try: user = int(user)
+            except: return None
+        
+        if chat_member:
+            if chat_id and user:
+                return await client.get_chat_member(chat_id, user_id=user)
+        if user:
+            return await client.get_users(user)

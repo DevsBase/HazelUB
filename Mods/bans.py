@@ -1,7 +1,6 @@
 from Hazel import Tele
 from pyrogram import filters
-from pyrogram.types import Message, User
-from pyrogram.enums import MessageEntityType
+from pyrogram.types import Message, User, ChatMember
 from pyrogram.errors import PeerIdInvalid
 import logging
 from pyrogram.client import Client
@@ -11,22 +10,13 @@ logger = logging.getLogger(__name__)
 @Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.group, sudo=True)
 async def banFunc(c: Client, m: Message): 
     ban_or_unban_or_kick = m.command[0]  # type: ignore
+    if m.chat:
+        chat = m.chat.id
 
     if len(m.command) < 2 and not m.reply_to_message: # type: ignore
         return await m.reply(f"Provide a user to {ban_or_unban_or_kick}.")
     elif m.reply_to_message and m.reply_to_message.from_user.id == c.me.id: # type: ignore
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
-    
-    if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
-        user = m.reply_to_message.from_user.id # type: ignore
-    elif any(e.type == MessageEntityType.TEXT_MENTION for e in m.entities): # type: ignore
-        for entity in m.entities: # type: ignore
-            if entity.type != MessageEntityType.TEXT_MENTION:
-                continue
-            user = entity.user.id
-            break
-    else:
-        user = (m.text.split(None, 1)[1]).replace('@', '') # type: ignore
     
     is_admin = await Tele.is_admin(c, m.chat.id) # type: ignore
     if not is_admin:
@@ -36,10 +26,10 @@ async def banFunc(c: Client, m: Message):
         return await m.reply("You are missing rights `can_restrict_members`.")
     
     try:
-        if user and str(user).isdigit():
-            user = int(user)
-        user = await c.get_chat_member(m.chat.id, user_id=user) # type: ignore
-        user = user.user
+        _user = await Tele.get_user(c, m, chat, chat_member=True) 
+        if isinstance(_user, ChatMember):
+            user: User = _user.user
+        else: return await m.reply("User not found.")
     except PeerIdInvalid:
         return await m.reply('PeerId is invalid. You must interacted with that person once, otherwise use thier username.')
     except Exception as e:
