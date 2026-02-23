@@ -9,7 +9,7 @@ async def joinvc(c: pyrogram.client.Client, m: pyrogram.types.Message):
     if not tgcalls:
       return
     await m.delete()
-    if cmd in ['jv', 'joinvc']:
+    if cmd in ['lv', 'leavevc']:
         await tgcalls.play(chat)
         await tgcalls.leave_call(chat)
     else:
