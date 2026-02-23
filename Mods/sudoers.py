@@ -25,9 +25,9 @@ async def addsudo_handler(c: Client, m: Message):
             Hazel.sudoers[owner_id] = []
         if user_id not in sudoers[owner_id]:
             Hazel.sudoers[owner_id].append(user_id)
-        await m.reply(f"Added user `{user_id}` as sudo for this client.")
+        await m.reply(f"Added user `{user_id}` as sudo.")
     else:
-        await m.reply(f"User `{user_id}` is already a sudoer for this client.")
+        await m.reply(f"User `{user_id}` is already a sudoer.")
 
 @Tele.on_message(filters.command("rsudo"), sudo=True)
 async def delsudo_handler(c: Client, m: Message):
@@ -51,7 +51,7 @@ async def delsudo_handler(c: Client, m: Message):
     await SQLClient.remove_sudo(owner_id, user_id)
     if owner_id in sudoers and user_id in sudoers[owner_id]:
         Hazel.sudoers[owner_id].remove(user_id)
-    await m.reply(f"Removed user `{user_id}` from sudoers for this client.")
+    await m.reply(f"Removed user `{user_id}` from sudoers.")
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
@@ -69,6 +69,6 @@ async def sudoers_handler(c: Client, m: Message):
 
 MOD_NAME = "Sudoers"
 MOD_HELP = """**Usage:**
-> .asudo (reply) - Add a user to sudoers. Restart required.
-> .dsudo (ID/reply) - Remove a user from sudoers. Restart required.
+> .asudo (reply) - Add a user to sudoers.
+> .dsudo (ID/reply) - Remove a user from sudoers.
 > .sudoers - List all sudoers."""
