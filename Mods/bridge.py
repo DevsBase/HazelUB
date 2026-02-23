@@ -140,8 +140,8 @@ async def audio_data(
 
     app = cast(Client, call_py.mtproto_client)
 
-    me = await app.get_me()
-    user_id: int = me.id
+    me = app.me
+    user_id: int = me.id # type: ignore
 
     if user_id not in data:
         return
