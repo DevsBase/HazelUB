@@ -19,7 +19,7 @@ from pytgcalls import filters as call_filters
 from pytgcalls import PyTgCalls
 from pytgcalls.types import Update
 
-from Hazel import Tele
+from Hazel import Tele, sudoers
 
 # --- Logging Setup ---
 logger = logging.getLogger("Mods.Music")
@@ -103,13 +103,15 @@ def get_music_keyboard(chat_id: int, loop_mode: int, is_paused: bool = False) ->
 
 async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
     """Checks if a user is authorized to control the music (sudo or admin)."""
+    if user_id in sudoers:
+        return True
     for ub_client in Tele._allClients:
         if ub_client.me and ub_client.me.id == user_id:
-            return True
+            return True   
     try:
         return await Tele.is_admin(client, chat_id, user_id)
     except Exception as e:
-        logger.debug(f"Admin check failed: {e}")
+        logger.error(f"Admin check failed: {e}")
         return False
 
 async def send_track_ui(client_id: int, chat_id: int, song: SongDict, status: str = "Now Playing", force_new: bool = True) -> None:
