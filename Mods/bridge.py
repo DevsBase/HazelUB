@@ -25,9 +25,8 @@ data: Dict[int, Dict[str, List[int]]] = {}
 
 @Tele.on_message(filters.command(["bridge", "sbridge"]), sudo=True)
 async def bridge_func(app: Client, m: Message) -> None:
-
-    me = await app.get_me()
-    user_id: int = me.id
+    me = app.me
+    user_id: int = me.id  # type: ignore
 
     command: List[str] = m.command or []
 
@@ -41,7 +40,9 @@ async def bridge_func(app: Client, m: Message) -> None:
             await m.reply("Bridging is not active.")
             return
 
-        call_py = cast(PyTgCalls, getattr(app, "pytgcalls"))
+        _callpy = Tele.getClientPyTgCalls(app)
+        if isinstance(_callpy, PyTgCalls):
+            call_py: PyTgCalls = _callpy
 
         chat_ids: List[int] = data[user_id]["chat_ids"]
 
