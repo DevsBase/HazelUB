@@ -4,7 +4,6 @@ from pyrogram.types import Message, User
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import PeerIdInvalid
 import logging
-from typing import Optional
 from pyrogram.client import Client
 
 logger = logging.getLogger(__name__)
