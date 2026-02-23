@@ -70,7 +70,7 @@ async def bridge_func(app: Client, m: Message) -> None:
         cmd = m.command[1] if m.command else ""
         try: cmd = int(cmd)
         except: ...
-        target_chat = await app.get_chat(command[1])
+        target_chat = await app.get_chat(cmd)
     except Exception:
         await m.reply("Cannot find the chat.")
         return
