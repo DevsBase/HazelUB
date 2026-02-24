@@ -13,9 +13,9 @@ logger = logging.getLogger("Hazel.Tasks.messageRepeater")
 if TYPE_CHECKING:
     events: Dict[int, asyncio.Event] # int is client's user_id
 else:
-    events = {}
+    events: Dict[int, asyncio.Event] = {}
 
-async def createJob(job: RepeatMessage, chats: list, client: Client):
+async def createJob(job: RepeatMessage, chats: list[int], client: Client) -> None:
     while True:
         try:
             await asyncio.sleep(int(job.repeatTime * 60)) # type: ignore # Convert sec to mins 
@@ -38,16 +38,22 @@ async def createJob(job: RepeatMessage, chats: list, client: Client):
         except Exception as e:
             logger.error(f"Failed to do repeat task for user: {job.userId}: Full Traceback: {traceback.format_exc()}")
             
-async def main(Tele: Telegram, db: DBClient):
-    jobs = await db.get_repeat_messages()
+async def main(Tele: Telegram, db: DBClient) -> None:
+    jobs: list[RepeatMessage] = await db.get_repeat_messages()
 
     for job in jobs:
         for client in Tele._allClients:
-            if client.me.id == job.userId: # type: ignore
-                if job.userId not in events:
-                    events[job.userId] = asyncio.Event() # type: ignore
-                    events[job.userId].set() # type: ignore
-                chats = await db.get_group_chats(job.group_id, user_id=client.me.id) # type: ignore
+            # Type assertion to ensure IDEs understand the attribute types
+            client_id: int = int(client.me.id) if client.me else 0
+            job_user_id: int = int(job.userId) # type: ignore
+
+            if client_id == job_user_id:
+                if job_user_id not in events:
+                    events[job_user_id] = asyncio.Event() 
+                    if not job.is_paused: # type: ignore
+                        events[job_user_id].set() 
+                
+                chats: list[int] = await db.get_group_chats(int(job.group_id), user_id=client_id) # type: ignore
                 asyncio.create_task(createJob(job, chats, client))
-                logger.info(f"Created repeat message job for user {job.userId} in group {job.group_id}") # type: ignore
+                logger.info(f"Created repeat message job for user {job_user_id} in group {job.group_id}") # type: ignore
     logger.info(f"Loaded {len(jobs)} repeat message jobs.")

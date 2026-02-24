@@ -855,10 +855,10 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
 
     data = _get_session(client_id, chat_id)
     if not data or not data["current"]:
-        await m.reply("❌ There is no music currently playing to fetch lyrics for.")
+        await m.reply("There is no music currently playing to fetch lyrics for.")
         return
 
-    loading = await m.reply("🔍 Fetching lyrics...")
+    loading = await m.reply("🔍 Fetching...")
     lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
     
     if lyrics_text:
@@ -866,7 +866,7 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
             lyrics_text = lyrics_text[:4000] + "..."
         await loading.edit(f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`")
     else:
-        await loading.edit("Lyrics not found for this track.")
+        await loading.edit("Lyrics not found.")
 
 
 # --- Module Metadata ---

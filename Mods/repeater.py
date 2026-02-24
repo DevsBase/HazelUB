@@ -3,6 +3,7 @@ from pyrogram.client import Client
 from pyrogram.types import Message 
 from pyrogram import filters
 from sqlalchemy.exc import IntegrityError
+import asyncio
 
 
 # ---------------- Repeat ----------------
@@ -11,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 async def repeatFunc(c: Client, m: Message):
     if 'help' in str(m.text): 
         return await m.reply(MOD_HELP)
-    text = m.text.split()  # type: ignore
+    text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 3:
         return await m.reply("Usage: $repeat (minutes) (group_name)")
@@ -56,7 +57,7 @@ async def repeatFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command('rgroup'), sudo=True)
 async def groupCreate(c: Client, m: Message):
-    text = m.text.split(maxsplit=2)  # type: ignore
+    text: list[str] = m.text.split(maxsplit=2)  # type: ignore
 
     if len(text) < 3 or text[1] != "create":
         return await m.reply("Usage: $rgroup create (name)")
@@ -76,7 +77,7 @@ async def groupCreate(c: Client, m: Message):
 
 @Tele.on_message(filters.command('rgroup_add'), sudo=True)
 async def groupAdd(c: Client, m: Message):
-    text = m.text.split(maxsplit=1)  # type: ignore
+    text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
         return await m.reply("Usage: $rgroup_add (group_name)")
@@ -107,7 +108,7 @@ async def groupAdd(c: Client, m: Message):
 
 @Tele.on_message(filters.command('rgroup_remove'), sudo=True)
 async def groupRemove(c: Client, m: Message):
-    text = m.text.split(maxsplit=1)  # type: ignore
+    text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
         return await m.reply("Usage: $rgroup_remove (group_name)")
@@ -133,7 +134,7 @@ async def groupRemove(c: Client, m: Message):
 
 @Tele.on_message(filters.command('rgroup_list'), sudo=True)
 async def groupList(c: Client, m: Message):
-    text = m.text.split(maxsplit=1)  # type: ignore
+    text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
         return await m.reply("Usage: $rgroup_list (group_name)")
@@ -181,7 +182,7 @@ async def groupListAll(c: Client, m: Message):
 
 @Tele.on_message(filters.command('repeat_delete'), sudo=True)
 async def repeatDelete(c: Client, m: Message):
-    text = m.text.split()  # type: ignore
+    text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 2:
         return await m.reply("Usage: $repeat_delete (id)")
@@ -203,10 +204,12 @@ async def repeatList(c: Client, m: Message):
     msg = "Your Repeat Tasks:\n\n"
 
     for r in rows:
+        status: str = "Paused" if r.is_paused else "Active"
         msg += (
             f"ID: {r.id}\n"
             f"Every: {r.repeatTime} min\n"
             f"Group ID: {r.group_id}\n"
+            f"Status: {status}\n"
             "----------------------\n"
         )
 
@@ -215,18 +218,24 @@ async def repeatList(c: Client, m: Message):
 @Tele.on_message(filters.command(['rpause', 'rresume']), sudo=True)
 async def pauseAndResumeFunc(c: Client, m: Message):
     import Hazel.Tasks.messageRepeater as messageRepeater
-    uid = c.me.id # type: ignore
+    uid: int = c.me.id # type: ignore
     if uid not in messageRepeater.events:
         return await m.reply("Cannot find this client Hazel.Tasks.messageRepeater.events")
-    event = messageRepeater.events[uid]
-    if 'resume' in m.command[0].lower(): # type: ignore
+    event: asyncio.Event = messageRepeater.events[uid]
+
+    command: str = m.command[0].lower() # type: ignore
+    if 'resume' in command:
         if event.is_set():
             return await m.reply("Repeat tasks are not paused.")
+            
+        await SQLClient.set_repeat_state(uid, False)
         event.set()
         return await m.reply("Resumed all messageRepeat Tasks for you.")
     else:
         if not event.is_set():
             return await m.reply("Repeat Tasks are paused already.")
+            
+        await SQLClient.set_repeat_state(uid, True)
         event.clear()
         return await m.reply("Paused all messageRepeat Tasks for you.")
 

@@ -135,3 +135,13 @@ class RepeatMethods:
                 .where(RepeatMessage.id == repeat_id)
             )
             await session.commit()
+
+    async def set_repeat_state(self, user_id: int, is_paused: bool) -> None:
+        async with self.get_db() as session: # type: ignore
+            q = await session.execute(
+                select(RepeatMessage).where(RepeatMessage.userId == user_id)
+            )
+            rows = q.scalars().all()
+            for r in rows:
+                r.is_paused = is_paused
+            await session.commit()
