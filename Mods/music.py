@@ -139,11 +139,11 @@ def get_music_keyboard(
             ],
             [
                 InlineKeyboardButton("🔁 Loop", callback_data=f"mus_loop_{chat_id}"),
-                InlineKeyboardButton("Queue", callback_data=f"mus_queue_{chat_id}"),          
-                InlineKeyboardButton("Stop", callback_data=f"mus_stop_{chat_id}"),
+                InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),          
+                InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
             ],
             [
-                InlineKeyboardButton("Lyrics", callback_data=f"mus_lyrics_{chat_id}"),
+                InlineKeyboardButton("📝 Lyrics", callback_data=f"mus_lyrics_{chat_id}"),
             ],
             [
                 InlineKeyboardButton(
