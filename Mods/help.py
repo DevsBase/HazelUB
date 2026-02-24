@@ -78,6 +78,7 @@ def get_help_markup(page_num=0):
         nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"hpage_{page_num+1}"))
     
     buttons.append(nav)
+    buttons.append([InlineKeyboardButton("> HazelUB <", callback_data="none")])
     return InlineKeyboardMarkup(buttons), len(mods)
 
 @Tele.on_message(filters.command("help"), sudo=True)
@@ -118,9 +119,9 @@ async def help_inline(c: Client, q: InlineQuery):
     
     await q.answer([
         InlineQueryResultArticle(
-            title="HazelUB Help Menu",
+            title="• Help Menu",
             description=f"Total Modules: {count}",
-            input_message_content=InputTextMessageContent(f"**HazelUB Help Menu**\n\nTotal Modules: {count}"),
+            input_message_content=InputTextMessageContent(f"• **Help Menu**\n\nTotal Modules: `{count}`"),
             reply_markup=markup
         )
     ], cache_time=1)
@@ -130,7 +131,7 @@ async def help_page_cb(c: Client, q: CallbackQuery):
     page_num = int(q.matches[0].group(1))
     markup, count = get_help_markup(page_num)
     await q.edit_message_text(
-        f"**HazelUB Help Menu**\n\nTotal Modules: {count}",
+        f"• **Help Menu**\n\nTotal Modules: `{count}`",
         reply_markup=markup # type: ignore
     )
 

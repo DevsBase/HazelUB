@@ -20,11 +20,11 @@ infoTxt = """
 
 @Tele.on_message(filters.command('clients'), sudo=True)
 async def clientsFunc(c: Client, m: Message):
-    txt = "**Clients informations**\n"
+    txt = "• **Hazel Clients:**\n"
     for client in Tele._allClients:
         if client.me:
             txt += infoTxt.format(client.me.first_name, client.me.id, Tele.getClientPrivilege(client)) # type: ignore
-    txt += f"**HazelUB v{__version__}**"
+    txt += f"\nHazelUB `v{__version__}`"
     await m.reply(txt)
 
 @Tele.on_message(filters.command('cpromote'), sudo=True)
