@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import re
 import aiohttp
 from typing import Dict, List, Optional, TypedDict, Union
 
@@ -35,7 +34,6 @@ class SongDict(TypedDict):
     performer: str
     duration: int
     file_name: str 
-    lyrics_type: Optional[str]
 
 class SessionData(TypedDict):
     queue: List[SongDict]
@@ -44,11 +42,6 @@ class SessionData(TypedDict):
     client: Client
     is_paused: bool
     ui_msg_id: Optional[int]
-    lyrics_task: Optional[asyncio.Task]
-    lyrics_msg_id: Optional[int]
-    start_time: float
-    pause_start: float
-    total_pause: float
 
 
 # --- Global State ---
@@ -85,7 +78,7 @@ def get_audio_duration(file_path: str) -> int:
         return 0
 
 
-async def fetch_lyrics(title: str, artist: str, duration: int) -> dict:
+async def fetch_lyrics(title: str, artist: str, duration: int) -> str:
     url = f"{LRCLIB}api/search"
     if artist and artist.lower() != "unknown artist":
         params = {"track_name": title, "artist_name": artist}
@@ -106,79 +99,10 @@ async def fetch_lyrics(title: str, artist: str, duration: int) -> dict:
                                 break
                         if not best_match:
                             best_match = results[0]
-                        return {
-                            "plain": best_match.get("plainLyrics", ""),
-                            "synced": best_match.get("syncedLyrics", "")
-                        }
+                        return best_match.get("plainLyrics", "")
     except Exception as e:
         logger.error(f"Error fetching lyrics: {e}")
-    return {"plain": "", "synced": ""}
-
-
-async def live_lyrics_task(client_id: int, chat_id: int, synced_lyrics: str):
-    data = _get_session(client_id, chat_id)
-    if not data: return
-    
-    lines = []
-    for line in synced_lyrics.split('\n'):
-        match = re.search(r'\[(\d+):(\d+\.\d+)\](.*)', line)
-        if match:
-            mins = int(match.group(1))
-            secs = float(match.group(2))
-            text = match.group(3).strip()
-            total_seconds = mins * 60 + secs
-            lines.append((total_seconds, text))
-            
-    if not lines:
-        return
-        
-    client = data["client"]
-    try:
-        msg = await client.send_message(chat_id, "🎤 **Lyrics Starting...**")
-        data["lyrics_msg_id"] = msg.id
-    except:
-        return
-
-    current_idx = -1
-    last_text = ""
-    while data and data["current"]:
-        if data["is_paused"]:
-            await asyncio.sleep(0.5)
-            continue
-            
-        loop = asyncio.get_event_loop()
-        curr_time = loop.time() - data["start_time"] - data["total_pause"]
-        
-        idx = -1
-        for i, (t, tz) in enumerate(lines):
-            if curr_time >= t:
-                idx = i
-            else:
-                break
-                
-        if idx != current_idx and idx >= 0:
-            current_idx = idx
-            
-            display_text = "🎤 **Live Lyrics**\n\n"
-            start_idx = max(0, idx - 1)
-            end_idx = min(len(lines), idx + 2)
-            
-            for i in range(start_idx, end_idx):
-                line_text = lines[i][1] or '🎶'
-                if i == idx:
-                    display_text += f"**> {line_text}**\n"
-                else:
-                    display_text += f"`  {line_text}`\n"
-            
-            if display_text != last_text:
-                try:
-                    await client.edit_message_text(chat_id, msg.id, display_text)
-                    last_text = display_text
-                except Exception as e:
-                    if "MESSAGE_NOT_MODIFIED" not in str(e):
-                        logger.debug(f"Live lyrics edit error: {e}")
-        
-        await asyncio.sleep(0.5)
+    return ""
 
 def get_duration_str(seconds: Union[int, float]) -> str:
     """Converts seconds to MM:SS format."""
@@ -217,6 +141,9 @@ def get_music_keyboard(
                 InlineKeyboardButton("🔁 Loop", callback_data=f"mus_loop_{chat_id}"),
                 InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),
                 InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
+            ],
+            [
+                InlineKeyboardButton("📝 Lyrics", callback_data=f"mus_lyrics_{chat_id}")
             ],
             [
                 InlineKeyboardButton(
@@ -317,18 +244,6 @@ async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
     queue = data["queue"]
     data["is_paused"] = False
 
-    lyrics_task = data.get("lyrics_task")
-    if lyrics_task:
-        lyrics_task.cancel()
-        data["lyrics_task"] = None
-    lyrics_msg_id = data.get("lyrics_msg_id")
-    if lyrics_msg_id:
-        try:
-            await data["client"].delete_messages(chat_id, lyrics_msg_id)
-        except:
-            pass
-        data["lyrics_msg_id"] = None
-
     if current:
         if loop == 0:
             if os.path.exists(current["path"]):
@@ -375,30 +290,9 @@ async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
         return
 
     data["current"] = next_song
-    data["start_time"] = asyncio.get_event_loop().time()
-    data["pause_start"] = 0.0
-    data["total_pause"] = 0.0
     try:
         await tgcalls.play(chat_id, next_song["path"])
         await send_track_ui(client_id, chat_id, next_song)
-        
-        lyrics_type = next_song.get("lyrics_type")
-        if lyrics_type:
-            lyrics_data = await fetch_lyrics(next_song["title"], next_song["performer"], next_song["duration"])
-            if lyrics_type == "plain" and lyrics_data["plain"]:
-                text = lyrics_data["plain"]
-                if len(text) > 4000: text = text[:4000] + "..."
-                await data["client"].send_message(chat_id, f"📝 **Lyrics:**\n\n`{text}`")
-            elif lyrics_data["synced"]:
-                task = asyncio.create_task(live_lyrics_task(client_id, chat_id, lyrics_data["synced"]))
-                data["lyrics_task"] = task
-            elif lyrics_data["plain"]:
-                text = lyrics_data["plain"]
-                if len(text) > 4000: text = text[:4000] + "..."
-                await data["client"].send_message(chat_id, f"📝 **Lyrics:**\n\n`{text}`")
-            else:
-                await data["client"].send_message(chat_id, "❌ No lyrics found for this track.")
-                
     except Exception as e:
         logger.error(f"Error playing next song: {e}")
         data["current"] = None
@@ -455,16 +349,6 @@ async def stop_music(client_id: int, chat_id: int) -> bool:
         except:
             pass
 
-    lyrics_task = data.get("lyrics_task")
-    if lyrics_task:
-        lyrics_task.cancel()
-    lyrics_msg_id = data.get("lyrics_msg_id")
-    if lyrics_msg_id:
-        try:
-            await data["client"].delete_messages(chat_id, lyrics_msg_id)
-        except:
-            pass
-
     if client_id in streaming_chats and chat_id in streaming_chats[client_id]:
         del streaming_chats[client_id][chat_id]
         if not streaming_chats[client_id]:
@@ -488,7 +372,6 @@ async def pause_music(client_id: int, chat_id: int) -> bool:
     try:
         await tgcalls.pause(chat_id)
         data["is_paused"] = True
-        data["pause_start"] = asyncio.get_event_loop().time()
         return True
     except Exception as e:
         logger.error(f"Pause failed: {e}")
@@ -506,9 +389,6 @@ async def resume_music(client_id: int, chat_id: int) -> bool:
     try:
         await tgcalls.resume(chat_id)
         data["is_paused"] = False
-        if data.get("pause_start"):
-            data["total_pause"] += asyncio.get_event_loop().time() - data["pause_start"]
-            data["pause_start"] = 0.0
         return True
     except Exception as e:
         logger.error(f"Resume failed: {e}")
@@ -537,18 +417,7 @@ async def play_command(c: Client, m: Message) -> None:
         return await m.reply("Voice chat client not initialized.")  # type: ignore
 
     m_command = m.command or []
-    flags = []
-    query_parts = []
-    if len(m_command) > 1:
-        for p in m_command[1:]:
-            if p in ["--lyrics", "--plyrics"]:
-                flags.append(p)
-            else:
-                query_parts.append(p)
-    query = " ".join(query_parts)
-
-    get_plain_lyrics = "--plyrics" in flags
-    get_sync_lyrics = "--lyrics" in flags
+    query = " ".join(m_command[1:]) if len(m_command) > 1 else ""
 
     song_data: Optional[SongDict] = None
     loading: Optional[Message] = None
@@ -585,7 +454,6 @@ async def play_command(c: Client, m: Message) -> None:
                     performer=getattr(media, "performer", None) or "Unknown Artist",
                     duration=duration,
                     file_name=os.path.basename(final_path),
-                    lyrics_type=None,
                 )
             except Exception as e:
                 if loading:
@@ -623,53 +491,25 @@ async def play_command(c: Client, m: Message) -> None:
         streaming_chats[client_id] = {}
 
     if chat_id not in streaming_chats[client_id]:
-        streaming_chats[client_id][chat_id] = {
-            "queue": [],
-            "loop": 0,
-            "current": None,
-            "client": c,
-            "is_paused": False,
-            "ui_msg_id": None,
-            "lyrics_task": None,
-            "lyrics_msg_id": None,
-            "start_time": 0.0,
-            "pause_start": 0.0,
-            "total_pause": 0.0,
-        }
+        streaming_chats[client_id][chat_id] = SessionData(
+            queue=[],
+            loop=0,
+            current=None,
+            client=c,
+            is_paused=False,
+            ui_msg_id=None,
+        )
 
     data = streaming_chats[client_id][chat_id]
     data["client"] = c
 
-    song_data["lyrics_type"] = "plain" if get_plain_lyrics else ("sync" if get_sync_lyrics else None)
-
     if not data["current"]:
         data["current"] = song_data
-        data["start_time"] = asyncio.get_event_loop().time()
-        data["pause_start"] = 0.0
-        data["total_pause"] = 0.0
         try:
             await tgcalls.play(chat_id, song_data["path"])
             if loading:
                 await loading.delete()
             await send_track_ui(client_id, chat_id, song_data)
-            
-            lyrics_type = song_data.get("lyrics_type")
-            if lyrics_type:
-                lyrics_data = await fetch_lyrics(song_data["title"], song_data["performer"], song_data["duration"])
-                if lyrics_type == "plain" and lyrics_data["plain"]:
-                    text = lyrics_data["plain"]
-                    if len(text) > 4000: text = text[:4000] + "..."
-                    await c.send_message(chat_id, f"📝 **Lyrics:**\n\n`{text}`")
-                elif lyrics_data["synced"]:
-                    task = asyncio.create_task(live_lyrics_task(client_id, chat_id, lyrics_data["synced"]))
-                    data["lyrics_task"] = task
-                elif lyrics_data["plain"]:
-                    text = lyrics_data["plain"]
-                    if len(text) > 4000: text = text[:4000] + "..."
-                    await c.send_message(chat_id, f"📝 **Lyrics:**\n\n`{text}`")
-                else:
-                    await c.send_message(chat_id, "❌ No lyrics found for this track.")
-                    
         except Exception as e:
             if loading:
                 await loading.edit(f"Error playing: {e}")
@@ -851,7 +691,7 @@ async def music_inline_handler(c: Client, q: InlineQuery) -> None:
 
 
 @Tele.bot.on_callback_query(
-    filters.regex(r"^mus_(skip|loop|queue|stop|close|pause|resume)_(-?\d+)$")
+    filters.regex(r"^mus_(skip|loop|queue|stop|close|pause|resume|lyrics)_(-?\d+)$")
 )
 async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
     action = q.matches[0].group(1)
@@ -968,6 +808,29 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
         else:
             await q.answer("Already playing.", show_alert=True)
 
+    elif action == "lyrics" and data and owner_client_id:
+        if not data["current"]:
+            await q.answer("Nothing is playing to fetch lyrics for!", show_alert=True)
+            return
+        
+        await q.answer("📝 Fetching lyrics...", show_alert=False)
+        lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
+        if lyrics_text:
+            if len(lyrics_text) > 4000:
+                lyrics_text = lyrics_text[:4000] + "..."
+            try:
+                await data["client"].send_message(
+                    chat_id, 
+                    f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`"
+                )
+            except Exception as e:
+                logger.debug(f"Could not send lyrics: {e}")
+        else:
+            try:
+                await data["client"].send_message(chat_id, "❌ No lyrics found for this track.")
+            except:
+                pass
+
     elif action == "close":
         ui_msg_id = data.get("ui_msg_id") if data else None
         if data and ui_msg_id:
@@ -983,10 +846,36 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 await q.answer("Could not close player.")
 
 
+@Tele.on_message(filters.command("lyrics"), sudo=True)
+async def lyrics_cmd_handler(c: Client, m: Message) -> None:
+    if not m.chat or m.chat.id is None or not c.me:
+        return
+    chat_id: int = m.chat.id
+    client_id: int = c.me.id
+
+    data = _get_session(client_id, chat_id)
+    if not data or not data["current"]:
+        await m.reply("❌ There is no music currently playing to fetch lyrics for.")
+        return
+
+    loading = await m.reply("🔍 Fetching lyrics...")
+    lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
+    
+    if lyrics_text:
+        if len(lyrics_text) > 4000:
+            lyrics_text = lyrics_text[:4000] + "..."
+        await loading.edit(f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`")
+    else:
+        await loading.edit("❌ No lyrics found for this track.")
+
+
 # --- Module Metadata ---
 MOD_NAME = "Music"
 MOD_HELP = """> `.play <query>`
 Download and play a song. Supports searching by title or artist.
+
+> `.lyrics`
+Get lyrics of the currently playing song.
 
 > `.skip` / `.next`
 Skip the current track.
