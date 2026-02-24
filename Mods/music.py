@@ -813,7 +813,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
             await q.answer("Nothing is playing to fetch lyrics for!", show_alert=True)
             return
         
-        await q.answer("📝 Fetching lyrics...", show_alert=False)
+        await q.answer("Fetching...", show_alert=False)
         lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
         if lyrics_text:
             if len(lyrics_text) > 4000:
@@ -827,7 +827,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 logger.debug(f"Could not send lyrics: {e}")
         else:
             try:
-                await data["client"].send_message(chat_id, "❌ No lyrics found for this track.")
+                await q.answer("Lyrics not found for this track.", show_alert=True)
             except:
                 pass
 
@@ -866,7 +866,7 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
             lyrics_text = lyrics_text[:4000] + "..."
         await loading.edit(f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`")
     else:
-        await loading.edit("❌ No lyrics found for this track.")
+        await loading.edit("Lyrics not found for this track.")
 
 
 # --- Module Metadata ---
