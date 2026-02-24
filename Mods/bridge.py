@@ -22,7 +22,6 @@ from pytgcalls.types.stream import StreamFrames
 
 data: Dict[int, Dict[str, List[int]]] = {}
 
-
 @Tele.on_message(filters.command(["bridge", "sbridge"]), sudo=True)
 async def bridge_func(app: Client, m: Message) -> None:
     me = app.me
