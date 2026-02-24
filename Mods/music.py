@@ -134,7 +134,7 @@ def get_music_keyboard(
     return InlineKeyboardMarkup(
         [
             [
-                InlineKeyboardButton(pause_resume_text, callback_data=pause_resume_cb),
+                InlineKeyboardButton(pause_resume_text, callback_data=pause_resume_cb, style=ButtonStyle.PRIMARY),
                 InlineKeyboardButton("⏭ Skip", callback_data=f"mus_skip_{chat_id}", style=ButtonStyle.PRIMARY),
             ],
             [
