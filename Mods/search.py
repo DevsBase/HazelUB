@@ -45,4 +45,4 @@ async def search(_, message: Message) -> None:
 
 
 MOD_NAME: str = "Search"
-MOD_HELP: str = ".search <query> - search web pages links."
+MOD_HELP: str = "> .search (query) - search web pages links."

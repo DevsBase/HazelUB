@@ -75,6 +75,6 @@ async def joins_func(
 
 MOD_NAME: str = "joins"
 MOD_HELP: str = (
-    ".join <link/username> - to join there\n"
-    ".leave <link/username/blank> - pass chat link or use in a group to leave from there."
+    "> .join <link/username> - to join there\n"
+    "> .leave <link/username/blank> - pass chat link or use in a group to leave from there."
 )
