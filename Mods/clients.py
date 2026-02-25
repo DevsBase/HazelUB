@@ -1,12 +1,3 @@
-"""This module is to manage other clients/users in your HazelUB.
-
-.asudo (reply to a user) - To give them sudo privilage.
-.rsudo (reply to a user) - To remove sudo privilage.
-.clients - To get all clients/users connected in HazelUB.
-
-**⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
-"""
-
 from pyrogram.client import Client
 from pyrogram import filters
 from pyrogram.types import Message
@@ -72,4 +63,7 @@ MOD_NAME = "Clients"
 MOD_HELP = """**Usage:**
 > .clients - Info about all sessions.
 > .cpromote - Add sudo (reply).
-> .cdemote - Remove sudo (reply)."""
+> .cdemote - Remove sudo (reply).
+
+**⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
+"""

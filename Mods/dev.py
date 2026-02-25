@@ -1,5 +1,5 @@
 from Hazel.utils import aexec
-from Hazel import Tele, SQLClient
+from Hazel import Tele
 from pyrogram.client import Client
 from pyrogram import filters
 from pyrogram.types import Message

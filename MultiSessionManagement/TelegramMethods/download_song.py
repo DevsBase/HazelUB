@@ -12,7 +12,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 async def get_audio_duration(file_path: str) -> int:
-    """Helper to get audio duration using ffprobe."""
+    """Get the duration of an audio file in seconds using ``ffprobe``.
+
+    Runs ``ffprobe`` in a background thread (via :func:`asyncio.to_thread`) so
+    the event loop is never blocked. If the probe fails for any reason (e.g.
+    ``ffprobe`` is not installed, the file is corrupt, or the path is invalid),
+    the function silently returns ``0`` instead of raising.
+
+    Args:
+        file_path (str): Absolute or relative path to the audio file to probe.
+
+    Returns:
+        int: Duration of the audio in whole seconds, or ``0`` if the duration
+        could not be determined.
+    """
     try:
         cmd = [
             'ffprobe', 
@@ -28,7 +41,53 @@ async def get_audio_duration(file_path: str) -> int:
         return 0
 
 class DownloadSong:
+    """Mixin class that adds song-downloading capability to the ``Telegram`` class.
+
+    Leverages the ``@DazzerBot`` inline bot on Telegram to search for and
+    download audio tracks. Downloaded media is saved locally as an MP3 file
+    (video results are automatically converted using ``ffmpeg``).
+    """
+
     async def download_song(self: "MultiSessionManagement.telegram.Telegram", query: str, client: pyrogram.Client) -> dict | None: # type: ignore
+        """Search for and download a song via the DazzerBot inline bot.
+
+        The method performs the following steps:
+
+        1. Sends an inline query to ``@DazzerBot`` with the given *query*.
+        2. Forwards the first inline result to the bot's own chat.
+        3. Polls the chat (up to ~37 s) until the bot replies with a media
+           message (audio, video, or voice).
+        4. Downloads the media to a uniquely named temporary file.
+        5. If the media is a video, converts it to MP3 using ``ffmpeg`` and
+           removes the original video file.
+        6. Returns a dictionary containing the file path and metadata.
+
+        Args:
+            query (str): The search query string (e.g. song title or
+                ``"artist - title"``).
+            client (pyrogram.Client): The Pyrogram client session to use
+                for making the inline query and downloading the media.
+
+        Returns:
+            dict | None: A dictionary with the following keys on success, or
+            ``None`` if no inline results were found:
+
+            - **path** (*str*) – Local filesystem path to the downloaded MP3.
+            - **title** (*str*) – Track title extracted from the media
+              metadata, or ``"Unknown Title"`` as a fallback.
+            - **performer** (*str*) – Artist / performer name, or
+              ``"Unknown Artist"``.
+            - **duration** (*int*) – Track duration in seconds.
+            - **file_name** (*str*) – Base filename of the downloaded file.
+
+        Raises:
+            TimeoutError: If ``@DazzerBot`` does not respond with a media
+                message within the polling window (~37 seconds).
+
+        Note:
+            Both ``ffprobe`` and ``ffmpeg`` must be available on ``$PATH``
+            for duration detection and video-to-audio conversion to work.
+        """
         results = await client.get_inline_bot_results(config.DazzerBot, query)
         if not results:
             return None

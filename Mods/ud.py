@@ -7,12 +7,12 @@ import asyncio
 
 @Tele.on_message(filters.command("ud"), sudo=True)
 async def urban_dictionary(_, message: Message):
-
     if len(message.command) < 2: # type: ignore
         return await message.reply(
             "Please give an input of a word.\nExample: `.ud asap`"
         )
-
+    
+    processing = await message.reply("Exploring....")
     text = message.text.split(None, 1)[1] # type: ignore
 
     try:
@@ -40,14 +40,12 @@ async def urban_dictionary(_, message: Message):
         )
 
     except Exception as e:
+        await processing.delete()
         return await message.reply(
             f"Something went wrong:\n`{e}`"
         )
-
-    processing = await message.reply("Exploring....")
+    
     await message.reply(reply_text)
-    await processing.delete()
-
 
 MOD_NAME = "UD"
 MOD_HELP = "> .ud (word) - To get definition of that word."
