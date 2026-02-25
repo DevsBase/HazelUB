@@ -16,7 +16,7 @@ GEMINI_API_KEY: Optional[str] = "" # Get it from https://aistudio.google.com/app
 
 # No need to change (almost all time)
 DazzerBot: str = "@Dazzerbot" # This bot allows us to download songs
-LRCLIB: str = "https://lrclib.net/" # This API allows us to get lyrics of songs
+LRCLIB: str = "https://lrclib.net" # This API allows us to get lyrics of songs
 
 """ Tip(s):
 * Pyrogram session(s) are only allowed.

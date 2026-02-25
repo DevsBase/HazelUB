@@ -79,7 +79,7 @@ def get_audio_duration(file_path: str) -> int:
 
 
 async def fetch_lyrics(title: str, artist: str, duration: int) -> str:
-    url = f"{LRCLIB}api/search"
+    url = f"{LRCLIB}/api/search"
     if artist and artist.lower() != "unknown artist":
         params = {"track_name": title, "artist_name": artist}
     else:
@@ -158,7 +158,7 @@ def get_music_keyboard(
 
 async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
     """Checks if a user is authorized to control the music (sudo or admin)."""
-    if user_id in sudoers:
+    if sudoers.get(user_id) and user_id in sudoers[user_id]:
         return True
     for ub_client in Tele._allClients:
         if ub_client.me and ub_client.me.id == user_id:
@@ -246,9 +246,9 @@ async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
 
     if current:
         if loop == 0:
-            if os.path.exists(current["path"]):
+            if await asyncio.to_thread(os.path.exists, current["path"]):
                 try:
-                    os.remove(current["path"])
+                    await asyncio.to_thread(os.remove, current["path"])
                 except:
                     pass
         elif loop == 2:
@@ -260,9 +260,9 @@ async def play_next(client_id: int, chat_id: int, tgcalls: PyTgCalls) -> None:
         next_song = queue.pop(0)
     else:
         if current and loop != 2:
-            if os.path.exists(current["path"]):
+            if await asyncio.to_thread(os.path.exists, current["path"]):
                 try:
-                    os.remove(current["path"])
+                    await asyncio.to_thread(os.remove, current["path"])
                 except:
                     pass
 
@@ -336,9 +336,9 @@ async def stop_music(client_id: int, chat_id: int) -> bool:
         except:
             pass
     for song in data["queue"]:
-        if os.path.exists(song["path"]):
+        if await asyncio.to_thread(os.path.exists, song["path"]):
             try:
-                os.remove(song["path"])
+                await asyncio.to_thread(os.remove, song["path"])
             except:
                 pass
 
@@ -827,7 +827,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 logger.debug(f"Could not send lyrics: {e}")
         else:
             try:
-                await q.answer("Lyrics not found for this track.", show_alert=True)
+                await data["client"].send_message(chat_id, "Lyrics not found for this track.")
             except:
                 pass
 

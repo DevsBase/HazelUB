@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_audio_duration(file_path: str) -> int:
+async def get_audio_duration(file_path: str) -> int:
     """Helper to get audio duration using ffprobe."""
     try:
         cmd = [
@@ -21,7 +21,7 @@ def get_audio_duration(file_path: str) -> int:
             '-of', 'default=noprint_wrappers=1:nokey=1', 
             file_path
         ]
-        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        result = await asyncio.to_thread(subprocess.run, cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         return int(float(result.stdout.strip()))
     except Exception as e:
         logging.debug(e)
@@ -68,14 +68,14 @@ class DownloadSong:
                     final_path = temp_path.replace(".mp4", ".mp3")
                     try:
                         cmd = ['ffmpeg', '-i', temp_path, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', final_path, '-y']
-                        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        await asyncio.to_thread(subprocess.run, cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                         if os.path.exists(temp_path): os.remove(temp_path)
                     except Exception as e:
                         logger.error(f"Video conversion failed: {e}")
                 
                 duration = getattr(media, 'duration', 0)
                 if duration == 0:
-                    duration = get_audio_duration(final_path)
+                    duration = await get_audio_duration(final_path)
 
                 return {
                     "path": final_path,
@@ -86,5 +86,3 @@ class DownloadSong:
                 }
             await asyncio.sleep(1.5)
         raise TimeoutError("DazzerBot doesn't give media file.")
-
-
