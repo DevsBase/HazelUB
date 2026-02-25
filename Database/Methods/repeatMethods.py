@@ -2,6 +2,7 @@ from sqlalchemy import select, delete
 from Database.Tables.repeatMessage import RepeatMessage
 from Database.Tables.repeatMessageGroup import RepeatMessageGroup
 from Database.Tables.repeatMessageGroupChat import RepeatMessageGroupChat
+from Database.Tables.repeatState import RepeatState
 
 
 class RepeatMethods:
@@ -304,11 +305,26 @@ class RepeatMethods:
             )
             await session.commit()
 
+    async def get_repeat_state(self, user_id: int) -> bool:
+        """Fetch the global paused state for a user.
+
+        Args:
+            user_id (int): Telegram user ID.
+
+        Returns:
+            bool: ``True`` if repeats are paused, ``False`` if active.
+        """
+        async with self.get_db() as session: # type: ignore
+            state = await session.get(RepeatState, user_id)
+            if state:
+                return state.is_paused # type: ignore
+            return False
+
     async def set_repeat_state(self, user_id: int, is_paused: bool) -> None:
         """Pause or resume all repeat messages for a given user.
 
-        Updates the ``is_paused`` flag on every :class:`RepeatMessage`
-        owned by *user_id* in a single transaction.
+        Updates or inserts the ``is_paused`` flag for the user
+        in the :class:`RepeatState` table.
 
         Args:
             user_id (int): Telegram user ID whose repeat messages should
@@ -317,10 +333,10 @@ class RepeatMethods:
                 resume them.
         """
         async with self.get_db() as session: # type: ignore
-            q = await session.execute(
-                select(RepeatMessage).where(RepeatMessage.userId == user_id)
-            )
-            rows = q.scalars().all()
-            for r in rows:
-                r.is_paused = is_paused
+            state = await session.get(RepeatState, user_id)
+            if state:
+                state.is_paused = is_paused # type: ignore
+            else:
+                state = RepeatState(userId=user_id, is_paused=is_paused)
+                session.add(state)
             await session.commit()

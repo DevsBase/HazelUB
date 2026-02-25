@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, BigInteger, ForeignKey, Boolean
+from sqlalchemy import Integer, BigInteger, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
@@ -16,4 +16,3 @@ class RepeatMessage(Base):
         ForeignKey("repeat_message_groups.id"),
         nullable=False
     )
-    is_paused: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

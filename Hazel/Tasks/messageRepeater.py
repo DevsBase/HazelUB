@@ -73,7 +73,8 @@ async def main(Tele: Telegram, db: DBClient) -> None:
             if client_id == job_user_id:
                 if job_user_id not in events:
                     events[job_user_id] = asyncio.Event() 
-                    if not job.is_paused: # type: ignore
+                    is_paused = await db.get_repeat_state(job_user_id)
+                    if not is_paused:
                         events[job_user_id].set() 
                 
                 chats: list[int] = await db.get_group_chats(int(job.group_id), user_id=client_id) # type: ignore

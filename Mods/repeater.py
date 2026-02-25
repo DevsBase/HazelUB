@@ -15,17 +15,17 @@ async def repeatFunc(c: Client, m: Message):
     text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 3:
-        return await m.reply("Usage: $repeat (minutes) (group_name)")
+        return await m.reply("**Usage:** `.repeat [minutes] [group_name]`")
 
     if not m.reply_to_message:
         return await m.reply("Please reply to a message.")
 
     if not text[1].isdigit():
-        return await m.reply("Invalid time. Must be number of minutes.")
+        return await m.reply("**Error:** Interval must be a number of minutes.")
 
     mins = int(text[1])
     if mins > 500:
-        return await m.reply("You can only repeat maximum of 500 minutes.")
+        return await m.reply("**Error:** You can only repeat a maximum of 500 minutes.")
 
     group_name = text[2]
 
@@ -35,7 +35,7 @@ async def repeatFunc(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("Group not found. Create one using $rgroup create (name)")
+        return await m.reply("**Error:** Group not found.\n**Hint:** Create one using `.rgroup create [name]`")
 
     try:
         await SQLClient.create_repeat_message(  
@@ -46,10 +46,12 @@ async def repeatFunc(c: Client, m: Message):
             group_id=group.id
         )
     except IntegrityError:
-        return await m.reply("Database error while creating repeat task.")
+        return await m.reply("**Database Error:** Could not create repeat task.")
 
     return await m.reply(
-        f"Task created. Repeating every {mins} min in group `{group.name}`."
+        f"**Task Created Successfully**\n"
+        f"**Interval:** `{mins}` minutes\n"
+        f"**Target Group:** `{group.name}`"
     )
 
 
@@ -60,19 +62,23 @@ async def groupCreate(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=2)  # type: ignore
 
     if len(text) < 3 or text[1] != "create":
-        return await m.reply("Usage: $rgroup create (name)")
+        return await m.reply("**Usage:** `.rgroup create [name]`")
 
     name = text[2]
     group = await SQLClient.get_group_by_name(name=name, user_id=c.me.id) # type: ignore
     if group:
-        return await m.reply(f'You already have a group named `{name}`.')
+        return await m.reply(f"**Error:** You already have a group named `{name}`.")
 
     group = await SQLClient.create_group(  
         name,
         c.me.id  # type: ignore
     )
 
-    return await m.reply(f"Group created: `{group.name}` (id: {group.id})")
+    return await m.reply(
+        f"**Group Created Successfully**\n"
+        f"**Name:** `{group.name}`\n"
+        f"**ID:** `{group.id}`"
+    )
 
 
 @Tele.on_message(filters.command('rgroup_add'), sudo=True)
@@ -80,7 +86,7 @@ async def groupAdd(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("Usage: $rgroup_add (group_name)")
+        return await m.reply("**Usage:** `.rgroup_add [group_name]`")
 
     group_name = text[1]
 
@@ -90,12 +96,12 @@ async def groupAdd(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("Group not found.")
+        return await m.reply("**Error:** Group not found.")
     
     chats = await SQLClient.get_group_chats(group.id, c.me.id) # type: ignore
     for chat_id in chats:
         if chat_id == m.chat.id: # type: ignore
-            return await m.reply(f'This chat already in group `{group_name}`.')
+            return await m.reply(f"**Notice:** This chat is already in group `{group_name}`.")
 
     await SQLClient.add_chat_to_group(  
         group.id,
@@ -103,7 +109,7 @@ async def groupAdd(c: Client, m: Message):
         c.me.id     # type: ignore
     )
 
-    return await m.reply(f"Chat added to group `{group.name}`.")
+    return await m.reply(f"**Notice:** Chat added to group `{group.name}`.")
 
 
 @Tele.on_message(filters.command('rgroup_remove'), sudo=True)
@@ -111,7 +117,7 @@ async def groupRemove(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("Usage: $rgroup_remove (group_name)")
+        return await m.reply("**Usage:** `.rgroup_remove [group_name]`")
 
     group_name = text[1]
 
@@ -121,7 +127,7 @@ async def groupRemove(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("Group not found.")
+        return await m.reply("**Error:** Group not found.")
 
     await SQLClient.remove_chat_from_group(  
         group.id,
@@ -129,7 +135,7 @@ async def groupRemove(c: Client, m: Message):
         c.me.id     # type: ignore
     )
 
-    return await m.reply(f"Chat removed from group `{group.name}`.")
+    return await m.reply(f"**Notice:** Chat removed from group `{group.name}`.")
 
 
 @Tele.on_message(filters.command('rgroup_list'), sudo=True)
@@ -137,7 +143,7 @@ async def groupList(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("Usage: $rgroup_list (group_name)")
+        return await m.reply("**Usage:** `.rgroup_list [group_name]`")
 
     group_name = text[1]
 
@@ -147,7 +153,7 @@ async def groupList(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("Group not found.")
+        return await m.reply("**Error:** Group not found.")
 
     chats = await SQLClient.get_group_chats( 
         group.id,
@@ -155,10 +161,10 @@ async def groupList(c: Client, m: Message):
     )
 
     if not chats:
-        return await m.reply("Group is empty.")
+        return await m.reply(f"**Notice:** Group `{group.name}` is empty.")
 
-    msg = f"Chats in `{group.name}`:\n"
-    msg += "\n".join(str(x) for x in chats)
+    msg = f"**Chats in `{group.name}`:**\n"
+    msg += "\n".join(f"> `{x}`" for x in chats)
     return await m.reply(msg)
 
 @Tele.on_message(filters.command('rgroup_list_all') , sudo=True)
@@ -168,12 +174,12 @@ async def groupListAll(c: Client, m: Message):
     )
 
     if not groups:
-        return await m.reply("You have no groups.")
+        return await m.reply("**Notice:** You have no groups.")
 
-    msg = "Your Groups:\n\n"
+    msg = "**Your Groups:**\n\n"
 
     for g in groups:
-        msg += f"- {g.name} (id: {g.id})\n"
+        msg += f"> **{g.name}**  **(ID:** `{g.id}`**)**\n"
 
     return await m.reply(msg)
 
@@ -185,11 +191,11 @@ async def repeatDelete(c: Client, m: Message):
     text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("Usage: $repeat_delete (id)")
+        return await m.reply("**Usage:** `.repeat_delete [id]`")
 
     rid = int(text[1])
     await SQLClient.delete_repeat_message(rid) 
-    return await m.reply("Repeat task deleted. Restart required.")
+    return await m.reply("**Task Deleted:** You must restart the bot to apply this change.")
 
 
 @Tele.on_message(filters.command('repeat_list'), sudo=True)
@@ -199,18 +205,19 @@ async def repeatList(c: Client, m: Message):
     rows = [r for r in rows if r.userId == c.me.id]  # type: ignore
 
     if not rows:
-        return await m.reply("No repeat tasks found.")
+        return await m.reply("**Notice:** No repeat tasks found.")
 
-    msg = "Your Repeat Tasks:\n\n"
+    is_paused = await SQLClient.get_repeat_state(c.me.id) # type: ignore
+    status = "Paused" if is_paused else "Active"
+    
+    msg = f"**Your Repeat Tasks**\n**Status:** `{status}`\n\n"
 
     for r in rows:
-        status: str = "Paused" if r.is_paused else "Active"
         msg += (
-            f"ID: {r.id}\n"
-            f"Every: {r.repeatTime} min\n"
-            f"Group ID: {r.group_id}\n"
-            f"Status: {status}\n"
-            "----------------------\n"
+            f"**ID:** `{r.id}`\n"
+            f"**Interval:** `{r.repeatTime}` min\n"
+            f"**Group ID:** `{r.group_id}`\n"
+            "---\n"
         )
 
     return await m.reply(msg)
@@ -220,24 +227,24 @@ async def pauseAndResumeFunc(c: Client, m: Message):
     import Hazel.Tasks.messageRepeater as messageRepeater
     uid: int = c.me.id # type: ignore
     if uid not in messageRepeater.events:
-        return await m.reply("Cannot find this client Hazel.Tasks.messageRepeater.events")
+        return await m.reply("**Error:** Internal bot state not found for your client.")
     event: asyncio.Event = messageRepeater.events[uid]
 
     command: str = m.command[0].lower() # type: ignore
     if 'resume' in command:
         if event.is_set():
-            return await m.reply("Repeat tasks are not paused.")
+            return await m.reply("**Notice:** Repeat tasks are already active.")
             
         await SQLClient.set_repeat_state(uid, False)
         event.set()
-        return await m.reply("Resumed all messageRepeat Tasks for you.")
+        return await m.reply("**Status:** Resumed all repeat tasks.")
     else:
         if not event.is_set():
-            return await m.reply("Repeat Tasks are paused already.")
+            return await m.reply("**Notice:** Repeat tasks are already paused.")
             
         await SQLClient.set_repeat_state(uid, True)
         event.clear()
-        return await m.reply("Paused all messageRepeat Tasks for you.")
+        return await m.reply("**Status:** Paused all repeat tasks.")
 
 MOD_NAME = "Repeater"
 MOD_HELP = """**Usage:**
