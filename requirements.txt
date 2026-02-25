@@ -4,7 +4,7 @@ aiofiles
 #gcrypto
 requests
 py-tgcalls
-googlesearch-python
+duckduckgo-search
 numpy
 python-dotenv
 plyer
