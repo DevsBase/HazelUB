@@ -11,11 +11,23 @@ import traceback
 logger = logging.getLogger("Hazel.Tasks.messageRepeater")
 
 if TYPE_CHECKING:
-    events: Dict[int, asyncio.Event] # int is client's user_id
+    events: Dict[int, asyncio.Event] # Mapping of client user-IDs to their pause/resume events.
 else:
     events: Dict[int, asyncio.Event] = {}
 
 async def createJob(job: RepeatMessage, chats: list[int], client: Client) -> None:
+    """Run an infinite loop that periodically copies a message to target chats.
+
+    The loop sleeps for ``job.repeatTime`` minutes between iterations.
+    If the owning client's :class:`asyncio.Event` is unset (paused),
+    the loop blocks until it is resumed.  Individual ``FloodWait``
+    errors are handled gracefully by sleeping for the required duration.
+
+    Args:
+        job: The :class:`RepeatMessage` row describing what to repeat.
+        chats: List of chat IDs the message should be copied to.
+        client: The Pyrogram client used to send the messages.
+    """
     while True:
         try:
             await asyncio.sleep(int(job.repeatTime * 60)) # type: ignore # Convert sec to mins 
@@ -39,6 +51,17 @@ async def createJob(job: RepeatMessage, chats: list[int], client: Client) -> Non
             logger.error(f"Failed to do repeat task for user: {job.userId}: Full Traceback: {traceback.format_exc()}")
             
 async def main(Tele: Telegram, db: DBClient) -> None:
+    """Bootstrap all stored repeat-message jobs at startup.
+
+    Fetches every :class:`RepeatMessage` from the database, matches
+    each job to its owning Pyrogram client, creates the corresponding
+    pause/resume :class:`asyncio.Event`, and spawns background tasks
+    via :func:`createJob`.
+
+    Args:
+        Tele: The multi-session manager holding all active clients.
+        db: The database client used to query repeat-message data.
+    """
     jobs: list[RepeatMessage] = await db.get_repeat_messages()
 
     for job in jobs:

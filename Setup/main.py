@@ -9,7 +9,19 @@ import os
 
 logger = logging.getLogger("Hazel.setup")
 
-async def main(install_packages: bool=True):
+async def main():
+    """Entry-point that orchestrates the full HazelUB startup lifecycle.
+
+    The sequence executed is:
+    1. Run first-time installation / dependency checks via
+       :func:`installation_main`.
+    2. Create and start all Pyrogram client sessions.
+    3. Load user-defined Mods (command modules).
+    4. Spawn background tasks (e.g. the message repeater).
+    5. Enter an idle loop that keeps the process alive until a
+       termination signal (``SIGINT``, ``SIGTERM``, ``SIGABRT``) is
+       received.
+    """
     db, config = await installation_main()  # Ensure installation is done first.
     from MultiSessionManagement.telegram import Telegram
     import art
@@ -32,7 +44,7 @@ async def main(install_packages: bool=True):
         import Mods; Mods.load_mods()
         
         logger.info("HazelUB is now running!")
-        await asyncio.to_thread(startup_popup)
+        asyncio.create_task(asyncio.to_thread(startup_popup))
     except Exception as e:
         raise SystemExit(f"Setup Failed: {traceback.format_exc()}")
     

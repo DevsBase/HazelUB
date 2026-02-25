@@ -12,6 +12,27 @@ else:
 logger = getLogger(__name__)
 
 async def main() -> Tuple[DBClient, tuple]:
+    """Run the installation and configuration sequence for HazelUB.
+
+    The function performs two checks:
+
+    1. **Essential-package check** – imports critical dependencies
+       (``dotenv``, ``sqlalchemy``, ``pyrogram``, etc.) and, if any
+       are missing, installs them from ``requirements.txt`` and
+       restarts the process.
+    2. **First-time setup** – if the database ``installed`` flag is
+       ``False``, installs/upgrades packages from ``requirements.txt``
+       and marks the bot as installed.
+
+    Between these checks the database engine is created, all tables
+    are initialised, and the global ``Hazel.SQLClient`` /
+    ``Hazel.sudoers`` references are populated.
+
+    Returns:
+        A tuple ``(db, config)`` where *db* is the initialised
+        :class:`DBClient` and *config* is the loaded configuration
+        tuple.
+    """
     clear()
     print(
         "HazelUB is now booting...\n"

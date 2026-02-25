@@ -8,14 +8,25 @@ import os
 logger = logging.getLogger(__name__)
 
 def clear():
+    """Clear the terminal screen (works on both Windows and Unix)."""
     try: os.system('cls' if os.name == 'nt' else 'clear')
     except: pass
 
 def signal_handler(signum, __):
+    """Handle termination signals by logging and force-exiting the process.
+
+    Args:
+        signum: The signal number received (e.g. ``SIGINT``).
+    """
     logger.info(f"Stop signal received ({signum}). Stopping HazelUB...")
     os._exit(0)
 
 def install_requirements():
+    """Ensure pip is available and install packages from ``requirements.txt``.
+
+    Returns:
+        ``0`` on success, or the captured *stderr* string on failure.
+    """
     subprocess.run( # Install PIP if not available
         [sys.executable, "-m", "ensurepip"],
         stdout=subprocess.DEVNULL,
@@ -32,6 +43,15 @@ def install_requirements():
 
     
 def _ask_missing(key: str):
+    """Interactively prompt the user for a missing configuration value.
+
+    Recursively re-prompts until a value of at least 3 characters is
+    entered.  Raises :exc:`SystemExit` on ``EOFError`` (e.g. when
+    running without an interactive terminal).
+
+    Args:
+        key: The name of the missing configuration key.
+    """
     try:
         value = input(f'Cannot find {key} in env or config.py. Please enter: ')
     except EOFError:
@@ -41,6 +61,18 @@ def _ask_missing(key: str):
         return _ask_missing(key)
 
 def load_config() -> tuple:
+    """Load bot configuration from ``config.py`` and environment variables.
+
+    Required keys (``BOT_TOKEN``, ``API_ID``, ``API_HASH``, ``SESSION``)
+    are resolved from the config module first, then from environment
+    variables, and finally by prompting the user interactively.
+    Optional keys fall back to sensible defaults.
+
+    Returns:
+        A tuple of
+        ``(BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL,
+        OtherSessions, PREFIX, GEMINI_API_KEY)``.
+    """
     BOT_TOKEN = config.BOT_TOKEN or os.getenv('BOT_TOKEN') or _ask_missing("BOT_TOKEN")
     API_ID = config.API_ID or os.getenv('API_ID') or _ask_missing("API_ID")
     API_HASH = config.API_HASH or os.getenv('API_HASH') or _ask_missing("API_HASH")
@@ -53,7 +85,14 @@ def load_config() -> tuple:
     return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
 
 def startup_popup():
-    from plyer import notification
+    """Show a desktop notification indicating that HazelUB has started.
+
+    Uses :mod:`plyer` for cross-platform notifications.  Silently
+    ignores any errors (e.g. when running in a headless environment).
+    """
+    try:
+        from plyer import notification
+    except: return
 
     try:
         notification.notify(
