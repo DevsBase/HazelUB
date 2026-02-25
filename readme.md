@@ -204,16 +204,6 @@ HazelUB can run **multiple Telegram accounts** simultaneously:
 3. Each session gets its own Pyrogram `Client` and `PyTgCalls` instance.
 4. The `@Tele.on_message()` decorator automatically registers handlers on **all** sessions.
 
-### Privilege Levels
-
-| Level | Scope |
-|-------|-------|
-| **Owner** | The primary session (`SESSION`) — full access |
-| **Sudo** | Users added via `.addsudo` — can run `sudo=True` commands |
-| **User** | Additional sessions in `OtherSessions` |
-
----
-
 ## 🤝 Contributing
 
 1. **Fork** the repository.

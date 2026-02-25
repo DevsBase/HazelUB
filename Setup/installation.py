@@ -48,6 +48,7 @@ async def main() -> Tuple[DBClient, tuple]:
         from art import text2art
         from pyrogram.client import Client
         from google import genai
+        from googlesearch import search
     except ImportError:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()

@@ -84,7 +84,7 @@ class Telegram(Methods, Decorators):
         :class:`PyTgCalls` instance and assigned a privilege level:
 
         * The primary client receives ``"sudo"`` privileges.
-        * Additional clients receive ``"user"`` privileges.
+        * Additional clients receive ``"user"`` privileges. (can be changed with `cpromote` command.)
 
         After this method completes, ``self._allClients`` and
         ``self._allPyTgCalls`` are fully populated and ready for
@@ -203,7 +203,7 @@ class Telegram(Methods, Decorators):
 
         Returns:
             str: ``"sudo"`` for the primary account, ``"user"`` for all
-            others (including unknown clients).
+            others. Unless you haven't changed the privilege by `.cpromote` or `.cdemote` command.
         """
         return self._clientPrivileges.get(client, "user")
     
