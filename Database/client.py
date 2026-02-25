@@ -69,14 +69,6 @@ class DBClient(Methods):
         """Returns the main database session."""
         return self.session_factory()
 
-    def get_pg(self) -> AsyncSession:
-        """Alias for get_db (deprecated)"""
-        return self.get_db()
-
-    def get_local(self) -> AsyncSession:
-        """Alias for get_db (deprecated)"""
-        return self.get_db()
-
     # ---------- Local helpers ----------
 
     async def is_installed(self) -> bool:
