@@ -4,6 +4,9 @@ from pyrogram.types import Message
 from pyrogram import filters
 from sqlalchemy.exc import IntegrityError
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------- Repeat ----------------
@@ -15,17 +18,17 @@ async def repeatFunc(c: Client, m: Message):
     text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 3:
-        return await m.reply("**Usage:** `.repeat [minutes] [group_name]`")
+        return await m.reply("**Usage:** `> .repeat [minutes] [group_name]`")
 
     if not m.reply_to_message:
         return await m.reply("Please reply to a message.")
 
     if not text[1].isdigit():
-        return await m.reply("**Error:** Interval must be a number of minutes.")
+        return await m.reply("Interval must be a number of minutes.")
 
     mins = int(text[1])
     if mins > 500:
-        return await m.reply("**Error:** You can only repeat a maximum of 500 minutes.")
+        return await m.reply("You can only repeat a maximum of 500 minutes.")
 
     group_name = text[2]
 
@@ -35,7 +38,7 @@ async def repeatFunc(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("**Error:** Group not found.\n**Hint:** Create one using `.rgroup create [name]`")
+        return await m.reply("Group not found.\n**Hint:** Create one using `.rgroup create [name]`")
 
     try:
         await SQLClient.create_repeat_message(  
@@ -45,14 +48,11 @@ async def repeatFunc(c: Client, m: Message):
             source_chat_id=m.reply_to_message.chat.id,  # type: ignore
             group_id=group.id
         )
-    except IntegrityError:
-        return await m.reply("**Database Error:** Could not create repeat task.")
+    except IntegrityError as e:
+        logger.error(e)
+        return await m.reply("Could not create repeat task.")
 
-    return await m.reply(
-        f"**Task Created Successfully**\n"
-        f"**Interval:** `{mins}` minutes\n"
-        f"**Target Group:** `{group.name}`"
-    )
+    return await m.reply("Task created! Restart Required.")
 
 
 # ---------------- Groups ----------------
@@ -62,23 +62,19 @@ async def groupCreate(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=2)  # type: ignore
 
     if len(text) < 3 or text[1] != "create":
-        return await m.reply("**Usage:** `.rgroup create [name]`")
+        return await m.reply("**Usage:** `> .rgroup create [name]`")
 
     name = text[2]
     group = await SQLClient.get_group_by_name(name=name, user_id=c.me.id) # type: ignore
     if group:
-        return await m.reply(f"**Error:** You already have a group named `{name}`.")
+        return await m.reply(f"You already have a group named `{name}`.")
 
     group = await SQLClient.create_group(  
         name,
         c.me.id  # type: ignore
     )
 
-    return await m.reply(
-        f"**Group Created Successfully**\n"
-        f"**Name:** `{group.name}`\n"
-        f"**ID:** `{group.id}`"
-    )
+    return await m.reply("Created.")
 
 
 @Tele.on_message(filters.command('rgroup_add'), sudo=True)
@@ -86,7 +82,7 @@ async def groupAdd(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("**Usage:** `.rgroup_add [group_name]`")
+        return await m.reply("**Usage:** `> .rgroup_add [group_name]`")
 
     group_name = text[1]
 
@@ -96,7 +92,7 @@ async def groupAdd(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("**Error:** Group not found.")
+        return await m.reply("Group not found.")
     
     chats = await SQLClient.get_group_chats(group.id, c.me.id) # type: ignore
     for chat_id in chats:
@@ -117,7 +113,7 @@ async def groupRemove(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("**Usage:** `.rgroup_remove [group_name]`")
+        return await m.reply("**Usage:** `> .rgroup_remove [group_name]`")
 
     group_name = text[1]
 
@@ -127,7 +123,7 @@ async def groupRemove(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("**Error:** Group not found.")
+        return await m.reply("Group not found.")
 
     await SQLClient.remove_chat_from_group(  
         group.id,
@@ -143,7 +139,7 @@ async def groupList(c: Client, m: Message):
     text: list[str] = m.text.split(maxsplit=1)  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("**Usage:** `.rgroup_list [group_name]`")
+        return await m.reply("**Usage:** `> .rgroup_list [group_name]`")
 
     group_name = text[1]
 
@@ -153,7 +149,7 @@ async def groupList(c: Client, m: Message):
     )
 
     if not group:
-        return await m.reply("**Error:** Group not found.")
+        return await m.reply("Group not found.")
 
     chats = await SQLClient.get_group_chats( 
         group.id,
@@ -191,7 +187,7 @@ async def repeatDelete(c: Client, m: Message):
     text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 2:
-        return await m.reply("**Usage:** `.repeat_delete [id]`")
+        return await m.reply("**Usage:** `> .repeat_delete [id]`")
 
     rid = int(text[1])
     await SQLClient.delete_repeat_message(rid) 
