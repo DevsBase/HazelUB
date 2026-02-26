@@ -1,8 +1,10 @@
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
-from Hazel import Tele, SQLClient, sudoers
+
 import Hazel
+from Hazel import SQLClient, Tele, sudoers
+
 
 @Tele.on_message(filters.command("asudo"), sudo=True)
 async def addsudo_handler(c: Client, m: Message):
@@ -71,4 +73,5 @@ MOD_NAME = "Sudoers"
 MOD_HELP = """**Usage:**
 > .asudo (reply) - Add a user to sudoers.
 > .dsudo (ID/reply) - Remove a user from sudoers.
-> .sudoers - List all sudoers."""
+> .sudoers - List all sudoers.
+"""

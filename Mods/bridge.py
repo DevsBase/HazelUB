@@ -1,26 +1,19 @@
-import numpy as np
 from typing import Dict, List, cast
 
-from Hazel import Tele
-
+import numpy as np
+from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
-from pyrogram import filters
-
 from pytgcalls import PyTgCalls
 from pytgcalls import filters as call_filter
-from pytgcalls.types import (
-    Device,
-    Direction,
-    ExternalMedia,
-    RecordStream,
-    MediaStream,
-)
+from pytgcalls.types import Device, Direction, ExternalMedia, MediaStream, RecordStream
 from pytgcalls.types.raw import AudioParameters
 from pytgcalls.types.stream import StreamFrames
 
+from Hazel import Tele
 
 data: Dict[int, Dict[str, List[int]]] = {}
+
 
 @Tele.on_message(filters.command(["bridge", "sbridge"]), sudo=True)
 async def bridge_func(app: Client, m: Message) -> None:
@@ -57,9 +50,7 @@ async def bridge_func(app: Client, m: Message) -> None:
 
     # Already running
     if user_id in data:
-        await m.reply(
-            "Already running somewhere. Use .sbridge to stop it first."
-        )
+        await m.reply("Already running somewhere. Use .sbridge to stop it first.")
         return
 
     if len(command) < 2:
@@ -68,8 +59,10 @@ async def bridge_func(app: Client, m: Message) -> None:
 
     try:
         cmd = m.command[1] if m.command else ""
-        try: cmd = int(cmd)
-        except: ...
+        try:
+            cmd = int(cmd)
+        except:
+            ...
         target_chat = await app.get_chat(cmd)
     except Exception:
         await m.reply("Cannot find the chat.")
@@ -141,7 +134,7 @@ async def audio_data(
     app = cast(Client, call_py.mtproto_client)
 
     me = app.me
-    user_id: int = me.id # type: ignore
+    user_id: int = me.id  # type: ignore
 
     if user_id not in data:
         return
@@ -151,9 +144,7 @@ async def audio_data(
     if update.chat_id not in chat_ids:
         return
 
-    forward_chat_ids: List[int] = [
-        x for x in chat_ids if x != update.chat_id
-    ]
+    forward_chat_ids: List[int] = [x for x in chat_ids if x != update.chat_id]
 
     if not update.frames:
         return

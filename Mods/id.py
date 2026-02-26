@@ -1,5 +1,7 @@
-from Hazel import Tele
 import pyrogram
+
+from Hazel import Tele
+
 
 @Tele.on_message(pyrogram.filters.command("id"), sudo=True)
 async def id_func(_, m: pyrogram.types.Message):

@@ -1,13 +1,16 @@
-from Hazel.utils import aexec
-from Hazel import Tele
-from pyrogram.client import Client
-from pyrogram import filters
-from pyrogram.types import Message
-from pathlib import Path
-import restart
 import asyncio
-import subprocess
 import os
+import subprocess
+from pathlib import Path
+
+from pyrogram import filters
+from pyrogram.client import Client
+from pyrogram.types import Message
+
+import restart
+from Hazel import Tele
+from Hazel.utils import aexec
+
 
 @Tele.on_message(filters.command(["e", "eval"]), sudo=True)
 async def evalFunc(c: Client, m: Message):

@@ -1,9 +1,9 @@
 import asyncio
 import logging
 import os
-import aiohttp
 from typing import Dict, List, Optional, TypedDict, Union
 
+import aiohttp
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.enums import ButtonStyle
@@ -20,8 +20,8 @@ from pytgcalls import PyTgCalls
 from pytgcalls import filters as call_filters
 from pytgcalls.types import Update
 
-from Hazel import Tele, sudoers
 from config import LRCLIB
+from Hazel import Tele, sudoers
 
 # --- Logging Setup ---
 logger = logging.getLogger("Mods.Music")
@@ -33,7 +33,8 @@ class SongDict(TypedDict):
     title: str
     performer: str
     duration: int
-    file_name: str 
+    file_name: str
+
 
 class SessionData(TypedDict):
     queue: List[SongDict]
@@ -84,7 +85,7 @@ async def fetch_lyrics(title: str, artist: str, duration: int) -> str:
         params = {"track_name": title, "artist_name": artist}
     else:
         params = {"q": title}
-    
+
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as resp:
@@ -103,6 +104,7 @@ async def fetch_lyrics(title: str, artist: str, duration: int) -> str:
     except Exception as e:
         logger.error(f"Error fetching lyrics: {e}")
     return ""
+
 
 def get_duration_str(seconds: Union[int, float]) -> str:
     """Converts seconds to MM:SS format."""
@@ -139,11 +141,13 @@ def get_music_keyboard(
             ],
             [
                 InlineKeyboardButton("🔁 Loop", callback_data=f"mus_loop_{chat_id}"),
-                InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),          
+                InlineKeyboardButton("📜 Queue", callback_data=f"mus_queue_{chat_id}"),
                 InlineKeyboardButton("🛑 Stop", callback_data=f"mus_stop_{chat_id}"),
             ],
             [
-                InlineKeyboardButton("📝 Lyrics", callback_data=f"mus_lyrics_{chat_id}"),
+                InlineKeyboardButton(
+                    "📝 Lyrics", callback_data=f"mus_lyrics_{chat_id}"
+                ),
             ],
             [
                 InlineKeyboardButton(
@@ -210,7 +214,7 @@ async def send_track_ui(
     # Try to send via assistant bot (inline)
     try:
         bot_me = Tele.bot.me
-        bot_username = bot_me.username # type: ignore
+        bot_username = bot_me.username  # type: ignore
         if not bot_username:
             raise ValueError("Bot username not found")
 
@@ -491,6 +495,10 @@ async def play_command(c: Client, m: Message) -> None:
         streaming_chats[client_id] = {}
 
     if chat_id not in streaming_chats[client_id]:
+        try:
+            await tgcalls.leave_call(chat_id)
+        except:
+            ...
         streaming_chats[client_id][chat_id] = SessionData(
             queue=[],
             loop=0,
@@ -812,22 +820,28 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
         if not data["current"]:
             await q.answer("Nothing is playing to fetch lyrics for!", show_alert=True)
             return
-        
+
         await q.answer("Fetching...", show_alert=False)
-        lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
+        lyrics_text = await fetch_lyrics(
+            data["current"]["title"],
+            data["current"]["performer"],
+            data["current"]["duration"],
+        )
         if lyrics_text:
             if len(lyrics_text) > 4000:
                 lyrics_text = lyrics_text[:4000] + "..."
             try:
                 await data["client"].send_message(
-                    chat_id, 
-                    f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`"
+                    chat_id,
+                    f"**Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`",
                 )
             except Exception as e:
                 logger.debug(f"Could not send lyrics: {e}")
         else:
             try:
-                await data["client"].send_message(chat_id, "Lyrics not found for this track.")
+                await data["client"].send_message(
+                    chat_id, "Lyrics not found for this track."
+                )
             except:
                 pass
 
@@ -859,12 +873,18 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
         return
 
     loading = await m.reply("🔍 Fetching...")
-    lyrics_text = await fetch_lyrics(data["current"]["title"], data["current"]["performer"], data["current"]["duration"])
-    
+    lyrics_text = await fetch_lyrics(
+        data["current"]["title"],
+        data["current"]["performer"],
+        data["current"]["duration"],
+    )
+
     if lyrics_text:
         if len(lyrics_text) > 4000:
             lyrics_text = lyrics_text[:4000] + "..."
-        await loading.edit(f"📝 **Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`")
+        await loading.edit(
+            f"**Lyrics for {data['current']['title']}:**\n\n`{lyrics_text}`"
+        )
     else:
         await loading.edit("Lyrics not found.")
 

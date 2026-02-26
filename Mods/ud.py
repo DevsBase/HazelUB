@@ -1,8 +1,10 @@
-from Hazel import Tele
+import asyncio
+
+import requests
 from pyrogram import filters
 from pyrogram.types import Message
-import requests
-import asyncio
+
+from Hazel import Tele
 
 
 @Tele.on_message(filters.command("ud"), sudo=True)

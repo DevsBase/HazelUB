@@ -17,6 +17,6 @@ def load_mods():
                 importlib.import_module(module)
                 loaded.append(module)
             except Exception as e:
-                logger.error(f"[FAILED TO LOAD]: {module}")
                 traceback.print_exc()
+                logger.error(f"[FAILED TO LOAD]: {module}. see error above ↑")
     logger.info(f"[Mods] Loaded: {', '.join(loaded)}")
