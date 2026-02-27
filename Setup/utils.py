@@ -69,9 +69,7 @@ def load_config() -> tuple:
     Optional keys fall back to sensible defaults.
 
     Returns:
-        A tuple of
-        ``(BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL,
-        OtherSessions, PREFIX, GEMINI_API_KEY)``.
+        A tuple of confg.
     """
     BOT_TOKEN = config.BOT_TOKEN or os.getenv('BOT_TOKEN') or _ask_missing("BOT_TOKEN")
     API_ID = config.API_ID or os.getenv('API_ID') or _ask_missing("API_ID")
@@ -87,8 +85,7 @@ def load_config() -> tuple:
 def startup_popup():
     """Show a desktop notification indicating that HazelUB has started.
 
-    Uses :mod:`plyer` for cross-platform notifications.  Silently
-    ignores any errors (e.g. when running in a headless environment).
+    Uses :mod:`plyer` for cross-platform notifications.
     """
     try:
         from plyer import notification

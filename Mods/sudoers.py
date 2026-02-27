@@ -6,7 +6,7 @@ import Hazel
 from Hazel import SQLClient, Tele, sudoers
 
 
-@Tele.on_message(filters.command("asudo"), sudo=True)
+@Tele.on_message(filters.command(["asudo", "addsudo"]), sudo=True)
 async def addsudo_handler(c: Client, m: Message):
     if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
         user_id = m.reply_to_message.from_user.id # type: ignore
@@ -31,7 +31,7 @@ async def addsudo_handler(c: Client, m: Message):
     else:
         await m.reply(f"User `{user_id}` is already a sudoer.")
 
-@Tele.on_message(filters.command("rsudo"), sudo=True)
+@Tele.on_message(filters.command(["rsudo", "dsudo", "delsudo"]), sudo=True)
 async def delsudo_handler(c: Client, m: Message):
     if not c.me:
         return

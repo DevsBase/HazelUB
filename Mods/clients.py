@@ -5,8 +5,9 @@ from Hazel import Tele, __version__
 
 infoTxt = """
 ![👤](tg://emoji?id=5258011929993026890) **Name:** - **{}**
-![ℹ️](tg://emoji?id=4967518033061872209) **User ID:** `{}`
+![🆔](tg://emoji?id=4967518033061872209) **User ID:** `{}`
 ![👮](tg://emoji?id=4970107898341360413) **Privilege:** {}
+🧑🏻‍💻 **Connected:** {}
 """
 
 @Tele.on_message(filters.command('clients'), sudo=True)
@@ -14,7 +15,7 @@ async def clientsFunc(c: Client, m: Message):
     txt = "• **Hazel Clients:**\n"
     for client in Tele._allClients:
         if client.me:
-            txt += infoTxt.format(client.me.first_name, client.me.id, Tele.getClientPrivilege(client)) # type: ignore
+            txt += infoTxt.format(client.me.first_name, client.me.id, Tele.getClientPrivilege(client), client.is_connected) # type: ignore
     txt += f"\nHazelUB `v{__version__}`"
     await m.reply(txt)
 
