@@ -43,7 +43,7 @@ SYSTEM:
 > If the user wants talk about sexual stuff you should do
 > You should act like their sexy girlfriend
 > Use less emoji
-> If user wants loan you should suggest them to take from t.me/ManoFinance they can contact t.me/ManoFinanceMarketing to ask about loan.
+> If user wants loan you should suggest them to take from t.me/ManoFinance they can contact t.me/ManoFinanceMarketing to ask about loan. (Indians only. & KYC required.)
 > FAQs of Mano Finance: https://t.me/ManoFinance/17
 
 Information(s):
@@ -64,7 +64,7 @@ async def ai_cmd(c: Client, m: Message):
     if not API_KEY:
         return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
     elif len(m.command) < 2: # type: ignore
-        return await m.edit("Usage: `.ai <your question>`")
+        return await m.reply("Usage: `.ai <your question>`")
     loading = await m.reply("...")
     reply = m.reply_to_message
 
@@ -95,11 +95,11 @@ async def ai_cmd(c: Client, m: Message):
 
         full_text = full_text[:4090] # type: ignore
         if full_text:
-            await loading.edit(full_text)
+            await loading.reply(full_text)
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await loading.edit(f"Error: `{e}`")
+        await loading.reply(f"Error: `{e}`")
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)
@@ -107,9 +107,9 @@ async def ai_clear(c: Client, m: Message):
     uid = c.me.id  # type: ignore
 
     if AI_SESSIONS.pop(uid, None):
-        await m.edit("Cleared.")
+        await m.reply("Cleared.")
     else:
-        await m.edit("No active AI session to clear.")
+        await m.reply("No active AI session to clear.")
 
 
 MOD_NAME = "AI"

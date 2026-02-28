@@ -188,10 +188,20 @@ async def repeatDelete(c: Client, m: Message):
 
     if len(text) < 2:
         return await m.reply("**Usage:** `> .repeat_delete [id]`")
+    rows = await SQLClient.get_repeat_messages()
 
-    rid = int(text[1])
-    await SQLClient.delete_repeat_message(rid) 
-    return await m.reply("**Task Deleted:** You must restart the bot to apply this change.")
+    rows = [r for r in rows if r.userId == c.me.id]  # type: ignore
+
+    try:
+        rid = int(text[1])
+    except: return await m.reply("**Usage:** `> .repeat_delete [id]`")
+    
+
+    for r in rows:
+        if r.id == rid:
+            await SQLClient.delete_repeat_message(rid) 
+            return await m.reply("**Task Deleted:** You must restart the bot to apply this change.")
+    return await m.reply("Not found.")
 
 
 @Tele.on_message(filters.command('repeat_list'), sudo=True)
