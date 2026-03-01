@@ -100,6 +100,9 @@ async def ai_cmd(c: Client, m: Message):
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
         await loading.reply(f"Error: `{e}`")
+    finally:
+        try: await loading.delete()
+        except: pass
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)

@@ -162,8 +162,8 @@ def get_music_keyboard(
 
 async def is_authorized(client: Client, chat_id: int, user_id: int) -> bool:
     """Checks if a user is authorized to control the music (sudo or admin)."""
-    if sudoers.get(getattr(client.me, "id")) and user_id in sudoers[user_id]:
-        return True
+    if sudoers.get(getattr(client.me, "id")) and user_id in sudoers.get(user_id, []):
+        return True 
     for ub_client in Tele._allClients:
         if ub_client.me and ub_client.me.id == user_id:
             return True
