@@ -24,5 +24,5 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-__version__ = "01.2026"
+__version__ = "03.2026"
 __channel__ = "DevsBase"
