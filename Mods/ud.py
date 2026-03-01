@@ -46,7 +46,7 @@ async def urban_dictionary(_, message: Message):
         return await message.reply(
             f"Something went wrong:\n`{e}`"
         )
-    
+    await processing.delete()
     await message.reply(reply_text)
 
 MOD_NAME = "UD"
