@@ -17,7 +17,7 @@ class Decorators:
     multi-session support with a single decorator call.
     """
 
-    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, me: bool = True, group: int = 0): # type: ignore
+    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, bot: bool = True, group: int = 0): # type: ignore
         """Register a message handler across all Pyrogram client sessions.
 
         This decorator iterates over every client in ``self._allClients`` and
@@ -73,10 +73,10 @@ class Decorators:
                         
                     _filters = filters_param & filters.create(sudo_check)
                 else:
-                    if me: _filters = filters_param & filters.me
-                    else: _filters = filters_param
+                    _filters = filters_param
                 
                 i.on_message(_filters, group=group)(func)
+                if sudo and bot: self.bot.on_business_message(_filters, group=group)(func)
             return func
             
         return decorator

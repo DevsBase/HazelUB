@@ -59,4 +59,4 @@ async def banFunc(c: Client, m: Message):
             await m.reply(f"Failed to kick user {user.id}\n\n**Error:** {e}")
 
 MOD_NAME = "Admins"
-MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)"
+MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nBuisness bot won't work. and only works on group."

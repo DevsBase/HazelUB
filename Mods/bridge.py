@@ -15,7 +15,7 @@ from Hazel import Tele
 data: Dict[int, Dict[str, List[int]]] = {}
 
 
-@Tele.on_message(filters.command(["bridge", "sbridge"]), sudo=True)
+@Tele.on_message(filters.command(["bridge", "sbridge"]) & filters.group, sudo=True, bot=False)
 async def bridge_func(app: Client, m: Message) -> None:
     me = app.me
     user_id: int = me.id  # type: ignore
@@ -194,5 +194,6 @@ async def audio_data(
 MOD_NAME = "Bridge"
 MOD_HELP = (
     "> .bridge <username/link/id> - Bridge two voice chats.\n"
-    "> .sbridge - Stop bridging."
+    "> .sbridge - Stop bridging.\n\n"
+    "Buisness bot won't work. and only works on group."
 )

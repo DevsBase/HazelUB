@@ -19,7 +19,7 @@ async def clientsFunc(c: Client, m: Message):
     txt += f"\nHazelUB `v{__version__}`"
     await m.reply(txt)
 
-@Tele.on_message(filters.command('cpromote'), sudo=True)
+@Tele.on_message(filters.command('cpromote'), sudo=True, bot=False)
 async def add_sudo(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
@@ -40,7 +40,7 @@ async def add_sudo(c: Client, m: Message):
     return await m.reply("Client not found. You should add their session in OtherSessions in config.py or env.")
         
 
-@Tele.on_message(filters.command('cdemote'), sudo=True)
+@Tele.on_message(filters.command('cdemote'), sudo=True, bot=False)
 async def remove_sudo(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != 'sudo':
         return await m.reply("You don't have permisson.")
@@ -63,8 +63,8 @@ async def remove_sudo(c: Client, m: Message):
 MOD_NAME = "Clients"
 MOD_HELP = """**Usage:**
 > .clients - Info about all sessions.
-> .cpromote - Add sudo (reply).
-> .cdemote - Remove sudo (reply).
+> .cpromote - Add sudo (reply). (Buisness bot won't work.)
+> .cdemote - Remove sudo (reply). (Buisness bot won't work.)
 
 **⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
 """
