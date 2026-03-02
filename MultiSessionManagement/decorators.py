@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 from pyrogram import filters
+import pyrogram
 from Hazel import sudoers
 from pyrogram.types import Message
 
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
 else:
     Telegram = None
 
-async def sudo_check(_, __, message: Message) -> bool:
+async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
     if not message.from_user:
         return False
 
@@ -16,10 +17,13 @@ async def sudo_check(_, __, message: Message) -> bool:
         return True
 
     user_id: int = message.from_user.id
-
-    if any(user_id in user_ids for user_ids in sudoers.values()):
+    if not client.me:
+        return False
+    if user_id in sudoers.get(client.me.id, []):
         return True
-
+    if client.me.is_bot:
+        if any(user_id in user_ids for user_ids in sudoers.values()):
+            return True
     return False
 
 class Decorators:
@@ -36,28 +40,23 @@ class Decorators:
 
         This decorator iterates over every client in ``self._allClients`` and
         registers the decorated function as a message handler on each one. It
-        supports three access-control modes controlled by the ``sudo`` and
-        ``me`` flags:
+        supports access-control and routing controlled by the ``sudo`` and
+        ``bot`` flags:
 
         * **sudo=True** – The handler is triggered for the account owner
           *and* any user whose ID is present in the per-client ``sudoers``
           dictionary (``Hazel.sudoers``).
-        * **me=True** (default) – The handler is restricted to messages sent
-          by the client's own account (``filters.me``).
-        * **me=False, sudo=False** – No ownership filter is applied; the
-          handler fires for *all* incoming messages that match
-          ``filters_param``.
+        * **bot=True** – If ``sudo`` is also ``True``, the handler is additionally
+          registered on the bot client for business messages.
 
         Args:
             filters_param (filters.Filter): A Pyrogram filter (or combination
                 of filters) that determines which messages trigger the handler.
                 For example, ``filters.command("ping")``.
             sudo (bool, optional): If ``True``, allow both the account owner
-                and authorised sudo users to trigger the handler. When enabled,
-                the ``me`` flag is ignored. Defaults to ``False``.
-            me (bool, optional): If ``True``, restrict the handler to messages
-                sent by the client's own account. Ignored when ``sudo`` is
-                ``True``. Defaults to ``True``.
+                and authorised sudo users to trigger the handler. Defaults to ``False``.
+            bot (bool, optional): If ``True`` and ``sudo`` is ``True``, registers
+                the handler on the bot client for business messages. Defaults to ``True``.
             group (int, optional): The handler group number. Handlers in the
                 same group are mutually exclusive; handlers in different groups
                 are independent. Defaults to ``0``.
@@ -68,11 +67,11 @@ class Decorators:
 
         Example::
 
-            @app.on_message(filters.command("ping"))
+            @Tele.on_message(filters.command("ping"))
             async def ping_handler(client, message):
                 await message.reply("Pong!")
 
-            @app.on_message(filters.command("ban"), sudo=True)
+            @Tele.on_message(filters.command("ban"), sudo=True)
             async def ban_handler(client, message):
                 # Both the owner and sudo users can trigger this.
                 ...
