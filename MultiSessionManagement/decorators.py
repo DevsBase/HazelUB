@@ -8,6 +8,20 @@ if TYPE_CHECKING:
 else:
     Telegram = None
 
+async def sudo_check(_, __, message: Message) -> bool:
+    if not message.from_user:
+        return False
+
+    if message.from_user.is_self:
+        return True
+
+    user_id: int = message.from_user.id
+
+    if any(user_id in user_ids for user_ids in sudoers.values()):
+        return True
+
+    return False
+
 class Decorators:
     """Mixin class providing decorator methods for registering message and call handlers.
 
@@ -66,11 +80,6 @@ class Decorators:
         def decorator(func):
             for i in self._allClients: 
                 if sudo:
-                    async def sudo_check(_, client, message: Message):
-                        if not message.from_user: return False
-                        if message.from_user.is_self: return True
-                        return message.from_user.id in sudoers.get(client.me.id, [])
-                        
                     _filters = filters_param & filters.create(sudo_check)
                 else:
                     _filters = filters_param
