@@ -151,6 +151,7 @@ class Telegram(Methods, Decorators):
         If a :class:`Message` is provided and it is a reply, the user ID is
         automatically extracted from the replied-to message's sender, which
         is useful for commands like *".info"* that target the replied user.
+        Additionally checks if the user ID is a sudoer, and if so, returns the associated client.
 
         Args:
             id (int | None, optional): The Telegram user ID to search for.
@@ -163,16 +164,27 @@ class Telegram(Methods, Decorators):
             Optional[Client]: The matching :class:`Client` instance, or
             `None` if no client with the given ID is found.
         """
+        from Hazel import sudoers
+
         if m and isinstance(m, Message):
             if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
                 id = m.reply_to_message.from_user.id # type: ignore
+
         for client in self._allClients:
             if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client
-        return None
+            
+        for _sudoClientId, _sudoers in sudoers.items():
+            for _sudoer in _sudoers:
+                if id == _sudoer:
+                    return self.getClientById(_sudoClientId)
+        return
     
     def getClientPrivilege(self, client: Client) -> str:
         """Return the privilege level of a client.
+        
+        If the given client is a bot, it will attempt to resolve the privilege using the 
+        bot's ID directly by resolving the associated user client first.
 
         Args:
             client (Client): The Pyrogram client to query.
@@ -181,10 +193,17 @@ class Telegram(Methods, Decorators):
             str: `"sudo"` for the primary account, `"user"` for all
             others. Unless you haven't changed the privilege by `.cpromote` or `.cdemote` command.
         """
+        if client.me and client.me.is_bot:
+            id = client.me.id
+            _client = self.getClientById(id)
+            if _client: client = _client
         return self._clientPrivileges.get(client, "user")
     
     def getClientPyTgCalls(self, client: Client) -> Optional[PyTgCalls]:
         """Return the PyTgCalls instance associated with a client.
+        
+        If the given client is a bot, it will attempt to fetch the corresponding user 
+        client to retrieve the PyTgCalls instance.
 
         Args:
             client (Client): The Pyrogram client whose call instance is
@@ -195,6 +214,10 @@ class Telegram(Methods, Decorators):
             instance, or `None` if the client has no associated call
             handler.
         """
+        if client.me and client.me.is_bot:
+            id = client.me.id
+            _client = self.getClientById(id)
+            if _client: client = _client
         return self._clientPyTgCalls.get(client, None)
     
     async def is_admin(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> bool:

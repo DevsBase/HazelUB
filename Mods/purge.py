@@ -31,4 +31,4 @@ async def purgeFunc(app: Client, m: Message):
 MOD_NAME = "Purge"
 MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"
 MOD_NAME = "Purge"
-MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"
+MOD_HELP = "**Usage:**\n> .purge (reply to the start message) (only in groups)"

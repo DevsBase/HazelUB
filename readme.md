@@ -18,6 +18,7 @@ A powerful, modular **Telegram userbot** built with [Pyrogram](https://docs.pyro
 - 🗄️ **Dual Database Support** — PostgreSQL for production, SQLite as an automatic fallback.
 - 📖 **Built-in Help Menu** — Auto-generated inline help menu from all loaded mods.
 - 🛡️ **Admin Utilities** — Ban, purge, delete, and manage chats with ease.
+- 💼 **Telegram Business Ready** — Link your assistant bot as a business bot and seamlessly run commands via private chats.
 - 📱 **Desktop Notifications** — Get notified when HazelUB starts (via [plyer](https://github.com/kivy/plyer)).
 
 ---
@@ -172,6 +173,7 @@ MOD_HELP = "**Usage:**\n> .hello - Sends a greeting."
 - Files starting with `_` are **ignored** by the loader.
 - Define `MOD_NAME` and `MOD_HELP` to appear in the `.help` menu.
 - Use `sudo=True` to allow both the owner and sudo users to run the command.
+- Set `bot=False` to ignore triggers from the linked business bot (enabled by default when `sudo=True`).
 - Your handler is **automatically registered** across all active client sessions.
 
 ---

@@ -20,4 +20,6 @@ MOD_HELP = "vc-tools"
 MOD_HELP = """**Usage:**
 > .joinvc / .jv - to join in a vc.
 > .leavevc / .lv - to leave in a vc.
+
+Only works on groups
 """

@@ -6,21 +6,23 @@ import Hazel
 from Hazel import SQLClient, Tele, sudoers
 
 
-@Tele.on_message(filters.command(["asudo", "addsudo"]), sudo=True)
+@Tele.on_message(filters.command(["asudo", "addsudo"]), sudo=True, bot=False)
 async def addsudo_handler(c: Client, m: Message):
-    if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
-        user_id = m.reply_to_message.from_user.id # type: ignore
+    if m.reply_to_message and hasattr(m.reply_to_message.from_user, "id"):
+        user_id = m.reply_to_message.from_user.id  # type: ignore
     else:
         return await m.reply("Reply to a user to add sudo.")
-    
+
     if not c.me:
         return
     owner_id = c.me.id
-    
+
     for client in Tele._allClients:
         if client.me and client.me.id == user_id:
-            return await m.reply("This user is already a HazelUB user. Please remove their session in config.py or .env to use this command.")
-        
+            return await m.reply(
+                "This user is already a HazelUB user. Please remove their session in config.py or .env to use this command."
+            )
+
     added = await SQLClient.add_sudo(owner_id, user_id)
     if added:
         if owner_id not in sudoers:
@@ -31,7 +33,8 @@ async def addsudo_handler(c: Client, m: Message):
     else:
         await m.reply(f"User `{user_id}` is already a sudoer.")
 
-@Tele.on_message(filters.command(["rsudo", "dsudo", "delsudo"]), sudo=True)
+
+@Tele.on_message(filters.command(["rsudo", "dsudo", "delsudo"]), sudo=True, bot=False)
 async def delsudo_handler(c: Client, m: Message):
     if not c.me:
         return
@@ -46,32 +49,43 @@ async def delsudo_handler(c: Client, m: Message):
             user_id = int(args[1])
         except ValueError:
             return await m.reply("Invalid User ID.")
-    
+
     if not user_id:
         return await m.reply("Could not get user ID.")
-            
+
     await SQLClient.remove_sudo(owner_id, user_id)
     if owner_id in sudoers and user_id in sudoers[owner_id]:
         Hazel.sudoers[owner_id].remove(user_id)
     await m.reply(f"Removed user `{user_id}` from sudoers.")
 
+
 @Tele.on_message(filters.command("sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
     if not c.me:
         return
+
+    if c.me.is_bot and m.from_user:
+        c = Tele.getClientById(m.from_user.id) or c
+        if not c.me:
+            return
+
     owner_id = c.me.id
+
     client_sudoers = await SQLClient.get_sudoers(owner_id)
     if not client_sudoers:
         return await m.reply("No sudo users found.")
-    
+
     text = f"**Sudo Users for {c.me.first_name}:**\n"
     for user_id in client_sudoers:
         text += f"- `{user_id}`\n"
     await m.reply(text)
 
+
 MOD_NAME = "Sudoers"
 MOD_HELP = """**Usage:**
-> .asudo (reply) - Add a user to sudoers.
-> .dsudo (ID/reply) - Remove a user from sudoers.
+> .asudo (reply) - Add a user to sudoers. (Business bot wont work)
+> .dsudo (ID/reply) - Remove a user from sudoers. (Business bot won't work)
 > .sudoers - List all sudoers.
+
+**⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
 """

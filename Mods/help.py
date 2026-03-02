@@ -84,6 +84,11 @@ def get_help_markup(page_num=0):
 @Tele.on_message(filters.command("help"), sudo=True)
 async def help_userbot(c: Client, m: Message):
     try:
+        if c.me and c.me.is_bot:
+            markup, count = get_help_markup(0)
+            await m.reply(f"• **Help Menu**\n\nTotal Modules: `{count}`", reply_markup=markup)
+            return
+        
         bot_username = Tele.bot.me.username  # type: ignore
         results = await c.get_inline_bot_results(bot_username, "help")  # type: ignore
         if results.results:

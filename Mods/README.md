@@ -74,14 +74,14 @@ async def my_handler(client: Client, message: Message):
 |-----------|------|---------|-------------|
 | `filters_param` | `filters.Filter` | *(required)* | Pyrogram filter(s) that determine which messages trigger the handler. |
 | `sudo` | `bool` | `False` | If `True`, both the account owner **and** authorised sudo users can trigger the command. |
-| `me` | `bool` | `True` | If `True`, only messages sent by the client's own account trigger the handler. Ignored when `sudo=True`. |
+| `bot` | `bool` | `True` | If `True` and `sudo=True`, automatically creates a handler on the business bot to allow interactions via private chat. |
 | `group` | `int` | `0` | Handler group number for ordering / mutual exclusion. |
 
 #### Access Control Modes
 
-- **`sudo=True`** — Owner + sudo users can use the command *(most common)*.
-- **`me=True`** (default) — Only the account owner.
-- **`me=False, sudo=False`** — **All** incoming messages matching the filter (use with caution).
+- **`sudo=True, bot=True`** — Owner + sudo users can use the command, and it also listens on the business bot *(most common)*.
+- **`sudo=True, bot=False`** — Owner + sudo users, but ignores business bot triggers (useful for commands requiring user-specific contexts like `.cpromote`).
+- **`sudo=False`** — Only the account owner.
 
 ### 3. Multiple Command Aliases
 

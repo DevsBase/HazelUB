@@ -9,7 +9,8 @@ if TYPE_CHECKING:
 else:
     Telegram = None
 
-async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
+async def _sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
+    """Check whether the sender of the message holds sudo privileges for the current client session."""
     if not message.from_user:
         return False
 
@@ -19,8 +20,10 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
     user_id: int = message.from_user.id
     if not client.me:
         return False
+    
     if user_id in sudoers.get(client.me.id, []):
         return True
+    
     if client.me.is_bot:
         if any(user_id in user_ids for user_ids in sudoers.values()):
             return True
@@ -79,12 +82,15 @@ class Decorators:
         def decorator(func):
             for i in self._allClients: 
                 if sudo:
-                    _filters = filters_param & filters.create(sudo_check)
+                    _filters = filters_param & filters.create(_sudo_check)
                 else:
                     _filters = filters_param
                 
                 i.on_message(_filters, group=group)(func)
-                if sudo and bot: self.bot.on_business_message(_filters, group=group)(func)
+                
+            if sudo and bot:
+                _bot_filters = filters_param & filters.create(_sudo_check)
+                self.bot.on_business_message(_bot_filters, group=group)(func)
             return func
             
         return decorator

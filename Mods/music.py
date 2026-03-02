@@ -410,7 +410,7 @@ async def stream_end_handler(c: PyTgCalls, update: Update) -> None:
             return
 
 
-@Tele.on_message(filters.command("play"), sudo=True)
+@Tele.on_message(filters.command("play") & filters.group, sudo=True, bot=False)
 async def play_command(c: Client, m: Message) -> None:
     if not m.chat or not m.command or m.chat.id is None or not c.me:
         return
@@ -537,7 +537,7 @@ async def play_command(c: Client, m: Message) -> None:
             await m.reply(text)
 
 
-@Tele.on_message(filters.command(["skip", "next"]), sudo=True)
+@Tele.on_message(filters.command(["skip", "next"]) & filters.group, sudo=True, bot=False)
 async def skip_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -549,7 +549,7 @@ async def skip_cmd_handler(c: Client, m: Message) -> None:
         await m.reply("Nothing is playing to skip.")
 
 
-@Tele.on_message(filters.command("mstop"), sudo=True)
+@Tele.on_message(filters.command("mstop") & filters.group, sudo=True, bot=False)
 async def stop_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -561,7 +561,7 @@ async def stop_cmd_handler(c: Client, m: Message) -> None:
         await m.reply("Not in voice chat.")
 
 
-@Tele.on_message(filters.command("pause"), sudo=True)
+@Tele.on_message(filters.command("pause") & filters.group, sudo=True, bot=False)
 async def pause_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -573,7 +573,7 @@ async def pause_cmd_handler(c: Client, m: Message) -> None:
         await m.reply("Already paused or not playing.")
 
 
-@Tele.on_message(filters.command("resume"), sudo=True)
+@Tele.on_message(filters.command("resume") & filters.group, sudo=True, bot=False)
 async def resume_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -585,7 +585,7 @@ async def resume_cmd_handler(c: Client, m: Message) -> None:
         await m.reply("Already playing or not playing.")
 
 
-@Tele.on_message(filters.command("queue"), sudo=True)
+@Tele.on_message(filters.command("queue") & filters.group, sudo=True, bot=False)
 async def queue_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -615,7 +615,7 @@ async def queue_cmd_handler(c: Client, m: Message) -> None:
     await m.reply(res)
 
 
-@Tele.on_message(filters.command("loop"), sudo=True)
+@Tele.on_message(filters.command("loop") & filters.group, sudo=True, bot=False)
 async def loop_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or not m.command or m.chat.id is None or not c.me:
         return
@@ -911,4 +911,6 @@ Set or cycle music loop mode.
 
 > `.queue`
 Show the queue.
+
+Only works on group.
 """
