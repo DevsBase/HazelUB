@@ -121,4 +121,4 @@ MOD_HELP: str = """**Usage:**
 Only `//` prefix is allowed. Default prefixes will NOT work.
 """
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

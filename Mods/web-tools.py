@@ -31,4 +31,4 @@ MOD_HELP = """**Usage:**
 > .open (link) - Open a link in server/machine browser."""
 
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

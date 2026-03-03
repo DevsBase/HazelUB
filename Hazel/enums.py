@@ -10,9 +10,9 @@ class CombinedValue:
 
 class USABLE(str, Enum):
     ALL = "Everyone"
-    SUDO = "Owner & Sudoers"
-    OWNER = "Owner Only"
-    BOT = "Bot Only"
+    SUDO = "Sudoers"
+    OWNER = "Owner"
+    BOT = "Business Bot"
 
     def __and__(self, other):
         val2 = other.value if hasattr(other, "value") else str(other)
@@ -20,9 +20,9 @@ class USABLE(str, Enum):
 
 class WORKS(str, Enum):
     ALL = "Anywhere"
-    GROUP = "Groups Only"
-    PRIVATE = "Private Only"
-    CHANNEL = "Channels Only"
+    GROUP = "Groups"
+    PRIVATE = "Private"
+    CHANNEL = "Channels"
 
     def __and__(self, other):
         val2 = other.value if hasattr(other, "value") else str(other)

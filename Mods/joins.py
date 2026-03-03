@@ -83,4 +83,4 @@ MOD_HELP: str = (
     "> .leave <link/username/blank> - pass chat link or use in a group to leave from there."
 )
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

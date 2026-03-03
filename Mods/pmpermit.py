@@ -42,7 +42,7 @@ async def pmpermit_cmd(c: Client, m: Message):
         await m.reply("**Usage:** `.pmpermit on|off`")
 
 
-@Tele.on_message(filters.command(["approve"]) & filters.me)
+@Tele.on_message(filters.command(["approve", "a"]) & filters.me)
 async def approve_cmd(c: Client, m: Message):
     """Approve a user for PM."""
     if not c.me or not c.me.id or not SQLClient:
@@ -70,7 +70,7 @@ async def approve_cmd(c: Client, m: Message):
     first_name = getattr(user, "first_name", str(user_id))
     await m.reply(f"**{first_name}** has been approved to PM.")
 
-@Tele.on_message(filters.command(["disapprove"]) & filters.me)
+@Tele.on_message(filters.command(["disapprove", "da"]) & filters.me)
 async def disapprove_cmd(c: Client, m: Message):
     """Disapprove a user from PM."""
     if not c.me or not c.me.id or not SQLClient:
@@ -140,8 +140,7 @@ async def pmpermit_handler(c: Client, m: Message):
     """Handle incoming private messages for PMPermit."""
     if not c.me or not c.me.id or not SQLClient:
         return
-    if getattr(c.me, "is_bot", False):
-        return
+    
     if not m.from_user:
         return
         
@@ -188,10 +187,11 @@ async def pmpermit_handler(c: Client, m: Message):
 MOD_NAME = "PMPermit"
 MOD_HELP = (
     "> .pmpermit on|off - Toggle PMPermit.\n"
-    "> .approve (reply/id) - Approve a user.\n"
-    "> .disapprove (reply/id) - Disapprove a user.\n"
+    "> .approve / .a (reply/id) - Approve a user.\n"
+    "> .disapprove / .da (reply/id) - Disapprove a user.\n"
     "> .setpmmsg <text> - Set custom warning message.\n"
     "> .pmlimit <int> - Set warning limit."
+    "\nNote: Sudoers are exempt from PMPermit checks. Use `.sudoers` to manage sudo users."
 )
 
 MOD_WORKS = WORKS.PRIVATE

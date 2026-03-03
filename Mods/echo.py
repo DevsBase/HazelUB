@@ -15,4 +15,4 @@ async def echo_cmd(c: Client, m: Message):
 MOD_NAME = "Echo"
 MOD_HELP = "> .echo / .ec (reply) - to send the replied message."
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

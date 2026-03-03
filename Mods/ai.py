@@ -121,4 +121,4 @@ MOD_HELP = """**Usage:**
 > .ai <query> - Talk to Gemini AI
 > .aiclr - Clear chat history"""
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

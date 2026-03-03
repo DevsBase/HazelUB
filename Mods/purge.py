@@ -35,4 +35,4 @@ MOD_NAME = "Purge"
 MOD_HELP = "**Usage:**\n> .purge (reply to the start message) (only in groups)"
 
 MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.OWNER & USABLE.SUDO

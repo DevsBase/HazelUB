@@ -185,4 +185,4 @@ MOD_HELP = """**Usage:**
 > .stop - Stop HazelUB."""
 
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.OWNER
+MOD_USABLE = USABLE.ALL

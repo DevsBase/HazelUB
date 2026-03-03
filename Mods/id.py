@@ -38,4 +38,4 @@ async def id_func(_, m: pyrogram.types.Message):
 MOD_NAME = "ID"
 MOD_HELP = "> .id - reply someone or get current chat id."
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL

@@ -1,4 +1,5 @@
 from Hazel import Tele
+from Hazel.enums import USABLE, WORKS
 import pyrogram
 
 @Tele.on_message(pyrogram.filters.command(['joinvc', 'jv', 'leavevc', 'lv']) & pyrogram.filters.group, sudo=True)
@@ -23,3 +24,5 @@ MOD_HELP = """**Usage:**
 
 Only works on groups
 """
+MOD_WORKS = WORKS.GROUP
+MOD_USABLE = USABLE.OWNER & USABLE.SUDO

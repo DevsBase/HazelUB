@@ -17,4 +17,4 @@ MOD_NAME = "Delete"
 MOD_HELP = "**Usage:**\n> .del (reply to a message)"
 
 MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.SUDO
+MOD_USABLE = USABLE.ALL
