@@ -861,7 +861,7 @@ async def music_callback_handler(c: Client, q: CallbackQuery) -> None:
                 await q.answer("Could not close player.")
 
 
-@Tele.on_message(filters.command("lyrics"), sudo=True)
+@Tele.on_message(filters.command("lyrics") & filters.group, sudo=True)
 async def lyrics_cmd_handler(c: Client, m: Message) -> None:
     if not m.chat or m.chat.id is None or not c.me:
         return
@@ -912,8 +912,6 @@ Set or cycle music loop mode.
 
 > `.queue`
 Show the queue.
-
-Only works on group.
 """
 
 MOD_WORKS = WORKS.GROUP

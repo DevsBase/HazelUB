@@ -28,7 +28,7 @@ def format_duration(seconds: int) -> str:
     return " ".join(parts)
 
 
-@Tele.on_message(filters.command(["afk"]) & filters.me)
+@Tele.on_message(filters.command(["afk"]) & filters.me, group=1)
 async def afk_cmd(c: Client, m: Message):
     """Enable AFK mode."""
     if not c.me or not c.me.id or not SQLClient:
@@ -65,12 +65,10 @@ async def unafk_cmd(c: Client, m: Message):
     await m.reply("I am no longer AFK.")
 
 # Outgoing messages disable AFK automatically
-@Tele.on_message(filters.me, group=4)
+@Tele.on_message(filters.me, group=1)
 async def auto_unafk(c: Client, m: Message):
     """Automatically disable AFK on outgoing messages."""
     if not c.me or not c.me.id or not SQLClient:
-        return
-    if m.text and "afk" in m.text.lower():
         return
     # Sudoers sending messages from their accounts shouldn't unafk the main client
     # So we strictly check if the sender is the client itself
@@ -83,7 +81,7 @@ async def auto_unafk(c: Client, m: Message):
         await m.reply("I am no longer AFK.")
 
 # Incoming PMs and mentions trigger AFK reply
-@Tele.on_message((filters.private | filters.mentioned) & ~filters.me & ~filters.bot, group=2)
+@Tele.on_message((filters.private | filters.mentioned) & ~filters.me & ~filters.bot, group=100)
 async def afk_reply(c: Client, m: Message):
     """Reply to PMs and mentions when AFK."""
     if not c.me or not c.me.id or not SQLClient:

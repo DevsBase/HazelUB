@@ -1,10 +1,8 @@
 art
 kurigram
 aiofiles
-#gcrypto
 requests
 py-tgcalls
-duckduckgo-search
 numpy
 python-dotenv
 plyer
