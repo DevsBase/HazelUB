@@ -1,17 +1,26 @@
-from typing import List, Optional
+from typing import Optional, Dict, Set
 from Database.Tables.pmpermit import PMPermitSettings, PMPermitApproved
 from sqlalchemy import select, delete
 
+_pmpermit_enabled_cache: Dict[int, bool] = {}
+_pmpermit_limit_cache: Dict[int, int] = {}
+_pmpermit_msg_cache: Dict[int, Optional[str]] = {}
+_pmpermit_approved_cache: Dict[int, Set[int]] = {}
+
 class PMPermitMethods:
     async def is_pmpermit_enabled(self, user_id: int) -> bool:
-        """Check if PMPermit is enabled for a given user client."""
+        """Check if PMPermit is enabled for a given user client (cached)."""
+        if user_id in _pmpermit_enabled_cache:
+            return _pmpermit_enabled_cache[user_id]
+            
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings.is_enabled).where(PMPermitSettings.user_id == user_id))
             state = result.scalar_one_or_none()
-            return state if state is not None else False
+            _pmpermit_enabled_cache[user_id] = state if state is not None else False
+            return _pmpermit_enabled_cache[user_id]
 
     async def set_pmpermit(self, user_id: int, is_enabled: bool) -> None:
-        """Enable or disable PMPermit for a user client."""
+        """Enable or disable PMPermit for a user client and update cache."""
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings).where(PMPermitSettings.user_id == user_id))
             settings = result.scalar_one_or_none()
@@ -21,16 +30,22 @@ class PMPermitMethods:
                 settings = PMPermitSettings(user_id=user_id, is_enabled=is_enabled)
                 session.add(settings)
             await session.commit()
+            
+        _pmpermit_enabled_cache[user_id] = is_enabled
 
     async def get_pmpermit_limit(self, user_id: int) -> int:
-        """Get the PMPermit warning limit."""
+        """Get the PMPermit warning limit (cached)."""
+        if user_id in _pmpermit_limit_cache:
+            return _pmpermit_limit_cache[user_id]
+            
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings.limit).where(PMPermitSettings.user_id == user_id))
             limit = result.scalar_one_or_none()
-            return limit if limit is not None else 5
+            _pmpermit_limit_cache[user_id] = limit if limit is not None else 5
+            return _pmpermit_limit_cache[user_id]
 
     async def set_pmpermit_limit(self, user_id: int, limit: int) -> None:
-        """Set the PMPermit warning limit."""
+        """Set the PMPermit warning limit and update cache."""
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings).where(PMPermitSettings.user_id == user_id))
             settings = result.scalar_one_or_none()
@@ -40,15 +55,22 @@ class PMPermitMethods:
                 settings = PMPermitSettings(user_id=user_id, limit=limit)
                 session.add(settings)
             await session.commit()
+            
+        _pmpermit_limit_cache[user_id] = limit
 
     async def get_pmpermit_message(self, user_id: int) -> Optional[str]:
-        """Get the custom PMPermit warning message."""
+        """Get the custom PMPermit warning message (cached)."""
+        if user_id in _pmpermit_msg_cache:
+            return _pmpermit_msg_cache[user_id]
+            
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings.pm_message).where(PMPermitSettings.user_id == user_id))
-            return result.scalar_one_or_none()
+            msg = result.scalar_one_or_none()
+            _pmpermit_msg_cache[user_id] = msg
+            return msg
 
     async def set_pmpermit_message(self, user_id: int, message: Optional[str]) -> None:
-        """Set the custom PMPermit warning message."""
+        """Set the custom PMPermit warning message and update cache."""
         async with self.get_db() as session: # type: ignore
             result = await session.execute(select(PMPermitSettings).where(PMPermitSettings.user_id == user_id))
             settings = result.scalar_one_or_none()
@@ -58,20 +80,24 @@ class PMPermitMethods:
                 settings = PMPermitSettings(user_id=user_id, pm_message=message) # type: ignore
                 session.add(settings)
             await session.commit()
+            
+        _pmpermit_msg_cache[user_id] = message
 
     async def is_approved(self, user_id: int, approved_user_id: int) -> bool:
-        """Check if a specific user is approved to PM this user client."""
-        async with self.get_db() as session: # type: ignore
-            result = await session.execute(
-                select(PMPermitApproved).where(
-                    PMPermitApproved.user_id == user_id,
-                    PMPermitApproved.approved_user_id == approved_user_id
+        """Check if a specific user is approved to PM this user client (cached)."""
+        if user_id not in _pmpermit_approved_cache:
+            async with self.get_db() as session: # type: ignore
+                result = await session.execute(
+                    select(PMPermitApproved.approved_user_id).where(
+                        PMPermitApproved.user_id == user_id
+                    )
                 )
-            )
-            return result.scalar_one_or_none() is not None
+                _pmpermit_approved_cache[user_id] = {row[0] for row in result.all()}
+                
+        return approved_user_id in _pmpermit_approved_cache[user_id]
 
     async def approve_user(self, user_id: int, approved_user_id: int) -> None:
-        """Approve a user to PM this user client."""
+        """Approve a user to PM this user client and update cache."""
         if await self.is_approved(user_id, approved_user_id):
             return
             
@@ -79,9 +105,12 @@ class PMPermitMethods:
             approved = PMPermitApproved(user_id=user_id, approved_user_id=approved_user_id)
             session.add(approved)
             await session.commit()
+            
+        if user_id in _pmpermit_approved_cache:
+            _pmpermit_approved_cache[user_id].add(approved_user_id)
 
     async def disapprove_user(self, user_id: int, approved_user_id: int) -> None:
-        """Disapprove a user from PMing this user client."""
+        """Disapprove a user from PMing this user client and update cache."""
         async with self.get_db() as session: # type: ignore
             await session.execute(
                 delete(PMPermitApproved).where(
@@ -90,3 +119,6 @@ class PMPermitMethods:
                 )
             )
             await session.commit()
+            
+        if user_id in _pmpermit_approved_cache:
+            _pmpermit_approved_cache[user_id].discard(approved_user_id)

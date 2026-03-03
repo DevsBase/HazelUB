@@ -89,6 +89,5 @@ MOD_HELP = """**Usage:**
 
 **⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
 """
-
 MOD_WORKS = WORKS.ALL
 MOD_USABLE = USABLE.ALL

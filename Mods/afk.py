@@ -42,7 +42,7 @@ async def afk_cmd(c: Client, m: Message):
         
     await SQLClient.set_afk(c.me.id, True, reason)
     
-    msg = "**I am now AFK.**"
+    msg = "I am now AFK."
     if reason:
         msg += f"\nReason: {reason}"
         
@@ -58,11 +58,11 @@ async def unafk_cmd(c: Client, m: Message):
         
     is_afk, _, _ = await SQLClient.get_afk(c.me.id)
     if not is_afk:
-        await m.reply("**I am not AFK.**")
+        await m.reply("I am not AFK.")
         return
         
     await SQLClient.set_afk(c.me.id, False)
-    await m.reply("**I am no longer AFK.**")
+    await m.reply("I am no longer AFK.")
 
 # Outgoing messages disable AFK automatically
 @Tele.on_message(filters.outgoing & filters.me, group=2)
@@ -79,7 +79,7 @@ async def auto_unafk(c: Client, m: Message):
     if is_afk:
         await SQLClient.set_afk(c.me.id, False)
         try:
-            msg = await m.reply("**I am no longer AFK.**")
+            msg = await m.reply("I am no longer AFK.")
             await __import__("asyncio").sleep(3)
             await msg.delete()
         except:
@@ -120,15 +120,15 @@ async def afk_reply(c: Client, m: Message):
     duration = int(current_time - start_time.timestamp())
     formatted_duration = format_duration(duration)
     
-    reply_msg = "**I'm currently AFK.**\n"
+    reply_msg = "I'm currently AFK.\n"
     if reason:
-        reply_msg += f"**Reason:** {reason}\n"
-    reply_msg += f"**Since:** {formatted_duration}"
+        reply_msg += f"Reason: {reason}\n"
+    reply_msg += f"Since: {formatted_duration}"
     
     await m.reply(reply_msg)
 
 
 MOD_NAME = "AFK"
-MOD_HELP = "> .afk [reason] - Enable AFK mode.\n> .unafk - Disable AFK mode manually."
+MOD_HELP = "> .afk (reason) - Enable AFK mode.\n> .unafk - Disable AFK mode manually."
 MOD_WORKS = WORKS.ALL
 MOD_USABLE = USABLE.OWNER

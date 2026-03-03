@@ -11,8 +11,8 @@ class CombinedValue:
 class USABLE(str, Enum):
     ALL = "Everyone"
     SUDO = "Sudoers"
-    OWNER = "Owner"
-    BOT = "Business Bot"
+    OWNER = "Owners"
+    BOT = "Business Bots"
 
     def __and__(self, other):
         val2 = other.value if hasattr(other, "value") else str(other)
