@@ -70,7 +70,7 @@ async def auto_unafk(c: Client, m: Message):
     """Automatically disable AFK on outgoing messages."""
     if not c.me or not c.me.id or not SQLClient:
         return
-    if m.text and "I am now AFK.".lower() in m.text.lower():
+    if m.text and "afk" in m.text.lower():
         return
     # Sudoers sending messages from their accounts shouldn't unafk the main client
     # So we strictly check if the sender is the client itself
@@ -80,12 +80,7 @@ async def auto_unafk(c: Client, m: Message):
     is_afk, _, _ = await SQLClient.get_afk(c.me.id)
     if is_afk:
         await SQLClient.set_afk(c.me.id, False)
-        try:
-            msg = await m.reply("I am no longer AFK.")
-            await __import__("asyncio").sleep(3)
-            await msg.delete()
-        except:
-            pass
+        await m.reply("I am no longer AFK.")
 
 # Incoming PMs and mentions trigger AFK reply
 @Tele.on_message((filters.private | filters.mentioned) & ~filters.me & ~filters.bot, group=2)
