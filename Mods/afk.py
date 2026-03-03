@@ -10,7 +10,7 @@ from typing import Dict
 # Rate limiting cache
 # Format: {client_id: {user_id: last_reply_timestamp}}
 last_afk_reply: Dict[int, Dict[int, float]] = {}
-AFK_REPLY_COOLDOWN = 60  # Reply at most once per minute per user
+AFK_REPLY_COOLDOWN = 5  # Reply at most once per minute per user
 
 def format_duration(seconds: int) -> str:
     """Format duration in seconds to a human-readable string."""
