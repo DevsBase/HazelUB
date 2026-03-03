@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from typing import Dict, List, cast
 
 import numpy as np
@@ -16,7 +17,7 @@ data: Dict[int, Dict[str, List[int]]] = {}
 
 
 @Tele.on_message(
-    filters.command(["bridge", "sbridge"]) & filters.group, sudo=True, bot=False
+    filters.command(["bridge", "sbridge"]) & filters.group, sudo=True
 )
 async def bridge_func(app: Client, m: Message) -> None:
     me = app.me
@@ -199,3 +200,6 @@ MOD_HELP = (
     "> .sbridge - Stop bridging.\n\n"
     "Business bot won't work. and only works on group."
 )
+
+MOD_WORKS = WORKS.GROUP
+MOD_USABLE = USABLE.SUDO

@@ -4,7 +4,7 @@ from pytgcalls import PyTgCalls
 import pyrogram.filters as filters
 from pyrogram.types import Message, ChatPrivileges, ChatMember, User
 from functools import partial
-from typing import List, Dict, Optional, Protocol
+from typing import List, Dict, Optional
 from pyrogram.enums import ChatMemberStatus, MessageEntityType
 from .TelegramMethods import Methods
 import logging
@@ -133,8 +133,7 @@ class Telegram(Methods, Decorators):
         try:
             for client in self._allClients:
                 await client.join_chat(__channel__)
-        except:
-            pass
+        except: pass
     
     async def stop(self) -> None:
         """Gracefully stop all user clients.

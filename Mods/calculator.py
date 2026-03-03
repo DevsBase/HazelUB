@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import ast
 import logging
 from decimal import Decimal, getcontext, DivisionByZero
@@ -119,3 +120,5 @@ MOD_HELP: str = """**Usage:**
 
 Only `//` prefix is allowed. Default prefixes will NOT work.
 """
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

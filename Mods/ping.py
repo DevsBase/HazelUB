@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import asyncio
 import logging
 import time
@@ -57,3 +58,5 @@ async def pingFunc(c: Client, m: Message):
 
 MOD_NAME = "Ping"
 MOD_HELP = "**Usage:**\n> .ping - Check Hazel's latency & uptime."
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

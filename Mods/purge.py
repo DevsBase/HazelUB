@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import asyncio
 import logging
 
@@ -32,3 +33,6 @@ MOD_NAME = "Purge"
 MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"
 MOD_NAME = "Purge"
 MOD_HELP = "**Usage:**\n> .purge (reply to the start message) (only in groups)"
+
+MOD_WORKS = WORKS.GROUP
+MOD_USABLE = USABLE.SUDO

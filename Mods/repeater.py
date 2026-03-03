@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from Hazel import SQLClient, Tele
 from pyrogram.client import Client
 from pyrogram.types import Message 
@@ -266,3 +267,6 @@ MOD_HELP = """**Usage:**
 
 Only work on group.
 """
+
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import asyncio
 import logging
 import os
@@ -914,3 +915,6 @@ Show the queue.
 
 Only works on group.
 """
+
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

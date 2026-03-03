@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import asyncio
 import os
 import subprocess
@@ -182,3 +183,6 @@ MOD_HELP = """**Usage:**
 > .update - Update HazelUB.
 > .logs - Get logs.
 > .stop - Stop HazelUB."""
+
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.OWNER

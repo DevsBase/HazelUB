@@ -63,6 +63,7 @@ async def main(Tele: Telegram, db: DBClient) -> None:
         db: The database client used to query repeat-message data.
     """
     jobs: list[RepeatMessage] = await db.get_repeat_messages()
+    jobs_created = 0
 
     for job in jobs:
         for client in Tele._allClients:
@@ -79,5 +80,6 @@ async def main(Tele: Telegram, db: DBClient) -> None:
                 
                 chats: list[int] = await db.get_group_chats(int(job.group_id), user_id=client_id) # type: ignore
                 asyncio.create_task(createJob(job, chats, client))
+                jobs_created += 1
                 logger.info(f"Created repeat message job for user {job_user_id} in group {job.group_id}") # type: ignore
-    logger.info(f"Loaded {len(jobs)} repeat message jobs.")
+    logger.info(f"Loaded {jobs_created} repeat message jobs.")

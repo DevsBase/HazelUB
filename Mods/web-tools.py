@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from pyrogram.client import Client
 from urllib.parse import urlparse
 from Hazel import Tele
@@ -28,3 +29,6 @@ async def openCommand(client, m):
 MOD_NAME = "Web-Tools"
 MOD_HELP = """**Usage:**
 > .open (link) - Open a link in server/machine browser."""
+
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

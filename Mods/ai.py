@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from google import genai
 from google.genai.chats import Chat
 from pyrogram import filters
@@ -119,3 +120,5 @@ MOD_NAME = "AI"
 MOD_HELP = """**Usage:**
 > .ai <query> - Talk to Gemini AI
 > .aiclr - Clear chat history"""
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

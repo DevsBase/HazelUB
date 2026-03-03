@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 import asyncio
 
 import requests
@@ -51,3 +52,5 @@ async def urban_dictionary(_, message: Message):
 
 MOD_NAME = "UD"
 MOD_HELP = "> .ud (word) - To get definition of that word."
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO

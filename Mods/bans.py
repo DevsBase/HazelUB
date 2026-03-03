@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from Hazel import Tele
 from pyrogram import filters
 from pyrogram.types import Message, User, ChatMember
@@ -60,3 +61,5 @@ async def banFunc(c: Client, m: Message):
 
 MOD_NAME = "Admins"
 MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nOnly works on group."
+MOD_WORKS = WORKS.GROUP
+MOD_USABLE = USABLE.SUDO

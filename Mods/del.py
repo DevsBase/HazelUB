@@ -1,3 +1,4 @@
+from Hazel.enums import USABLE, WORKS
 from pyrogram.client import Client
 from pyrogram import filters
 import pyrogram.types as types
@@ -14,3 +15,6 @@ async def delCommand(client: Client, m: types.Message):
 
 MOD_NAME = "Delete"
 MOD_HELP = "**Usage:**\n> .del (reply to a message)"
+
+MOD_WORKS = WORKS.ALL
+MOD_USABLE = USABLE.SUDO
