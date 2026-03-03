@@ -5,7 +5,7 @@ from pyrogram.types import Message
 from Hazel import Tele, SQLClient
 from MultiSessionManagement.decorators import _sudo_check
 import time
-from typing import Dict, Tuple
+from typing import Dict
 
 # Rate limiting cache
 # Format: {client_id: {user_id: last_reply_timestamp}}
@@ -69,6 +69,8 @@ async def unafk_cmd(c: Client, m: Message):
 async def auto_unafk(c: Client, m: Message):
     """Automatically disable AFK on outgoing messages."""
     if not c.me or not c.me.id or not SQLClient:
+        return
+    if m.text and "I am now AFK.".lower() in m.text.lower():
         return
     # Sudoers sending messages from their accounts shouldn't unafk the main client
     # So we strictly check if the sender is the client itself
