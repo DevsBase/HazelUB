@@ -65,7 +65,7 @@ async def unafk_cmd(c: Client, m: Message):
     await m.reply("I am no longer AFK.")
 
 # Outgoing messages disable AFK automatically
-@Tele.on_message(filters.outgoing & filters.me, group=2)
+@Tele.on_message(filters.me, group=4)
 async def auto_unafk(c: Client, m: Message):
     """Automatically disable AFK on outgoing messages."""
     if not c.me or not c.me.id or not SQLClient:
@@ -86,7 +86,7 @@ async def auto_unafk(c: Client, m: Message):
             pass
 
 # Incoming PMs and mentions trigger AFK reply
-@Tele.on_message((filters.private | filters.mentioned) & ~filters.me & ~filters.bot, group=1)
+@Tele.on_message((filters.private | filters.mentioned) & ~filters.me & ~filters.bot, group=2)
 async def afk_reply(c: Client, m: Message):
     """Reply to PMs and mentions when AFK."""
     if not c.me or not c.me.id or not SQLClient:
