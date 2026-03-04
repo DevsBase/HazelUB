@@ -202,6 +202,7 @@ class Telegram(Methods, Decorators):
                         if id == _sudoer:
                             return self.getClientById(_owner)
             del Hazel.sudoers[_owner]
+            # it will remove that owner id if that client is not found.
         return
     
     def getClientPrivilege(self, client: Client | None = None, user_id: int | None = None) -> str | None:
