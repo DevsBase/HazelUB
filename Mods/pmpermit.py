@@ -143,16 +143,15 @@ async def pmpermit_handler(c: Client, m: Message):
     
     if not m.from_user:
         return
-        
+    
+    # Skip checks if Sudoer
+    if await _sudo_check(None, c, m):
+        return    
+    
     # Check if PMPermit is enabled
     is_enabled = await SQLClient.is_pmpermit_enabled(c.me.id)
     if not is_enabled:
         return
-
-    # Skip checks if Sudoer
-    if await _sudo_check(None, c, m):
-        return
-        
     # Check if approved
     if await SQLClient.is_approved(c.me.id, m.from_user.id):
         return

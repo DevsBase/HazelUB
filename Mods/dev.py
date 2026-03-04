@@ -15,7 +15,9 @@ from Hazel.utils import aexec
 
 @Tele.on_message(filters.command(["e", "eval"]), sudo=True)
 async def evalFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
@@ -50,7 +52,9 @@ async def evalFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("stop"), sudo=True)
 async def stopFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
@@ -62,7 +66,9 @@ async def stopFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("restart"), sudo=True)
 async def restartFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
@@ -72,7 +78,9 @@ async def restartFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("update"), sudo=True)
 async def updateFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
@@ -119,7 +127,9 @@ async def updateFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command(["logs", "log", "flogs"]), sudo=True)
 async def logsFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
@@ -138,7 +148,9 @@ async def logsFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("sh"), sudo=True)
 async def shellFunc(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )

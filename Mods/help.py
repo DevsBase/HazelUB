@@ -168,9 +168,18 @@ async def help_inline(c: Client, q: InlineQuery):
 async def help_page_cb(c: Client, q: CallbackQuery):
     page_num = int(q.matches[0].group(1))
     markup, count = get_help_markup(page_num)
+    
+    if not markup: return
+    
+    if c.me and c.me.is_bot:
+        return await q.message.edit(
+            f"• **Help Menu**\n\nTotal Modules: `{count}`",
+            reply_markup=markup,
+        )
+    
     await q.edit_message_text(
         f"• **Help Menu**\n\nTotal Modules: `{count}`",
-        reply_markup=markup,  # type: ignore
+        reply_markup=markup,  
     )
 
 
@@ -188,9 +197,15 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         [InlineKeyboardButton(f"🌍 Works In: {help_data['works']}", callback_data="none")],
         [InlineKeyboardButton("⬅️ Back", callback_data=f"hpage_{page_num}")]
     ]
+    if c.me and c.me.is_bot:
+        return await q.message.edit(
+            f"**Module:** {mod_name}\n\n{help_text}",
+            reply_markup=InlineKeyboardMarkup(buttons),
+        )
+    
     await q.edit_message_text(
         f"**Module:** {mod_name}\n\n{help_text}",
-        reply_markup=InlineKeyboardMarkup(buttons),  # type: ignore
+        reply_markup=InlineKeyboardMarkup(buttons),
     )
 
 

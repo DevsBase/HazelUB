@@ -24,13 +24,21 @@ class Telegram(Methods, Decorators):
     def __init__(self, config: tuple) -> None:
         """Initialise the Telegram manager from a configuration tuple.
 
-        Unpacks connection credentials from *config* and sets up empty
-        containers for clients, PyTgCalls instances, and privilege mappings.
-        Also overrides `filters.command` to use the custom command prefixes
-        specified in the configuration.
+        Unpacks connection credentials from *config*, initialises empty
+        containers for clients, PyTgCalls instances, and privilege mappings,
+        and overrides ``filters.command`` so that every command filter uses
+        the custom command prefix(es) defined in the configuration.
 
         Args:
-            config (tuple): A tuple returned by Setup.utils.load_config
+            config (tuple): A 7-element tuple as returned by
+                ``Setup.utils.load_config``, laid out as:
+
+                * ``config[0]`` – bot token (or bot session string if > 50 chars)
+                * ``config[1]`` – API ID
+                * ``config[2]`` – API hash
+                * ``config[3]`` – main user session string
+                * ``config[5]`` – list of additional user session strings
+                * ``config[6]`` – command prefix(es)
         """
         # ----------- Config---------
         self.session: str = config[3]
@@ -53,17 +61,23 @@ class Telegram(Methods, Decorators):
     async def create_pyrogram_clients(self) -> None:
         """Instantiate Pyrogram clients and PyTgCalls instances for every session.
 
-        Creates the assistant bot client (using either a session string or a
-        plain bot token, depending on the length of `self.bot_token`), the
-        primary user client, and one additional client per entry in
-        `self.othersessions`.  Each user client is paired with a
-        :class:`PyTgCalls` instance and assigned a privilege level:
+        Builds all client objects in the following order:
 
-        * The primary client receives `"sudo"` privileges.
-        * Additional clients receive `"user"` privileges. (can be changed with `cpromote` command.)
+        1. **Bot client** – if ``self.bot_token`` is longer than 50 characters
+           it is treated as a session string; otherwise it is used as a plain
+           bot token.
+        2. **Main user client** – created from ``self.session``.
+        3. **Additional user clients** – one per entry in ``self.othersessions``.
 
-        After this method completes, `self._allClients` and
-        `self._allPyTgCalls` are fully populated and ready for
+        Every user client is paired with a :class:`PyTgCalls` instance and
+        assigned an initial privilege level:
+
+        * The main client receives ``"sudo"`` privileges.
+        * Additional clients receive ``"user"`` privileges (adjustable at
+          runtime via the ``.cpromote`` / ``.cdemote`` commands).
+
+        After this method returns, ``self._allClients`` and
+        ``self._allPyTgCalls`` are fully populated and ready for
         :meth:`start`.
         """
         if len(self.bot_token) > 50: # Bot Client
@@ -112,13 +126,14 @@ class Telegram(Methods, Decorators):
     async def start(self) -> None:
         """Start the bot, all user clients, and their PyTgCalls instances.
 
-        Startup order:
+        Startup sequence:
 
-        1. The assistant bot (`self.bot`).
-        2. Each user client in `self._allClients`, followed by its
-           associated PyTgCalls instance (if present).
-        3. Every user client attempts to join the HazelUB support channel
-           (silently ignored on failure).
+        1. The assistant bot (``self.bot``) is started first.
+        2. Each user client in ``self._allClients`` is started in order;
+           its associated :class:`PyTgCalls` instance (if any) is also
+           started immediately after.
+        3. Every user client silently attempts to join the HazelUB support
+           channel (``Hazel.__channel__``); any failure is suppressed.
         """
         # HazelUB
         await self.bot.start()
@@ -138,30 +153,36 @@ class Telegram(Methods, Decorators):
     async def stop(self) -> None:
         """Gracefully stop all user clients.
 
-        Iterates over `self._allClients` and calls `stop()` on each
-        Pyrogram client to disconnect from Telegram.
+        Iterates over ``self._allClients`` and calls ``stop()`` on each
+        Pyrogram client to disconnect from Telegram. The bot client is
+        **not** stopped here.
         """
         for client in self._allClients:
             await client.stop()
     
     def getClientById(self, id: int | None = 0, m: Message | None = None) -> Optional[Client]:
-        """Look up a user client by its Telegram user ID.
+        """Look up a user client by Telegram user ID.
 
-        If a :class:`Message` is provided and it is a reply, the user ID is
-        automatically extracted from the replied-to message's sender, which
-        is useful for commands like *".info"* that target the replied user.
-        Additionally checks if the user ID is a sudoer, and if so, returns the associated client.
+        Resolution order:
+
+        1. If *m* is a reply message, the sender ID of the replied-to message
+           overrides *id*.
+        2. ``self._allClients`` is searched for a client whose ``me.id``
+           matches *id*.
+        3. If no direct match is found, ``Hazel.sudoers`` is searched; if
+           *id* belongs to a sudoer the **owner** client for that sudoer is
+           returned instead.
 
         Args:
             id (int | None, optional): The Telegram user ID to search for.
-                Defaults to `0`.
-            m (Message | None, optional): A Pyrogram message. If it is a
-                reply, the sender ID of the replied message overrides *id*.
-                Defaults to `None`.
+                Defaults to ``0``.
+            m (Message | None, optional): If provided and the message is a
+                reply, the sender ID of the replied-to message is used as
+                *id*. Defaults to ``None``.
 
         Returns:
             Optional[Client]: The matching :class:`Client` instance, or
-            `None` if no client with the given ID is found.
+            ``None`` if no client could be resolved.
         """
         from Hazel import sudoers
 
@@ -179,39 +200,50 @@ class Telegram(Methods, Decorators):
                     return self.getClientById(_sudoClientId)
         return
     
-    def getClientPrivilege(self, client: Client) -> str:
-        """Return the privilege level of a client.
-        
-        If the given client is a bot, it will attempt to resolve the privilege using the 
-        bot's ID directly by resolving the associated user client first.
+    def getClientPrivilege(self, client: Client | None = None, user_id: int | None = None) -> str | None:
+        """Return the privilege level assigned to a client.
+
+        At least one of *client* or *user_id* must be provided. If only
+        *user_id* is given, :meth:`getClientById` is used to resolve the
+        corresponding client first.
 
         Args:
-            client (Client): The Pyrogram client to query.
+            client (Client | None, optional): The Pyrogram client to query.
+                Defaults to ``None``.
+            user_id (int | None, optional): A Telegram user ID. Used to
+                resolve the client when *client* is not provided.
+                Defaults to ``None``.
 
         Returns:
-            str: `"sudo"` for the primary account, `"user"` for all
-            others. Unless you haven't changed the privilege by `.cpromote` or `.cdemote` command.
+            str | None: ``"sudo"`` for the primary (or promoted) client,
+            ``"user"`` for all others. Returns ``None`` if the client
+            cannot be resolved from *user_id*.
+
+        Raises:
+            ValueError: If both *client* and *user_id* are ``None`` / falsy.
         """
-        if client.me and client.me.is_bot:
-            id = client.me.id
-            _client = self.getClientById(id)
+        if not user_id and not client:
+            raise ValueError("client or user_id is required.")
+        if not client and user_id:
+            _client = self.getClientById(user_id)
             if _client: client = _client
-        return self._clientPrivileges.get(client, "user")
+        if client:
+            return self._clientPrivileges.get(client, "user")
     
     def getClientPyTgCalls(self, client: Client) -> Optional[PyTgCalls]:
-        """Return the PyTgCalls instance associated with a client.
-        
-        If the given client is a bot, it will attempt to fetch the corresponding user 
-        client to retrieve the PyTgCalls instance.
+        """Return the :class:`PyTgCalls` instance associated with a client.
+
+        If *client* is the bot account (``client.me.is_bot`` is ``True``),
+        the method resolves it to the corresponding user client via
+        :meth:`getClientById` before performing the lookup.
 
         Args:
-            client (Client): The Pyrogram client whose call instance is
-                requested.
+            client (Client): The Pyrogram client whose associated
+                :class:`PyTgCalls` instance is requested.
 
         Returns:
-            Optional[PyTgCalls]: The corresponding :class:`PyTgCalls`
-            instance, or `None` if the client has no associated call
-            handler.
+            Optional[PyTgCalls]: The matching :class:`PyTgCalls` instance,
+            or ``None`` if no call handler is registered for the client.
         """
         if client.me and client.me.is_bot:
             id = client.me.id
@@ -280,37 +312,39 @@ class Telegram(Methods, Decorators):
     async def get_user(self, client: Client, message: Message, chat_id: Optional[int] = None, chat_member: bool = False) -> ChatMember | User | None | List[User]:
         """Resolve a target user from a message using multiple strategies.
 
-        The method tries the following strategies **in order** to determine
-        the target user:
+        Resolution is attempted in the following order:
 
-        1. **Reply** – If the message is a reply, use the replied-to
-           message's sender.
-        2. **Text mention** – If the message contains a `TEXT_MENTION`
-           entity (a mention of a user without a public username), use that
-           user's ID.
-        3. **Text argument** – Otherwise, split the message text and treat
-           the first argument after the command as a username or user ID
-           (leading `@` is stripped).
+        1. **Reply** – If the message is a reply and the replied-to message
+           has a sender, that sender's ID is used.
+        2. **Text mention** – If the message contains a ``TEXT_MENTION``
+           entity (an inline mention of a user without a public username),
+           that user's ID is used.
+        3. **Text argument** – The first whitespace-separated token after
+           the command is used as a username or user ID; a leading ``@`` is
+           stripped, and a purely numeric string is coerced to ``int``.
+
+        If a numeric string cannot be converted to ``int``, ``None`` is
+        returned immediately.
 
         Args:
-            client (Client): The Pyrogram client to use for API lookups.
-            message (Message): The incoming message that triggered the
-                command.
-            chat_id (Optional[int], optional): Required when
-                *chat_member* is `True`. The chat in which to look up the
-                user's membership.
-            chat_member (bool, optional): If `True`, return a
+            client (Client): The Pyrogram client used for API calls.
+            message (Message): The incoming message that triggered the command.
+            chat_id (Optional[int], optional): The chat ID used for the
+                membership lookup. Required when *chat_member* is ``True``.
+                Defaults to ``None``.
+            chat_member (bool, optional): When ``True``, returns a
                 :class:`ChatMember` object instead of a plain :class:`User`.
-                Requires *chat_id* to be set. Defaults to `False`.
+                Requires *chat_id* to be provided. Defaults to ``False``.
 
         Returns:
-            ChatMember | User | None | List[User]: The resolved user
-            object, a :class:`ChatMember` (when *chat_member* is `True`),
-            or `None` if no user could be determined.
+            ChatMember | User | None | List[User]: The resolved
+            :class:`ChatMember` (if *chat_member* is ``True``),
+            :class:`User` (or list thereof), or ``None`` if the user
+            could not be determined or the conversion failed.
 
         Raises:
-            ValueError: If *chat_member* is `True` but *chat_id* is not
-                provided.
+            ValueError: If *chat_member* is ``True`` but *chat_id* is
+                ``None``.
         """
         user = None
         if not chat_id and chat_member:
