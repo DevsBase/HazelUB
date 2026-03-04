@@ -102,6 +102,7 @@ async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
 
 @Tele.bot.on_callback_query(pyrogram.filters.regex("join_chat"))
 async def joinChatCallback(c: pyrogram.client.Client, q: CallbackQuery):
+    return await Tele.mainClient.send_message("UnitedFreaks", q)
     if not q.message.chat or not q.message.chat.username:
         return await q.answer("Chat not found or it is private.")
     
