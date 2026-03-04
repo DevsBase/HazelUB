@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient
-from MultiSessionManagement.decorators import sudo_check
+from Hazel.Platforms.Telegram.decorators import sudo_check
 import time
 from typing import Dict
 
@@ -122,8 +122,9 @@ async def afk_reply(c: Client, m: Message):
     
     await m.reply(reply_msg)
 
-
-MOD_NAME = "AFK"
-MOD_HELP = "> .afk (reason) - Enable AFK mode.\n> .unafk - Disable AFK mode manually."
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.OWNER
+MOD_CONFIG = {
+    "name": "AFK",
+    "help": "> .afk (reason) - Enable AFK mode.\n> .unafk - Disable AFK mode manually.",
+    "works": WORKS.ALL,
+    "usable": USABLE.OWNER
+}

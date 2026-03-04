@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from MultiSessionManagement.telegram import Telegram
+from Hazel.Platforms.Telegram import Telegram
 from pyrogram.client import Client
 from Database.client import DBClient
 from Database.Tables.repeatMessage import RepeatMessage

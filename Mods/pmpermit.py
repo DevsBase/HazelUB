@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient
-from MultiSessionManagement.decorators import sudo_check
+from Hazel.Platforms.Telegram.decorators import sudo_check
 from typing import Dict
 
 # Rate limiting / warning cache
@@ -183,15 +183,16 @@ async def pmpermit_handler(c: Client, m: Message):
     warn_text = warn_text.replace("{warns}", str(warns)).replace("{limit}", str(limit))
     await m.reply(warn_text)
 
-MOD_NAME = "PMPermit"
-MOD_HELP = (
+MOD_CONFIG = {
+    "name": "PMPermit",
+    "help": (
     "> .pmpermit on|off - Toggle PMPermit.\n"
     "> .approve / .a (reply/id) - Approve a user.\n"
     "> .disapprove / .da (reply/id) - Disapprove a user.\n"
     "> .setpmmsg <text> - Set custom warning message.\n"
     "> .pmlimit <int> - Set warning limit."
     "\nNote: Sudoers are exempt from PMPermit checks. Use `.sudoers` to manage sudo users."
-)
-
-MOD_WORKS = WORKS.PRIVATE
-MOD_USABLE = USABLE.OWNER
+    ),
+    "works": WORKS.PRIVATE,
+    "usable": USABLE.OWNER
+}

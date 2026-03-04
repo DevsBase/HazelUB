@@ -50,7 +50,9 @@ async def urban_dictionary(_, message: Message):
     await processing.delete()
     await message.reply(reply_text)
 
-MOD_NAME = "UD"
-MOD_HELP = "> .ud (word) - To get definition of that word."
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Urban Dictionary",
+    "help": "> .ud (word) - To get definition of that word.",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

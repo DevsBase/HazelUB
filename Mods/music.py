@@ -890,9 +890,7 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
         await loading.edit("Lyrics not found.")
 
 
-# --- Module Metadata ---
-MOD_NAME = "Music"
-MOD_HELP = """> `.play <query>`
+"""> `.play <query>`
 Download and play a song. Supports searching by title or artist.
 
 > `.lyrics`
@@ -913,6 +911,9 @@ Set or cycle music loop mode.
 > `.queue`
 Show the queue.
 """
-
-MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Musicr",
+    "help": __doc__,
+    "works": WORKS.GROUP,
+    "usable": USABLE.OWNER & USABLE.SUDO,
+}

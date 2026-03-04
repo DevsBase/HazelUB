@@ -186,14 +186,17 @@ async def shellFunc(c: Client, m: Message):
     await s.edit(f"Command Output:```bash\n{result.stdout}```")
 
 
-MOD_NAME = "Dev"
-MOD_HELP = """**Usage:**
+"""**Usage:**
 > .eval (code) - Evaluate python code.
 > .sh (cmd) - Execute shell command.
 > .restart - Restart HazelUB.
 > .update - Update HazelUB.
 > .logs - Get logs.
-> .stop - Stop HazelUB."""
-
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+> .stop - Stop HazelUB.
+"""
+MOD_CONFIG = {
+    "name": "Dev",
+    "help": __doc__,
+    "works": WORKS.ALL,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

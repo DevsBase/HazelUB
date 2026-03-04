@@ -13,8 +13,9 @@ async def delCommand(client: Client, m: types.Message):
         await m.reply_to_message.delete(revoke=True)
     except: pass
 
-MOD_NAME = "Delete"
-MOD_HELP = "**Usage:**\n> .del (reply to a message)"
-
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Delete",
+    "help": "**Usage:**\n> .del (reply to a message)",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

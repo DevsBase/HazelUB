@@ -1,9 +1,12 @@
 import logging
 import time
 from typing import TYPE_CHECKING, List, Dict
+import ensurepip
+
+ensurepip.bootstrap()
 
 if TYPE_CHECKING:
-    from MultiSessionManagement.telegram import Telegram
+    from Hazel.Platforms.Telegram import Telegram
     import Database.client as Database
     Tele: Telegram
     SQLClient: Database.DBClient

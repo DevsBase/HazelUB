@@ -108,9 +108,7 @@ async def calculateFunc(c: Client, m: Message) -> None:
     except Exception as e:
         logger.error(f"Failed to calculate: {exp}. Error: {e}")
 
-
-MOD_NAME: str = "Calculator"
-MOD_HELP: str = """**Usage:**
+"""**Usage:**
 > //2+2
 > //2/2
 > //2-2
@@ -120,5 +118,10 @@ MOD_HELP: str = """**Usage:**
 
 Only `//` prefix is allowed. Default prefixes will NOT work.
 """
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+
+MOD_CONFIG = {
+    "name": "Calculator",
+    "help": __doc__,
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

@@ -34,8 +34,10 @@ async def id_func(_, m: pyrogram.types.Message):
   elif reply and reply.photo:
     _reply += f"**Photo ID**: `{reply.photo.file_id}`"
   if reply: await reply.reply(_reply)
-  
-MOD_NAME = "ID"
-MOD_HELP = "> .id - reply someone or get current chat id."
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+
+MOD_CONFIG = {
+  "name": "ID",
+  "help": "> .id - reply someone or get current chat id.",  
+  "works": WORKS.ALL,
+  "usable": USABLE.ALL
+}

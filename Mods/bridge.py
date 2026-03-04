@@ -193,13 +193,13 @@ async def audio_data(
         except Exception:
             pass
 
-
-MOD_NAME = "Bridge"
-MOD_HELP = (
-    "> .bridge <username/link/id> - Bridge two voice chats.\n"
-    "> .sbridge - Stop bridging.\n\n"
-    "Business bot won't work. and only works on group."
-)
-
-MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Bridge",
+    "help": (
+        "> .bridge <username/link/id> - Bridge two voice chats.\n"
+        "> .sbridge - Stop bridging.\n\n"
+        "Business bot won't work. and only works on group."
+    ),
+    "works": WORKS.GROUP,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

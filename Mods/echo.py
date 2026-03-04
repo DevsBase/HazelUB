@@ -11,8 +11,9 @@ async def echo_cmd(c: Client, m: Message):
     try: await m.delete()
     except: ...
 
-
-MOD_NAME = "Echo"
-MOD_HELP = "> .echo / .ec (reply) - to send the replied message."
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Echo",
+    "help": "> .echo / .ec (reply) - to send the replied message.",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

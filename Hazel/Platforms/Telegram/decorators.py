@@ -7,7 +7,7 @@ from pyrogram.types import Message
 from Hazel import sudoers
 
 if TYPE_CHECKING:
-    from MultiSessionManagement.telegram import Telegram
+    from Hazel.Platforms.Telegram import Telegram
 else:
     Telegram = None
 

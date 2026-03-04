@@ -27,10 +27,9 @@ async def openCommand(client, m):
     except Exception as e:
         await m.reply(f"Failed to open link.\n\n**Error:** {e}")
 
-
-MOD_NAME = "Web-Tools"
-MOD_HELP = """**Usage:**
-> .open (link) - Open a link in server/machine browser."""
-
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Web-Tools",
+    "help": "**Usage:**\n> .open (link) - Open a link in server/machine browser.",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

@@ -59,7 +59,9 @@ async def banFunc(c: Client, m: Message):
         except Exception as e:
             await m.reply(f"Failed to kick user {user.id}\n\n**Error:** {e}")
 
-MOD_NAME = "Admins"
-MOD_HELP = "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nOnly works on group."
-MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Bans",
+    "help": "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nOnly works on group.",
+    "works": WORKS.GROUP,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

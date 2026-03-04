@@ -89,13 +89,16 @@ async def remove_sudo(c: Client, m: Message):
     )
 
 
-MOD_NAME = "Clients"
-MOD_HELP = """**Usage:**
+"""**Usage:**
 > .clients - Info about all sessions.
 > .cpromote - Add sudo (reply). (Business bot won't work.)
 > .cdemote - Remove sudo (reply). (Business bot won't work.)
 
 **⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
 """
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Clients",
+    "help": __doc__,
+    "works": WORKS.ALL,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

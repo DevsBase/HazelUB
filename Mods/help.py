@@ -15,6 +15,7 @@ from pyrogram.types import (
 )
 
 from Hazel import Tele
+from Hazel.enums import USABLE, WORKS
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def load_mods_help():
                     module = importlib.import_module(module_path)
 
                 name = getattr(
-                    module, "MOD_NAME", mod_name_id.replace("-", " ").capitalize()
+                    module, "", mod_name_id.replace("-", " ").capitalize()
                 )
                 help_text = getattr(module, "MOD_HELP", None)
                 mod_works = getattr(module, "MOD_WORKS", "Works.ALL")
@@ -213,6 +214,9 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
 async def none_cb(c, q):
     await q.answer()
 
-
-MOD_NAME = "Help"
-MOD_HELP = "Shows this help menu.\n\nUsage: `.help`"
+MOD_CONFIG = {
+    "name": "Help",
+    "help": "Shows this help menu.\n\nUsage: `.help`",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

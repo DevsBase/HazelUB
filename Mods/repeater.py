@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 @Tele.on_message(filters.command('repeat'), sudo=True)
 async def repeatFunc(c: Client, m: Message):
-    if 'help' in str(m.text): 
-        return await m.reply(MOD_HELP)
     text: list[str] = m.text.split()  # type: ignore
 
     if len(text) < 3:
@@ -230,7 +228,7 @@ async def repeatList(c: Client, m: Message):
 
 @Tele.on_message(filters.command(['rpause', 'rresume']) & filters.group, sudo=True)
 async def pauseAndResumeFunc(c: Client, m: Message):
-    import Hazel.Tasks.messageRepeater as messageRepeater
+    import Hazel.Platforms.Telegram.Tasks.messageRepeater as messageRepeater
     uid: int = c.me.id # type: ignore
     if uid not in messageRepeater.events:
         return await m.reply("No repeat messages found. Please restart Hazel then run this.")
@@ -252,8 +250,7 @@ async def pauseAndResumeFunc(c: Client, m: Message):
         event.clear()
         return await m.reply("Paused all repeat tasks.")
 
-MOD_NAME = "Repeater"
-MOD_HELP = """**Usage:**
+"""**Usage:**
 > .repeat (mins) (group) - Repeat a message.
 > .rgroup create (name) - Create a group.
 > .rgroup_add (group) - Add current chat to group.
@@ -268,5 +265,9 @@ MOD_HELP = """**Usage:**
 Only work on group.
 """
 
-MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Repeater",
+    "help": __doc__,
+    "works": WORKS.GROUP,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

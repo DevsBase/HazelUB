@@ -23,7 +23,7 @@ async def main():
        received.
     """
     db, config = await installation_main()  # Ensure installation is done first.
-    from MultiSessionManagement.telegram import Telegram
+    from Hazel.Platforms.Telegram import Telegram
     import art
     
     logger.info("Starting telegram setup...")
@@ -51,7 +51,7 @@ async def main():
     # Tasks -----------------------
     logger.info('Starting HazelUB Tasks...')
 
-    import Hazel.Tasks.messageRepeater as messageRepeater
+    import Hazel.Platforms.Telegram.Tasks.messageRepeater as messageRepeater
 
     asyncio.create_task(messageRepeater.main(Tele, db))
     # -- Idle System ---------------------------

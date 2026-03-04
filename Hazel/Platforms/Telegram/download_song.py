@@ -1,4 +1,4 @@
-import MultiSessionManagement.telegram
+import Hazel.Platforms.Telegram.telegram
 import pyrogram
 import asyncio
 import config
@@ -48,7 +48,7 @@ class DownloadSong:
     (video results are automatically converted using ``ffmpeg``).
     """
 
-    async def download_song(self: "MultiSessionManagement.telegram.Telegram", query: str, client: pyrogram.Client) -> dict | None: # type: ignore
+    async def download_song(self: "Hazel.Platforms.Telegram.Telegram", query: str, client: pyrogram.Client) -> dict | None: # type: ignore
         """Search for and download a song via the DazzerBot inline bot.
 
         The method performs the following steps:

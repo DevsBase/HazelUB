@@ -28,11 +28,9 @@ async def purgeFunc(app: Client, m: Message):
             logger.error(f"Error deleting messages {x}: {str(e)}")
     await app.send_message(m.chat.id, f"Deleted {count} messages.")  # type: ignore
 
-
-MOD_NAME = "Purge"
-MOD_HELP = "**Usage:**\n> .purge (reply to the start message)"
-MOD_NAME = "Purge"
-MOD_HELP = "**Usage:**\n> .purge (reply to the start message) (only in groups)"
-
-MOD_WORKS = WORKS.GROUP
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Purge",
+    "help": "**Usage:**\n> .purge (reply to the start message) (only in groups)",
+    "works": WORKS.GROUP,
+    "usable": USABLE.OWNER & USABLE.SUDO
+}

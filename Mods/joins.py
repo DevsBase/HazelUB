@@ -132,12 +132,10 @@ async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
             ],
         )
 
-    
 
-MOD_NAME: str = "joins"
-MOD_HELP: str = (
-    "> .join <link/username> - to join there\n"
-    "> .leave <link/username/blank> - pass chat link or use in a group to leave from there."
-)
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Joins",
+    "help": __doc__,
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

@@ -56,7 +56,9 @@ async def pingFunc(c: Client, m: Message):
         f"Uptime: `{uptime}`"
     )
 
-MOD_NAME = "Ping"
-MOD_HELP = "**Usage:**\n> .ping - Check Hazel's latency & uptime."
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.ALL
+MOD_CONFIG = {
+    "name": "Ping",
+    "help": "**Usage:**\n> .ping - Check Hazel's latency & uptime.",
+    "works": WORKS.ALL,
+    "usable": USABLE.ALL
+}

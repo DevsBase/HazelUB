@@ -6,10 +6,13 @@ from pyrogram.types import Message, ChatPrivileges, ChatMember, User
 from functools import partial
 from typing import List, Dict, Optional
 from pyrogram.enums import ChatMemberStatus, MessageEntityType
-from .TelegramMethods import Methods
+from .download_song import DownloadSong
 import logging
 
-class Telegram(Methods, Decorators):
+class Telegram(
+    DownloadSong,
+    Decorators
+):
     """Central orchestrator for multi-session Telegram userbot management.
 
     `Telegram` composes functionality from the :class:`Methods` and

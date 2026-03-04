@@ -81,9 +81,7 @@ async def sudoers_handler(c: Client, m: Message):
         text += f"- `{user_id}`\n"
     await m.reply(text)
 
-
-MOD_NAME = "Sudoers"
-MOD_HELP = """**Usage:**
+"""**Usage:**
 > .asudo (reply) - Add a user to sudoers. (Business bot wont work)
 > .dsudo (ID/reply) - Remove a user from sudoers. (Business bot won't work)
 > .sudoers - List all sudoers.
@@ -91,5 +89,9 @@ MOD_HELP = """**Usage:**
 **⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.
 """
 
-MOD_WORKS = WORKS.ALL
-MOD_USABLE = USABLE.OWNER & USABLE.SUDO
+MOD_CONFIG = {
+    "name": "Sudoers",
+    "help": __doc__,
+    "works": WORKS.ALL,
+    "usable": USABLE.OWNER & USABLE.SUDO,
+}
