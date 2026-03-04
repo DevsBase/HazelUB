@@ -96,14 +96,11 @@ async def ai_cmd(c: Client, m: Message):
 
         full_text = full_text[:4090] # type: ignore
         if full_text:
-            await loading.reply(full_text)
+            await loading.edit(full_text)
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await loading.reply(f"Error: `{e}`")
-    finally:
-        try: await loading.delete()
-        except: pass
+        await loading.edit(f"Error: `{e}`")
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)

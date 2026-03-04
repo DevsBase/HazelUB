@@ -30,7 +30,6 @@ async def evalFunc(c: Client, m: Message):
         result = await aexec(cmd[1], c, m)
     except Exception as e:
         result = (str(e), None)
-    await s.delete()
 
     if len(result[0]) > 1999 or (result[1] and len(str(result[1])) > 1999):
 
@@ -41,11 +40,11 @@ async def evalFunc(c: Client, m: Message):
         os.remove("eval.txt")
 
     elif not result[1]:
-        await m.reply(f"Output:```python\n{result[0]}```")
+        await s.edit(f"Output:```python\n{result[0]}```")
     elif not result[0]:
-        await m.reply(f"Result:```python\n{result[1]}```")
+        await s.edit(f"Result:```python\n{result[1]}```")
     else:
-        await m.reply(
+        await s.edit(
             f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```"
         )
 
@@ -97,7 +96,7 @@ async def updateFunc(c: Client, m: Message):
     result = subprocess.run(
         ["git", "pull", "origin", "main"], capture_output=True, text=True
     )
-    await s.delete()
+
     try:
         with open("config.py", "w") as f:
             f.write(config_data)
@@ -117,7 +116,7 @@ async def updateFunc(c: Client, m: Message):
     ).stdout.strip()
 
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
-    await m.reply(
+    await s.edit(
         f"**Update Successful:**```bash\n{result.stdout}```\n"
         f"**Update information:** \nCommit message: {title}\nDescription: {body}\n\n"
         "`Restarting HazelUB...`"
@@ -183,8 +182,8 @@ async def shellFunc(c: Client, m: Message):
         return os.remove("shell.txt")
 
     if result.returncode != 0:
-        return await m.reply(f"Command Failed:```bash\n{result.stderr}```")
-    await m.reply(f"Command Output:```bash\n{result.stdout}```")
+        return await s.edit(f"Command Failed:```bash\n{result.stderr}```")
+    await s.edit(f"Command Output:```bash\n{result.stdout}```")
 
 
 MOD_NAME = "Dev"
