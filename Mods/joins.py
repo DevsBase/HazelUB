@@ -1,31 +1,20 @@
-from Hazel.enums import USABLE, WORKS
 from typing import List, Optional
 
-from Hazel import Tele
 import pyrogram
 from pyrogram import enums
-from pyrogram.types import Message, Chat
 from pyrogram.errors import InviteRequestSent
-from MultiSessionManagement.decorators import sudo_check
-from pyrogram.types import (
-    CallbackQuery,
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-    InlineQuery,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
-    Message,
-)
+from pyrogram.types import Chat, Message
+
+from Hazel import Tele
+from Hazel.enums import USABLE, WORKS
+
 
 @Tele.on_message(pyrogram.filters.command(["join", "leave"]), sudo=True)
-async def joins_func(
-    app: pyrogram.client.Client,
-    m: Message
-) -> None:
-    
+async def joins_func(app: pyrogram.client.Client, m: Message) -> None:
+
     if app.me and app.me.is_bot and m.from_user:
         app = Tele.getClientById(m.from_user.id) or app
-        
+
     command: Optional[List[str]] = m.command
     text: str = m.text or ""
 
@@ -84,39 +73,6 @@ async def joins_func(
 
     except Exception as e:
         await m.reply(f"Failed: {e}")
-
-
-@Tele.bot.on_inline_query(pyrogram.filters.regex("join"))
-async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
-    btns = InlineKeyboardMarkup([[InlineKeyboardButton("Verify", callback_data="join_chat")]])
-    await q.answer(
-        [
-            InlineQueryResultArticle(
-                title="Join a chat",
-                description="Click the button to verify and join the chat.",
-                input_message_content=InputTextMessageContent("Click the button below to verify and join the chat."),
-                reply_markup=btns
-            )
-        ],
-    )
-
-@Tele.bot.on_callback_query(pyrogram.filters.regex("join_chat"))
-async def joinChatCallback(c: pyrogram.client.Client, q: CallbackQuery):
-    return await Tele.mainClient.send_message("UnitedFreaks", q)
-    if not q.message.chat or not q.message.chat.username:
-        return await q.answer("Chat not found or it is private.")
-    
-    chat = q.message.chat.username
-
-    join_client = Tele.getClientById(q.from_user.id)
-    if not join_client:
-        return await q.answer("Client not found.")
-    try:
-        await join_client.join_chat(chat)
-        await q.edit_message_text("Joined.")
-    except Exception as e:
-        await q.edit_message_text(str(e))
-
 
 
 MOD_NAME: str = "joins"
