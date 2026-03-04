@@ -6,7 +6,16 @@ import pyrogram
 from pyrogram import enums
 from pyrogram.types import Message, Chat
 from pyrogram.errors import InviteRequestSent
-
+from MultiSessionManagement.decorators import sudo_check
+from pyrogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InlineQuery,
+    InlineQueryResultArticle,
+    InputTextMessageContent,
+    Message,
+)
 
 @Tele.on_message(pyrogram.filters.command(["join", "leave"]), sudo=True)
 async def joins_func(
@@ -75,6 +84,40 @@ async def joins_func(
 
     except Exception as e:
         await m.reply(f"Failed: {e}")
+
+
+@Tele.bot.on_inline_query(pyrogram.filters.regex("join"))
+async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
+    btns = InlineKeyboardMarkup([[InlineKeyboardButton("Verify", callback_data="join_chat")]])
+    await q.answer(
+        [
+            InlineQueryResultArticle(
+                title="Join a chat",
+                description="Click the button to verify and join the chat.",
+                input_message_content=InputTextMessageContent("Click the button below to verify and join the chat."),
+                reply_markup=btns
+            )
+        ],
+    )
+
+@Tele.bot.on_callback_query(pyrogram.filters.regex("join_chat"))
+async def joinChatCallback(c: pyrogram.client.Client, q: CallbackQuery):
+    if not await sudo_check(None, c, q.message):
+        await q.answer("You cannot access this userbot.")
+    if not q.message.chat or not q.message.chat.username:
+        return await q.answer("Chat not found or it is private.")
+    
+    chat = q.message.chat.username
+
+    join_client = Tele.getClientById(q.from_user.id)
+    if not join_client:
+        return await q.answer("Client not found.")
+    try:
+        await join_client.join_chat(chat)
+        await q.edit_message_text("Joined.")
+    except Exception as e:
+        await q.edit_message_text(str(e))
+
 
 
 MOD_NAME: str = "joins"
