@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
-from pyrogram import filters
+
 import pyrogram
-from Hazel import sudoers, Tele
-import Hazel
+from pyrogram import filters
 from pyrogram.types import Message
+
+from Hazel import sudoers
 
 if TYPE_CHECKING:
     from MultiSessionManagement.telegram import Telegram
@@ -12,6 +13,8 @@ else:
 
 async def _sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
     """Check whether the sender of the message holds sudo privileges for the current client session."""
+    import Hazel
+
     if not message.from_user:
         return False
 
@@ -26,7 +29,7 @@ async def _sudo_check(_, client: pyrogram.client.Client, message: Message) -> bo
         return True
     
     if client.me.is_bot:
-        for owner, _sudoers in Hazel.sudoers.items():
+        for owner, _sudoers in list(Hazel.sudoers.items()):
             for _c in Hazel.Tele._allClients:
                 if _c and _c.me and _c.me.id == owner:
                     if user_id in _sudoers:

@@ -195,7 +195,7 @@ class Telegram(Methods, Decorators):
             if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client
             
-        for _owner, _sudoers in Hazel.sudoers.items():
+        for _owner, _sudoers in list(Hazel.sudoers.items()):
             for _c in self._allClients:
                 if _c and _c.me and _c.me.id == _owner:
                     for _sudoer in _sudoers:
