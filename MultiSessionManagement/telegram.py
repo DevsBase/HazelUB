@@ -184,7 +184,8 @@ class Telegram(Methods, Decorators):
             Optional[Client]: The matching :class:`Client` instance, or
             ``None`` if no client could be resolved.
         """
-        from Hazel import sudoers
+        import Hazel
+        sudoers = Hazel.sudoers
 
         if m and isinstance(m, Message):
             if m.reply_to_message and hasattr(m.reply_to_message.from_user, 'id'):
@@ -194,10 +195,13 @@ class Telegram(Methods, Decorators):
             if isinstance(id, int) and client.me and client.me.id == id: # type: ignore
                 return client
             
-        for _sudoClientId, _sudoers in sudoers.items():
-            for _sudoer in _sudoers:
-                if id == _sudoer:
-                    return self.getClientById(_sudoClientId)
+        for _owner, _sudoers in sudoers.items():
+            for _c in self._allClients:
+                if _c and _c.me and _c.me.id == _owner:
+                    for _sudoer in _sudoers:
+                        if id == _sudoer:
+                            return self.getClientById(_owner)
+            del Hazel.sudoers[_owner]
         return
     
     def getClientPrivilege(self, client: Client | None = None, user_id: int | None = None) -> str | None:
