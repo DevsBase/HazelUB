@@ -26,7 +26,7 @@ async def _sudo_check(_, client: pyrogram.client.Client, message: Message) -> bo
         return True
     
     if client.me.is_bot:
-        for owner, _sudoers in sudoers.items():
+        for owner, _sudoers in Hazel.sudoers.items():
             for _c in Hazel.Tele._allClients:
                 if _c and _c.me and _c.me.id == owner:
                     if user_id in _sudoers:
