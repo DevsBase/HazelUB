@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient
-from MultiSessionManagement.decorators import _sudo_check
+from MultiSessionManagement.decorators import sudo_check
 import time
 from typing import Dict
 
@@ -90,7 +90,7 @@ async def afk_reply(c: Client, m: Message):
         return
         
     # Ignore Sudoers
-    if await _sudo_check(None, c, m):
+    if await sudo_check(None, c, m):
         return
         
     is_afk, reason, start_time = await SQLClient.get_afk(c.me.id)

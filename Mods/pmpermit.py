@@ -3,7 +3,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele, SQLClient
-from MultiSessionManagement.decorators import _sudo_check
+from MultiSessionManagement.decorators import sudo_check
 from typing import Dict
 
 # Rate limiting / warning cache
@@ -145,7 +145,7 @@ async def pmpermit_handler(c: Client, m: Message):
         return
     
     # Skip checks if Sudoer
-    if await _sudo_check(None, c, m):
+    if await sudo_check(None, c, m):
         return    
     
     # Check if PMPermit is enabled
