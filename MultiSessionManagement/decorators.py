@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
 from pyrogram import filters
 import pyrogram
-from Hazel import sudoers
+from Hazel import sudoers, Tele
+import Hazel
 from pyrogram.types import Message
 
 if TYPE_CHECKING:
@@ -25,8 +26,14 @@ async def _sudo_check(_, client: pyrogram.client.Client, message: Message) -> bo
         return True
     
     if client.me.is_bot:
-        if any(user_id in user_ids for user_ids in sudoers.values()):
-            return True
+        for owner, _sudoers in sudoers.items():
+            for _c in Tele._allClients:
+                if _c and _c.me and _c.me.id == owner:
+                    if user_id in _sudoers:
+                        return True
+            del Hazel.sudoers[owner]
+            # it will remove that owner id if that client is not found.
+
     return False
 
 class Decorators:

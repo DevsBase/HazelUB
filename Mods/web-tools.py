@@ -9,7 +9,9 @@ import asyncio
 
 @Tele.on_message(filters.command("open"), sudo=True)
 async def openCommand(client, m):
-    if Tele.getClientPrivilege(client) != "sudo":
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )

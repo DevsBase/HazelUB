@@ -26,8 +26,12 @@ async def clientsFunc(c: Client, m: Message):
 
 @Tele.on_message(filters.command("cpromote"), sudo=True, bot=False)
 async def add_sudo(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
-        return await m.reply("You don't have permisson.")
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
+        return await m.reply(
+            "This client don't have `sudo` privillage. It is required to use this command."
+        )
 
     if not m.reply_to_message:
         if len(m.command or []) < 2:
@@ -51,8 +55,12 @@ async def add_sudo(c: Client, m: Message):
 
 @Tele.on_message(filters.command("cdemote"), sudo=True, bot=False)
 async def remove_sudo(c: Client, m: Message):
-    if Tele.getClientPrivilege(c) != "sudo":
-        return await m.reply("You don't have permisson.")
+    if not m or not m.from_user:
+        return
+    if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
+        return await m.reply(
+            "This client don't have `sudo` privillage. It is required to use this command."
+        )
 
     if not m.reply_to_message:
         if len(m.command or []) < 2:
