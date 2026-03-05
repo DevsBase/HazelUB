@@ -50,7 +50,6 @@ async def main() -> Tuple[DBClient, HazelConfig]:
         from aiosqlite import connect
         from art import text2art
         from pyrogram.client import Client
-        from google import genai
     except ImportError:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()
