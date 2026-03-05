@@ -1,7 +1,4 @@
-import typing
-
-if typing.TYPE_CHECKING:
-    from pyrogram.types import Message
+from pyrogram.types import Message
 
 class MessageMethods:
     def __init__(self, message: Message):

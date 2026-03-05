@@ -9,13 +9,11 @@ from pyrogram.types import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     InlineQuery,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
     Message,
 )
 
 from Hazel import Tele
-from Hazel.enums import USABLE, WORKS
+from Hazel.enums import USABLE, WORKS, CombinedValue
 from Hazel.ModLoader import MODS_DATA
 
 logger = logging.getLogger(__name__)
@@ -169,9 +167,9 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         u_val = help_data.get("usable")
         w_val = help_data.get("works")
         
-        if isinstance(u_val, USABLE):
+        if isinstance(u_val, USABLE) or isinstance(u_val, CombinedValue):
             u_val = u_val.value
-        if isinstance(w_val, WORKS):
+        if isinstance(w_val, WORKS) or isinstance(w_val, CombinedValue):
             w_val = w_val.value
         
         usable = getattr(u_val, "name", str(u_val)) if u_val else "Unknown"
