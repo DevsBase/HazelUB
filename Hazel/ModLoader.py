@@ -98,7 +98,7 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
 def load_mods() -> None:
     global MODS_DATA
 
-    mods_pkg: str = f"{__package__}.Mods"
+    mods_pkg: str = f"Mods"
 
     loaded: List[str] = []
 
