@@ -890,7 +890,9 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
         await loading.edit("Lyrics not found.")
 
 
-"""> `.play <query>`
+help = """**Usage:**
+
+> `.play <query>`
 Download and play a song. Supports searching by title or artist.
 
 > `.lyrics`
@@ -913,7 +915,7 @@ Show the queue.
 """
 MOD_CONFIG = {
     "name": "Musicr",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO,
 }

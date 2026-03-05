@@ -81,7 +81,7 @@ async def sudoers_handler(c: Client, m: Message):
         text += f"- `{user_id}`\n"
     await m.reply(text)
 
-"""**Usage:**
+help = """**Usage:**
 > .asudo (reply) - Add a user to sudoers. (Business bot wont work)
 > .dsudo (ID/reply) - Remove a user from sudoers. (Business bot won't work)
 > .sudoers - List all sudoers.
@@ -91,7 +91,7 @@ async def sudoers_handler(c: Client, m: Message):
 
 MOD_CONFIG = {
     "name": "Sudoers",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.ALL,
     "usable": USABLE.OWNER & USABLE.SUDO,
 }

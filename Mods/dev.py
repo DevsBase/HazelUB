@@ -184,7 +184,7 @@ async def shellFunc(c: Client, m: Message):
     await s.edit(f"Command Output:```bash\n{result.stdout}```")
 
 
-"""**Usage:**
+help = """**Usage:**
 > .eval (code) - Evaluate python code.
 > .sh (cmd) - Execute shell command.
 > .restart - Restart HazelUB.
@@ -194,7 +194,7 @@ async def shellFunc(c: Client, m: Message):
 """
 MOD_CONFIG = {
     "name": "Dev",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.ALL,
     "usable": USABLE.OWNER & USABLE.SUDO
 }

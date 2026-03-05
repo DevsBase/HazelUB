@@ -89,7 +89,7 @@ async def remove_sudo(c: Client, m: Message):
     )
 
 
-"""**Usage:**
+help = """**Usage:**
 > .clients - Info about all sessions.
 > .cpromote - Add sudo (reply). (Business bot won't work.)
 > .cdemote - Remove sudo (reply). (Business bot won't work.)
@@ -98,7 +98,7 @@ async def remove_sudo(c: Client, m: Message):
 """
 MOD_CONFIG = {
     "name": "Clients",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.ALL,
     "usable": USABLE.OWNER & USABLE.SUDO
 }

@@ -250,7 +250,7 @@ async def pauseAndResumeFunc(c: Client, m: Message):
         event.clear()
         return await m.reply("Paused all repeat tasks.")
 
-"""**Usage:**
+help = """**Usage:**
 > .repeat (mins) (group) - Repeat a message.
 > .rgroup create (name) - Create a group.
 > .rgroup_add (group) - Add current chat to group.
@@ -267,7 +267,7 @@ Only work on group.
 
 MOD_CONFIG = {
     "name": "Repeater",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO
 }

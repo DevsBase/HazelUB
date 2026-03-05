@@ -17,7 +17,7 @@ async def joinvc(c: pyrogram.client.Client, m: pyrogram.types.Message):
         await tgcalls.play(chat)
         await tgcalls.mute(chat)
   
-"""**Usage:**
+help = """**Usage:**
 > .joinvc / .jv - to join in a vc.
 > .leavevc / .lv - to leave in a vc.
 
@@ -26,7 +26,7 @@ Only works on groups
 
 MOD_CONFIG = {
     "name": "VC Tools",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO
 }

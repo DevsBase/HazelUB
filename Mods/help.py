@@ -169,6 +169,11 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         u_val = help_data.get("usable")
         w_val = help_data.get("works")
         
+        if isinstance(u_val, USABLE):
+            u_val = u_val.value
+        if isinstance(w_val, WORKS):
+            w_val = w_val.value
+        
         usable = getattr(u_val, "name", str(u_val)) if u_val else "Unknown"
         works = getattr(w_val, "name", str(w_val)) if w_val else "Unknown"
 

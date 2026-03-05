@@ -9,6 +9,7 @@ from pyrogram.types import (
     InlineQueryResultAudio,
     InlineQueryResultDocument,
     InputTextMessageContent,
+    InlineKeyboardMarkup
 )
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ class AnswerInlineQuery:
         title: str,
         text: str,
         description: str = "No description",
+        reply_markup: InlineKeyboardMarkup | None = None,
         *content_args: Any,
         **content_kwargs: Any
     ):
@@ -48,6 +50,21 @@ class AnswerInlineQuery:
         Returns:
             The result of query.answer.
         """
+        if reply_markup:
+            results: List[InlineQueryResult] = [
+                InlineQueryResultArticle(
+                    title=title,
+                    description=description,
+                    input_message_content=InputTextMessageContent(
+                        text,
+                        *content_args,
+                        **content_kwargs
+                    ),
+                    reply_markup=reply_markup
+                )
+            ]
+            return await query.answer(results=results, cache_time=0)
+
         results: List[InlineQueryResult] = [
             InlineQueryResultArticle(
                 title=title,
@@ -56,7 +73,7 @@ class AnswerInlineQuery:
                     text,
                     *content_args,
                     **content_kwargs
-                )
+                ),
             )
         ]
 

@@ -111,14 +111,13 @@ async def ai_clear(c: Client, m: Message):
         await m.reply("Cleared.")
     else:
         await m.reply("No active AI session to clear.")
-"""
-**Usage:**
+help = """**Usage:**
 > .ai <query> - Talk to Gemini AI
 > .aiclr - Clear chat history
 """
 MOD_CONFIG = {
     "name": "AI",
-    "help": __doc__,
+    "help": help,
     "works": WORKS.ALL,
     "usable": USABLE.ALL,
     "requires": {
