@@ -2,7 +2,7 @@ import importlib
 import logging
 import os
 import traceback
-import runpy
+import subprocess
 import sys
 import ast
 from pathlib import Path
@@ -35,7 +35,8 @@ def config_checks(config: dict) -> bool:
 
 def install_package(pkg: str) -> None:
     sys.argv = ["pip", "install", pkg]
-    runpy.run_module("pip", run_name="__main__")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+    importlib.invalidate_caches()
 
 def get_installed_version(pkg: str) -> Version | None:
     try:

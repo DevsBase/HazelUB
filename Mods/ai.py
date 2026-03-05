@@ -1,4 +1,6 @@
 from Hazel.enums import USABLE, WORKS
+from google import genai
+from google.genai.chats import Chat
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
@@ -9,11 +11,6 @@ import asyncio
 from typing import Dict
 from datetime import datetime
 from zoneinfo import ZoneInfo
-
-try:
-    from google import genai
-    from google.genai.chats import Chat
-except ImportError: pass 
 
 logger = logging.getLogger("Mods.ai")
 

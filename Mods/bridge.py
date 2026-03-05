@@ -1,6 +1,7 @@
 from Hazel.enums import USABLE, WORKS
 from typing import Dict, List, cast
 
+import numpy as np
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
@@ -11,9 +12,6 @@ from pytgcalls.types.raw import AudioParameters
 from pytgcalls.types.stream import StreamFrames
 
 from Hazel import Tele
-
-try: import numpy as np
-except ImportError: pass
 
 data: Dict[int, Dict[str, List[int]]] = {}
 
