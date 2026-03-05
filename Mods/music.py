@@ -891,7 +891,6 @@ async def lyrics_cmd_handler(c: Client, m: Message) -> None:
 
 
 help = """**Usage:**
-
 > `.play <query>`
 Download and play a song. Supports searching by title or artist.
 
@@ -914,7 +913,7 @@ Set or cycle music loop mode.
 Show the queue.
 """
 MOD_CONFIG = {
-    "name": "Musicr",
+    "name": "Music",
     "help": help,
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO,

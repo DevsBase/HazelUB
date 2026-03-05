@@ -96,11 +96,11 @@ async def ai_cmd(c: Client, m: Message):
 
         full_text = full_text[:4090] # type: ignore
         if full_text:
-            await loading.edit(full_text)
+            await Tele.message(loading).edit(full_text, business_connection_id=m.business_connection_id)
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await loading.edit(f"Error: `{e}`")
+        await Tele.message(loading).edit(f"Error: `{e}`", business_connection_id=m.business_connection_id)
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)

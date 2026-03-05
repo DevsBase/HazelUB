@@ -76,7 +76,6 @@ async def help_userbot(c: Client, m: Message):
 
         bot = Tele.bot
         if not bot or not bot.me or not bot.me.username:
-            await m.edit("Bot client is not initialized.")
             return
 
         bot_username = bot.me.username

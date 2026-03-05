@@ -116,10 +116,11 @@ async def updateFunc(c: Client, m: Message):
     ).stdout.strip()
 
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
-    await s.edit(
+    await Tele.message(s).edit(
         f"**Update Successful:**```bash\n{result.stdout}```\n"
         f"**Update information:** \nCommit message: {title}\nDescription: {body}\n\n"
-        "`Restarting HazelUB...`"
+        "`Restarting HazelUB...`",
+        business_connection_id=m.business_connection_id
     )
     restart.restart()
 
