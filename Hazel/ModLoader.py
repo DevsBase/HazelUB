@@ -98,12 +98,11 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
 def load_mods() -> None:
     global MODS_DATA
 
-    mods_dir: str = os.path.join(os.path.dirname(__file__), "Mods")
     mods_pkg: str = f"{__package__}.Mods"
 
     loaded: List[str] = []
 
-    for file in os.listdir(mods_dir):
+    for file in os.listdir("Mods/"):
         if not file.endswith(".py") or file.startswith("_"):
             continue
 
