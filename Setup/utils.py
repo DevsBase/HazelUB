@@ -1,86 +1,122 @@
-import subprocess
-import asyncio
 import logging
-import config
+import os
+import subprocess
 import sys
-import os 
+from dataclasses import dataclass
+from typing import List
 
-logger = logging.getLogger(__name__)
+import config
 
-def clear():
-    """Clear the terminal screen (works on both Windows and Unix)."""
-    try: os.system('cls' if os.name == 'nt' else 'clear')
-    except: pass
+logger: logging.Logger = logging.getLogger(__name__)
 
-def signal_handler(signum, __):
-    """Handle termination signals by logging and force-exiting the process.
 
-    Args:
-        signum: The signal number received (e.g. ``SIGINT``).
-    """
-    logger.info(f"Stop signal received ({signum}). Stopping HazelUB...")
+@dataclass
+class HazelConfig:
+    BOT_TOKEN: str
+    API_ID: str
+    API_HASH: str
+    SESSION: str
+    DB_URL: str
+    OtherSessions: List[str]
+    PREFIX: List[str]
+    GEMINI_API_KEY: str
+
+
+def clear() -> None:
+    """Clear terminal screen."""
+    try:
+        os.system("cls" if os.name == "nt" else "clear")
+    except Exception:
+        pass
+
+
+def signal_handler(signum: int, __) -> None:
+    """Handle termination signals."""
+    logger.info("Stop signal received (%s). Stopping HazelUB...", signum)
     os._exit(0)
 
-def install_requirements():
-    """Ensure pip is available and install packages from ``requirements.txt``.
 
-    Returns:
-        ``0`` on success, or the captured *stderr* string on failure.
-    """
-    subprocess.run( # Install PIP if not available
+def install_requirements() -> int | str:
+    """Ensure pip exists and install requirements."""
+    subprocess.run(
         [sys.executable, "-m", "ensurepip"],
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
     )
 
-    result = subprocess.run( # Install requirements.txt
+    result = subprocess.run(
         [sys.executable, "-m", "pip", "install", "-U", "-r", "requirements.txt"],
         capture_output=True,
-        text=True
+        text=True,
     )
-    
-    return result.returncode if result.returncode == 0 else result.stderr
 
-    
-def _ask_missing(key: str):
-    """Interactively prompt the user for a missing configuration value.
+    if result.returncode == 0:
+        return 0
 
-    Recursively re-prompts until a value of at least 3 characters is
-    entered.  Raises :exc:`SystemExit` on ``EOFError`` (e.g. when
-    running without an interactive terminal).
+    return result.stderr
 
-    Args:
-        key: The name of the missing configuration key.
-    """
+
+def _ask_missing(key: str) -> str:
+    """Ask user interactively for missing config value."""
     try:
-        value = input(f'Cannot find {key} in env or config.py. Please enter: ')
+        value: str = input(f"Cannot find {key}. Please enter: ")
     except EOFError:
-        raise SystemExit(f'Setup Failed: {key} is required and cannot found in config.py or env.')
+        raise SystemExit(
+            f"Setup Failed: {key} is required but not found in config.py or env."
+        )
+
     if len(value) < 3:
-        print(f"Please enter valid {key}")
+        print(f"Please enter a valid {key}")
         return _ask_missing(key)
 
-def load_config() -> tuple:
-    """Load bot configuration from ``config.py`` and environment variables.
+    return value
 
-    Required keys (``BOT_TOKEN``, ``API_ID``, ``API_HASH``, ``SESSION``)
-    are resolved from the config module first, then from environment
-    variables, and finally by prompting the user interactively.
-    Optional keys fall back to sensible defaults.
 
-    Returns:
-        A tuple of confg.
-    """
-    BOT_TOKEN = config.BOT_TOKEN or os.getenv('BOT_TOKEN') or _ask_missing("BOT_TOKEN")
-    API_ID = config.API_ID or os.getenv('API_ID') or _ask_missing("API_ID")
-    API_HASH = config.API_HASH or os.getenv('API_HASH') or _ask_missing("API_HASH")
-    SESSION = config.SESSION or os.getenv('SESSION') or _ask_missing("SESSION")
-    DB_URL = config.DB_URL or os.getenv('DB_URL', '')
-    # ---------- Optional ----------
-    OtherSessions = config.OtherSessions or list(os.getenv('OtherSessions', []))
-    PREFIX = list(config.PREFIX) or os.getenv('PREFIX', [])
-    GEMINI_API_KEY = config.GEMINI_API_KEY or os.getenv('GEMINI_API_KEY', '')
-    return (BOT_TOKEN, API_ID, API_HASH, SESSION, DB_URL, OtherSessions, PREFIX, GEMINI_API_KEY)
+def _resolve(key: str, default: str | None = None) -> str:
+    """Resolve config value from config module or environment."""
+    value = getattr(config, key, None) or os.getenv(key)
+
+    if value:
+        return value
+
+    if default is not None:
+        return default
+
+    return _ask_missing(key)
+
+
+def load_config() -> HazelConfig:
+    """Load configuration."""
+    BOT_TOKEN: str = _resolve("BOT_TOKEN")
+    API_ID: str = _resolve("API_ID")
+    API_HASH: str = _resolve("API_HASH")
+    SESSION: str = _resolve("SESSION")
+
+    DB_URL: str = _resolve("DB_URL", "")
+
+    other_sessions_env: str = os.getenv("OtherSessions", "")
+    OtherSessions: List[str] = config.OtherSessions or (
+        other_sessions_env.split(",") if other_sessions_env else []
+    )
+
+    prefix_env: str = os.getenv("PREFIX", "")
+    PREFIX: List[str] = list(config.PREFIX) or (
+        prefix_env.split(",") if prefix_env else []
+    )
+
+    GEMINI_API_KEY: str = _resolve("GEMINI_API_KEY", "")
+
+    return HazelConfig(
+        BOT_TOKEN=BOT_TOKEN,
+        API_ID=API_ID,
+        API_HASH=API_HASH,
+        SESSION=SESSION,
+        DB_URL=DB_URL,
+        OtherSessions=OtherSessions,
+        PREFIX=PREFIX,
+        GEMINI_API_KEY=GEMINI_API_KEY,
+    )
+
 
 def startup_popup():
     """Show a desktop notification indicating that HazelUB has started.

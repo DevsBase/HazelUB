@@ -3,11 +3,8 @@ kurigram
 aiofiles
 requests
 py-tgcalls
-numpy
 python-dotenv
 plyer
 SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
-websockets
-google-genai

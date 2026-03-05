@@ -4,23 +4,26 @@ import os
 import traceback
 import runpy
 import sys
+from pathlib import Path
 
 from importlib.metadata import PackageNotFoundError, version
 from typing import Dict, List, TypedDict
 from packaging.version import Version
 
 from restart import restart
-from .enums import USABLE, WORKS
+from .enums import USABLE, WORKS, PLATFORM
 
 logger = logging.getLogger(__name__)
 
-class ModHelp(TypedDict):
+class ModData(TypedDict):
     help: str
     works: WORKS
     usable: USABLE
+    requires: Dict[str, str] | None
+    platform: PLATFORM
+    required_mods: List[str]
 
-
-MODS_HELP: Dict[str, ModHelp] = {}
+MODS_DATA: Dict[str, ModData] = {}
 
 
 def config_checks(config: dict) -> bool:
@@ -74,27 +77,26 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
         installed: Version | None = get_installed_version(pkg)
 
         if installed is None:
-            logger.warning(f"[MOD DEP] Installing missing package: {pkg}")
+            logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
             install_package(pkg)
             restart_required = True
             continue
 
         if not check_requirement(pkg, constraint):
             logger.warning(
-                f"[MOD DEP] Upgrading {pkg} (installed {installed}, requires {constraint})"
+                f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
             )
             install_package(f"{pkg}{constraint}")
             restart_required = True
 
     if restart_required:
-        logger.info("[MOD DEP] Restart required after dependency install.")
         restart()
 
     return True
 
 
 def load_mods() -> None:
-    global MODS_HELP
+    global MODS_DATA
 
     mods_dir: str = os.path.join(os.path.dirname(__file__), "Mods")
     mods_pkg: str = f"{__package__}.Mods"
@@ -119,14 +121,23 @@ def load_mods() -> None:
                     continue
 
                 requires: Dict[str, str] | None = config.get("requires")
+                required_mods: List[str] = config.get("required_mods", [])
 
                 if requires and isinstance(requires, dict):
                     ensure_requirements(requires)
+                if required_mods and isinstance(required_mods, list):
+                    for req_mod in required_mods:
+                        path = Path("Mods") / req_mod
+                        if not path.exists():
+                            raise ModuleNotFoundError(f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found.")
 
-                MODS_HELP[config["name"]] = {
+                MODS_DATA[config["name"]] = {
                     "help": config["help"],
                     "works": config["works"],
                     "usable": config["usable"],
+                    "requires": requires,
+                    "platform": config.get("platform") or PLATFORM.TELEGRAM,
+                    "required_mods": required_mods
                 }
 
             loaded.append(module_name)

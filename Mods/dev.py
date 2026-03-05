@@ -163,9 +163,7 @@ async def shellFunc(c: Client, m: Message):
     s = await m.reply("Executing...")
     result = await asyncio.to_thread(
         subprocess.run, cmd[1], shell=True, capture_output=True, text=True
-    )
-
-    await s.delete()
+    ) 
 
     if (
         result.stderr

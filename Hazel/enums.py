@@ -54,3 +54,7 @@ class WORKS(str, Enum):
         """Combine this member with another using ``&``."""
         val2 = getattr(other, "value", str(other))
         return CombinedValue(f"{self.value} & {val2}")
+    
+class PLATFORM(str, Enum):
+    TELEGRAM = "Telegram"
+    WHATSAPP = "Whatsapp"

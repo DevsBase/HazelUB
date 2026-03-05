@@ -1,13 +1,18 @@
-from pyrogram.client import Client
-from .decorators import Decorators
-from pytgcalls import PyTgCalls
-import pyrogram.filters as filters
-from pyrogram.types import Message, ChatPrivileges, ChatMember, User
-from functools import partial
-from typing import List, Dict, Optional
-from pyrogram.enums import ChatMemberStatus, MessageEntityType
-from .download_song import DownloadSong
 import logging
+from functools import partial
+from typing import Dict, List, Optional, Set
+from Setup.utils import HazelConfig
+
+import pyrogram.filters as filters
+from pyrogram.client import Client
+from pyrogram.enums import ChatMemberStatus, MessageEntityType
+from pyrogram.types import ChatMember, ChatPrivileges, Message, User
+from pytgcalls import PyTgCalls
+
+from .decorators import Decorators
+from .download_song import DownloadSong
+from .answer_inline_query import AnswerInlineQuery
+
 
 class Telegram(
     DownloadSong,
@@ -24,7 +29,7 @@ class Telegram(
     * Looking up clients, privileges, and chat-member information.
     """
 
-    def __init__(self, config: tuple) -> None:
+    def __init__(self, config: HazelConfig) -> None:
         """Initialise the Telegram manager from a configuration tuple.
 
         Unpacks connection credentials from *config*, initialises empty
@@ -33,22 +38,14 @@ class Telegram(
         the custom command prefix(es) defined in the configuration.
 
         Args:
-            config (tuple): A 7-element tuple as returned by
-                ``Setup.utils.load_config``, laid out as:
-
-                * ``config[0]`` – bot token (or bot session string if > 50 chars)
-                * ``config[1]`` – API ID
-                * ``config[2]`` – API hash
-                * ``config[3]`` – main user session string
-                * ``config[5]`` – list of additional user session strings
-                * ``config[6]`` – command prefix(es)
+            config (HazelConfig): A tuple containing the necessary configuration values
         """
         # ----------- Config---------
-        self.session: str = config[3]
-        self.othersessions: List[str] = config[5]
-        self.api_id: int = int(config[1])
-        self.api_hash: str = config[2]
-        self.bot_token: str = config[0]
+        self.session: str = config.SESSION
+        self.othersessions: List[str] = config.OtherSessions
+        self.api_id: int = int(config.API_ID)
+        self.api_hash: str = config.API_HASH
+        self.bot_token: str = config.BOT_TOKEN
         # ----------- Clients ------------
         self.bot: Client = Client("HazelUB-Bot")
         self.mainClient: Client = Client("HazelUB")
@@ -56,11 +53,14 @@ class Telegram(
         # ---------- Others -------------
         self._allClients: List[Client] = []
         self._allPyTgCalls: List[PyTgCalls] = []
+        self._allClientsIds: Set[int] = set()
         self._clientPrivileges: Dict[Client, str] = {}
         self._clientPyTgCalls: Dict[Client, PyTgCalls] = {}
 
-        filters.command = partial(filters.command, prefixes=config[6]) # Override filters.command to set defualt prefixes
-    
+        filters.command = partial(filters.command, prefixes=config.PREFIX) # Override filters.command to set defualt prefixes
+        # ---------- Methods -------------
+        self.inline = AnswerInlineQuery(self)
+
     async def create_pyrogram_clients(self) -> None:
         """Instantiate Pyrogram clients and PyTgCalls instances for every session.
 
@@ -138,7 +138,8 @@ class Telegram(
         3. Every user client silently attempts to join the HazelUB support
            channel (``Hazel.__channel__``); any failure is suppressed.
         """
-        # HazelUB
+        import Hazel
+        __channel__ = Hazel.__channel__
         await self.bot.start()
         
         for client in self._allClients:
@@ -146,13 +147,19 @@ class Telegram(
             pytgcalls = self.getClientPyTgCalls(client)
             if pytgcalls:
                 await pytgcalls.start()
-
-        from Hazel import __channel__
-        try:
-            for client in self._allClients:
+            try:
                 await client.join_chat(__channel__)
-        except: pass
-    
+            except: ...
+        
+        self._allClientsIds: set[int] = {
+            c.me.id for c in self._allClients if c.me
+        }
+
+        # it will delete the owner id if that client is not found in self._allClientsIds, and it will also remove the sudoers of that owner id.
+        for x in list(Hazel.sudoers):
+            if x not in self._allClientsIds:
+                del Hazel.sudoers[x]
+
     async def stop(self) -> None:
         """Gracefully stop all user clients.
 
@@ -199,14 +206,13 @@ class Telegram(
                 return client
             
         for _owner, _sudoers in list(Hazel.sudoers.items()):
-            for _c in self._allClients:
-                if _c and _c.me and _c.me.id == _owner:
+            for _c in self._allClientsIds:
+                if _c == _owner:
                     for _sudoer in _sudoers:
                         if id == _sudoer:
                             return self.getClientById(_owner)
-            del Hazel.sudoers[_owner]
-            # it will remove that owner id if that client is not found.
         return
+    
     
     def getClientPrivilege(self, client: Client | None = None, user_id: int | None = None) -> str | None:
         """Return the privilege level assigned to a client.
@@ -375,5 +381,7 @@ class Telegram(
         if chat_member:
             if chat_id and user:
                 return await client.get_chat_member(chat_id, user_id=user)
+        if user:
+            return await client.get_users(user)
         if user:
             return await client.get_users(user)

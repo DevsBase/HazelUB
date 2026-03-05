@@ -29,13 +29,9 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
         return True
     
     if client.me.is_bot:
-        for owner, _sudoers in list(Hazel.sudoers.items()):
-            for _c in Hazel.Tele._allClients:
-                if _c and _c.me and _c.me.id == owner:
-                    if user_id in _sudoers:
-                        return True
-            del Hazel.sudoers[owner]
-            # it will remove that owner id if that client is not found.
+        for _sudoers in Hazel.sudoers.values():
+            if user_id in _sudoers:
+                return True
 
     return False
 

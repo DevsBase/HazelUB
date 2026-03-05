@@ -8,8 +8,6 @@ from pyrogram.types import Chat
 from pyrogram.errors import InviteRequestSent
 from pyrogram.types import (
     InlineQuery,
-    InlineQueryResultArticle,
-    InputTextMessageContent,
     Message,
 )
 
@@ -86,52 +84,19 @@ async def joins_func(
 async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
     chat_username = q.query.split(None, 1)[1] if len(q.query.split(None, 1)) > 1 else None
     if not chat_username:
-        await q.answer(
-            [
-                InlineQueryResultArticle(
-                    title="No chat specified",
-                    description="Please provide a chat username or link.",
-                    input_message_content=InputTextMessageContent("Please provide a chat username or link.")
-                )
-            ],
-        )
+        await Tele.inline.answer_text(q, "No chat specified", "Please provide a chat username or link")
         return
     
     join_client = Tele.getClientById(q.from_user.id)
     if not join_client:
-        await q.answer(
-            [
-                InlineQueryResultArticle(
-                    title="No client found",
-                    description="You don't have an active client session.",
-                    input_message_content=InputTextMessageContent("You don't have an active client session.")
-                )
-            ],
-        )
+        await Tele.inline.answer_text(q, "No Client found", "You don't have an active client session.")
         return
     
     try:
         x = await join_client.join_chat(chat_username)
-        await q.answer(
-            [
-                InlineQueryResultArticle(
-                    title="Joined successfully",
-                    description=f"Joined {x.first_name} successfully.",
-                    input_message_content=InputTextMessageContent(f"Joined {chat_username} successfully.")
-                )
-            ],
-        )
+        await Tele.inline.answer_text(q, "Joined", f"Joined {x.first_name} successfully.")
     except Exception as e:
-        await q.answer(
-            [
-                InlineQueryResultArticle(
-                    title="Failed to join",
-                    description=str(e),
-                    input_message_content=InputTextMessageContent(f"Failed to join: {e}")
-                )
-            ],
-        )
-
+        await Tele.inline.answer_text(q, "Failed", f"Failed to join: {e}")
 
 MOD_CONFIG = {
     "name": "Joins",

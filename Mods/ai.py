@@ -120,5 +120,8 @@ MOD_CONFIG = {
     "name": "AI",
     "help": __doc__,
     "works": WORKS.ALL,
-    "usable": USABLE.ALL
+    "usable": USABLE.ALL,
+    "requires": {
+        "google-genai": ">=1.66.0"
+    }
 }

@@ -16,50 +16,13 @@ from pyrogram.types import (
 
 from Hazel import Tele
 from Hazel.enums import USABLE, WORKS
+from Hazel.ModLoader import MODS_DATA
 
 logger = logging.getLogger(__name__)
 
-MODS_HELP = {}
-
-
-def load_mods_help():
-    global MODS_HELP
-    if MODS_HELP:
-        return MODS_HELP
-
-    mods_dir = os.path.dirname(__file__)
-    for file in os.listdir(mods_dir):
-        if file.endswith(".py") and not file.startswith("_") and file != "help.py":
-            mod_name_id = file[:-3]
-            module_path = f"Mods.{mod_name_id}"
-            try:
-                # Use sys.modules to avoid re-importing if already loaded
-                import sys
-
-                if module_path in sys.modules:
-                    module = sys.modules[module_path]
-                else:
-                    module = importlib.import_module(module_path)
-
-                name = getattr(
-                    module, "", mod_name_id.replace("-", " ").capitalize()
-                )
-                help_text = getattr(module, "MOD_HELP", None)
-                mod_works = getattr(module, "MOD_WORKS", "Works.ALL")
-                mod_usable = getattr(module, "MOD_USABLE", "Usable.ALL")
-                
-                if help_text:
-                    w = getattr(mod_works, "value", str(mod_works).split('.')[-1].capitalize())
-                    u = getattr(mod_usable, "value", str(mod_usable).split('.')[-1].capitalize())
-                    MODS_HELP[name] = {"help": help_text, "works": w, "usable": u}
-            except Exception as e:
-                logger.error(f"Error loading help for {module_path}: {e}")
-    return MODS_HELP
-
 
 def get_help_markup(page_num=0):
-    mods = load_mods_help()
-    mod_names = sorted(mods.keys())
+    mod_names = sorted(MODS_DATA.keys())
     page_size = 10
     total_pages = (len(mod_names) + page_size - 1) // page_size
 
@@ -99,7 +62,7 @@ def get_help_markup(page_num=0):
 
     buttons.append(nav)
     buttons.append([InlineKeyboardButton("> HazelUB <", callback_data="none")])
-    return InlineKeyboardMarkup(buttons), len(mods)
+    return InlineKeyboardMarkup(buttons), len(mod_names)
 
 
 @Tele.on_message(filters.command("help"), sudo=True)
@@ -188,8 +151,7 @@ async def help_page_cb(c: Client, q: CallbackQuery):
 async def help_mod_cb(c: Client, q: CallbackQuery):
     mod_name = q.matches[0].group(1)
     page_num = int(q.matches[0].group(2))
-    mods = load_mods_help()
-    help_data = mods.get(mod_name, {"help": "No help found.", "works": "Unknown", "usable": "Unknown"})
+    help_data = MODS_DATA.get(mod_name, {"help": "No help found.", "works": "Unknown", "usable": "Unknown"})
     
     help_text = help_data["help"]
 

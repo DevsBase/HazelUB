@@ -201,5 +201,6 @@ MOD_CONFIG = {
         "Business bot won't work. and only works on group."
     ),
     "works": WORKS.GROUP,
-    "usable": USABLE.OWNER & USABLE.SUDO
+    "usable": USABLE.OWNER & USABLE.SUDO,
+    "requires": ['numpy']
 }

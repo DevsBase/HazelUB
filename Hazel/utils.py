@@ -1,8 +1,13 @@
-import sys, io, asyncio
+import asyncio
+import io
+import sys
 from typing import Any
+
 from pyrogram.client import Client
 from pyrogram.types import Message
-from Hazel import Tele, SQLClient
+
+from Hazel import SQLClient, Tele
+
 
 async def aexec(code: str, app: Client, m: Message) -> Any:
     """Asynchronously execute arbitrary Python code in an isolated scope.
@@ -34,16 +39,15 @@ async def aexec(code: str, app: Client, m: Message) -> Any:
         stdout content and *result* is the return value of the
         executed code (if any).
     """
-    code = code.replace('r$4', 'return')
+    code = code.replace("r$4", "return")
     old_stdout = sys.stdout
     sys.stdout = buffer = io.StringIO()
     local_vars = {}
-    
+
     try:
         exec(
             "async def __aexec_func(app, m, r, frm, chat_id, loop):\n"
-            "    p = print\n"
-            + "\n".join(f"    {l}" for l in code.split("\n")),
+            "    p = print\n" + "\n".join(f"    {l}" for l in code.split("\n")),
             globals(),
             local_vars,
         )
@@ -53,8 +57,8 @@ async def aexec(code: str, app: Client, m: Message) -> Any:
             m,
             m.reply_to_message,
             m.from_user,
-            m.chat.id, # type: ignore
-            asyncio.get_running_loop()
+            m.chat.id,  # type: ignore
+            asyncio.get_running_loop(),
         )
     finally:
         sys.stdout = old_stdout
@@ -62,4 +66,5 @@ async def aexec(code: str, app: Client, m: Message) -> Any:
     output = buffer.getvalue()
     return output, result
 
-
+    output = buffer.getvalue()
+    return output, result

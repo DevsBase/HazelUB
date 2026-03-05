@@ -2,7 +2,7 @@ import Hazel
 from logging import getLogger
 from restart import restart
 from typing import TYPE_CHECKING, Tuple
-from .utils import install_requirements, load_config, clear
+from .utils import install_requirements, load_config, clear, HazelConfig
 
 if TYPE_CHECKING:
     from Database.client import DBClient
@@ -11,7 +11,7 @@ else:
 
 logger = getLogger(__name__)
 
-async def main() -> Tuple[DBClient, tuple]:
+async def main() -> Tuple[DBClient, HazelConfig]:
     """Run the installation and configuration sequence for HazelUB.
 
     The function performs two checks:
@@ -39,7 +39,10 @@ async def main() -> Tuple[DBClient, tuple]:
         "* If this is the first boot required packages may install.\n"
         f"Version: {Hazel.__version__}"
     )
-    
+    try:
+        import ensurepip
+        ensurepip.bootstrap()
+    except ImportError: ... 
     try: # Checking once if essential packages are installed.
         from dotenv import load_dotenv
         from sqlalchemy import create_engine
@@ -61,7 +64,7 @@ async def main() -> Tuple[DBClient, tuple]:
 
     load_dotenv()
     config = load_config()
-    db = DBClient(config[4])
+    db = DBClient(config.DB_URL)
     await db.init()
     Hazel.SQLClient = db # Override SQLClient in Hazel.__init__
     Hazel.sudoers = await db.get_all_sudoers_map()

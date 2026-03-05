@@ -1,13 +1,14 @@
 import logging
 import time
-from typing import TYPE_CHECKING, List, Dict
-import ensurepip
+from typing import TYPE_CHECKING, Dict, List
 
-ensurepip.bootstrap()
+#import ensurepip
+
+#3ensurepip.bootstrap()"""
 
 if TYPE_CHECKING:
-    from Hazel.Platforms.Telegram import Telegram
     import Database.client as Database
+    from Hazel.Platforms.Telegram import Telegram
     Tele: Telegram
     SQLClient: Database.DBClient
     sudoers: Dict[int, List[int]]
@@ -28,4 +29,5 @@ logging.basicConfig(
 )
 
 __version__ = "03.2026"
+__channel__ = "DevsBase"
 __channel__ = "DevsBase"
