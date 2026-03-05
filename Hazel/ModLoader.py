@@ -150,9 +150,12 @@ def load_mods() -> None:
 
     mods_pkg: str = "Mods"
     loaded: List[str] = []
+    mods = os.listdir(mods_pkg)
+    logger.info(f"[Mod Loader] Found {mods} mod files. Loading...")
 
-    for file in os.listdir("Mods/"):
+    for file in mods:
         if not file.endswith(".py") or file.startswith("_"):
+            logger.warning(f"[Mod Loader] Skipping invalid mod file: {file}")
             continue
 
         module_name: str = file[:-3]
@@ -171,6 +174,7 @@ def load_mods() -> None:
                 config: dict = getattr(module, "MOD_CONFIG")
 
                 if not isinstance(config, dict) or not config_checks(config):
+                    logger.warning(f"[Mod Loader] Invalid or missing MOD_CONFIG in {module_path}. Skipping mod.")
                     continue
 
                 requires = config.get("requires")
