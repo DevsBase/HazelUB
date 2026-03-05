@@ -120,37 +120,18 @@ async def help_userbot(c: Client, m: Message):
 async def help_inline(c: Client, q: InlineQuery):
     markup, count = get_help_markup(0)
     if not markup:
-        await q.answer(
-            [
-                InlineQueryResultArticle(
-                    title="No modules found",
-                    input_message_content=InputTextMessageContent(
-                        "No modules with help found."
-                    ),
-                )
-            ],
-            cache_time=1,
-        )
-        return
+        return await Tele.inline.answer_text(q, title="No modules found", text="No modules with help found.")
 
-    await q.answer(
-        [
-            InlineQueryResultArticle(
-                title="• Help Menu",
-                description=f"Total Modules: {count}",
-                input_message_content=InputTextMessageContent(
-                    f"• **Help Menu**\n\nTotal Modules: `{count}`"
-                ),
-                reply_markup=markup,
-            )
-        ],
-        cache_time=1,
+    await Tele.inline.answer_text(q, 
+        title="• Help Menu",
+        text=f"• **Help Menu**\n\nTotal Modules: `{count}`",
+        reply_markup=markup
     )
 
 
 @Tele.bot.on_callback_query(filters.regex(r"^hpage_(\d+)$"))
 async def help_page_cb(c: Client, q: CallbackQuery):
-    if not q.matches or not q.message:
+    if not q.matches:
         return
         
     page_num = int(q.matches[0].group(1))
@@ -158,7 +139,12 @@ async def help_page_cb(c: Client, q: CallbackQuery):
     
     if not markup:
         return
-        
+    
+    if c.me and c.me.is_bot and q.message:
+        return await q.message.edit(
+            text=f"• **Help Menu**\n\nTotal Modules: `{count}`",
+            reply_markup=markup,
+        )    
     await q.edit_message_text(
         text=f"• **Help Menu**\n\nTotal Modules: `{count}`",
         reply_markup=markup,
@@ -167,7 +153,7 @@ async def help_page_cb(c: Client, q: CallbackQuery):
 
 @Tele.bot.on_callback_query(filters.regex(r"^hmod_(.*)_(\d+)$"))
 async def help_mod_cb(c: Client, q: CallbackQuery):
-    if not q.matches or not q.message:
+    if not q.matches:
         return
         
     mod_name = q.matches[0].group(1)
@@ -192,6 +178,11 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         [InlineKeyboardButton("⬅️ Back", callback_data=f"hpage_{page_num}")]
     ]
     
+    if c.me and c.me.is_bot and q.message:
+        return await q.message.edit(
+            text=f"**Module:** {mod_name}\n\n{help_text}",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
     await q.edit_message_text(
         text=f"**Module:** {mod_name}\n\n{help_text}",
         reply_markup=InlineKeyboardMarkup(buttons),
