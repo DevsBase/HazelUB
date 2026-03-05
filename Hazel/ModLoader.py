@@ -4,6 +4,7 @@ import os
 import traceback
 import runpy
 import sys
+import ast
 from pathlib import Path
 from importlib.metadata import PackageNotFoundError, version
 from typing import Dict, List, TypedDict
@@ -17,9 +18,10 @@ class ModData(TypedDict):
     help: str
     works: WORKS
     usable: USABLE
-    requires: Dict[str, str] | None
+    requires: Dict[str, str] | List[str] | None
     platform: PLATFORM
     required_mods: List[str]
+
 
 MODS_DATA: Dict[str, ModData] = {}
 
@@ -29,6 +31,7 @@ def config_checks(config: dict) -> bool:
         if not config.get(key):
             return False
     return True
+
 
 def install_package(pkg: str) -> None:
     sys.argv = ["pip", "install", pkg]
@@ -60,34 +63,89 @@ def check_requirement(pkg: str, constraint: str) -> bool:
 
     return True
 
-def ensure_requirements(reqs: Dict[str, str]) -> bool:
+def ensure_requirements(reqs: Dict[str, str] | List[str]) -> bool:
     restart_required: bool = False
 
-    for pkg, constraint in reqs.items():
-        installed: Version | None = get_installed_version(pkg)
+    if isinstance(reqs, list):
+        for item in reqs:
+            pkg = item
+            constraint = ""
 
-        if installed is None:
-            logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
-            install_package(pkg)
-            restart_required = True
-            continue
+            for op in [">=", "<=", "==", ">", "<"]:
+                if op in item:
+                    pkg, ver = item.split(op, 1)
+                    constraint = op + ver
+                    break
 
-        if not check_requirement(pkg, constraint):
-            logger.warning(
-                f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
-            )
-            install_package(f"{pkg}{constraint}")
-            restart_required = True
+            installed: Version | None = get_installed_version(pkg)
+
+            if installed is None:
+                logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
+                install_package(pkg if not constraint else f"{pkg}{constraint}")
+                restart_required = True
+                continue
+
+            if constraint and not check_requirement(pkg, constraint):
+                logger.warning(
+                    f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
+                )
+                install_package(f"{pkg}{constraint}")
+                restart_required = True
+
+    else:
+        for pkg, constraint in reqs.items():
+            installed: Version | None = get_installed_version(pkg)
+
+            if installed is None:
+                logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
+                install_package(pkg)
+                restart_required = True
+                continue
+
+            if not check_requirement(pkg, constraint):
+                logger.warning(
+                    f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
+                )
+                install_package(f"{pkg}{constraint}")
+                restart_required = True
 
     if restart_required:
         restart()
-
     return True
+
+def extract_requires(file_path: str) -> Dict[str, str] | List[str] | None:
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id == "MOD_CONFIG" and isinstance(node.value, ast.Dict):
+                        for k, v in zip(node.value.keys, node.value.values):
+                            if isinstance(k, ast.Constant) and k.value == "requires":
+
+                                if isinstance(v, ast.Dict):
+                                    req = {}
+                                    for kk, vv in zip(v.keys, v.values):
+                                        if isinstance(kk, ast.Constant) and isinstance(vv, ast.Constant):
+                                            req[str(kk.value)] = str(vv.value)
+                                    return req
+
+                                if isinstance(v, ast.List):
+                                    req = []
+                                    for el in v.elts:
+                                        if isinstance(el, ast.Constant):
+                                            req.append(str(el.value))
+                                    return req
+    except Exception: ...
+    return
+
 
 def load_mods() -> None:
     global MODS_DATA
 
-    mods_pkg: str = f"Mods"
+    mods_pkg: str = "Mods"
     loaded: List[str] = []
 
     for file in os.listdir("Mods/"):
@@ -96,8 +154,14 @@ def load_mods() -> None:
 
         module_name: str = file[:-3]
         module_path: str = f"{mods_pkg}.{module_name}"
+        file_path = str(Path("Mods") / file)
 
         try:
+            reqs = extract_requires(file_path)
+
+            if reqs:
+                ensure_requirements(reqs)
+
             module = importlib.import_module(module_path)
 
             if hasattr(module, "MOD_CONFIG"):
@@ -106,11 +170,8 @@ def load_mods() -> None:
                 if not isinstance(config, dict) or not config_checks(config):
                     continue
 
-                requires: Dict[str, str] | None = config.get("requires")
+                requires = config.get("requires")
                 required_mods: List[str] = config.get("required_mods", [])
-
-                if requires and isinstance(requires, dict):
-                    ensure_requirements(requires)
 
                 if required_mods and isinstance(required_mods, list):
                     for req_mod in required_mods:
@@ -134,5 +195,4 @@ def load_mods() -> None:
         except Exception:
             traceback.print_exc()
             logger.error(f"[FAILED TO LOAD]: {module_path}. see error above ↑")
-
     logger.info(f"[Mods] Loaded: {', '.join(loaded)}")
