@@ -8,7 +8,7 @@ from Hazel import Tele
 async def echo_cmd(c: Client, m: Message):
     if m.reply_to_message and m.chat and m.chat.id:
         await m.reply_to_message.copy(m.chat.id)
-    try: await m.delete()
+    try: await Tele.message(m).delete(business_connection_id=m.business_connection_id)
     except: ...
 
 MOD_CONFIG = {

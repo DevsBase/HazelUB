@@ -20,15 +20,13 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
     """Check if the user is sudo."""
     import Hazel
 
-    if not message.from_user:
+    if not message.from_user or not client.me:
         return False
 
-    if message.from_user.is_self:
+    if message.from_user.is_self and not client.me.is_bot:
         return True
 
     user_id: int = message.from_user.id
-    if not client.me:
-        return False
 
     if user_id in sudoers.get(client.me.id, []):
         return True
@@ -155,5 +153,4 @@ class Decorators:
                 i.on_update(*args)(func)
             return func
 
-        return decorator
         return decorator

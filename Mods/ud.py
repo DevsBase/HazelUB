@@ -43,11 +43,11 @@ async def urban_dictionary(_, message: Message):
         )
 
     except Exception as e:
-        await processing.delete()
+        await Tele.message(processing).delete(business_connection_id=message.business_connection_id)
         return await message.reply(
             f"Something went wrong:\n`{e}`"
         )
-    await processing.delete()
+    await Tele.message(processing).delete(business_connection_id=message.business_connection_id)
     await message.reply(reply_text)
 
 MOD_CONFIG = {
