@@ -2,20 +2,21 @@ from Hazel.enums import USABLE, WORKS
 from pyrogram.client import Client
 from urllib.parse import urlparse
 from Hazel import Tele
-from pyrogram import filters
+from pyrogram import filters, types
 import webbrowser
 import asyncio
 
 
 @Tele.on_message(filters.command("open"), sudo=True)
-async def openCommand(client, m):
+async def openCommand(client: Client, m: types.Message):
     if not m or not m.from_user:
         return
     if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
         return await m.reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
-
+    if not m.text:
+        return await m.reply("Provide a link to open.")
     link = m.text.split(None, 1)
     if len(link) == 1:
         return await m.reply("Provide a link to open.")

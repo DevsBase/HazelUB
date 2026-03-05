@@ -180,8 +180,8 @@ async def shellFunc(c: Client, m: Message):
         return os.remove("shell.txt")
 
     if result.returncode != 0:
-        return await s.edit(f"Command Failed:```bash\n{result.stderr}```")
-    await s.edit(f"Command Output:```bash\n{result.stdout}```")
+        return await Tele.message(s).edit(f"Command Failed:```bash\n{result.stderr}```")
+    await Tele.message(s).edit(f"Command Output:```bash\n{result.stdout}```")
 
 
 help = """**Usage:**

@@ -11,7 +11,8 @@ from pytgcalls import PyTgCalls
 
 from .decorators import Decorators
 from .download_song import DownloadSong
-from .answer_inline_query import AnswerInlineQuery
+from .inline import InlineMethods
+from .message import MessageMethods
 
 
 class Telegram(
@@ -59,7 +60,8 @@ class Telegram(
 
         filters.command = partial(filters.command, prefixes=config.PREFIX) # Override filters.command to set defualt prefixes
         # ---------- Methods -------------
-        self.inline = AnswerInlineQuery(self)
+        self.inline = InlineMethods(self)
+        self.message = MessageMethods
 
     async def create_pyrogram_clients(self) -> None:
         """Instantiate Pyrogram clients and PyTgCalls instances for every session.

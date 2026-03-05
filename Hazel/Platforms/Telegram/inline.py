@@ -16,9 +16,7 @@ if TYPE_CHECKING:
     from Hazel.Platforms.Telegram import Telegram
 
 
-class AnswerInlineQuery:
-    """Provides methods for conveniently answering Telegram inline queries with various media types."""
-
+class InlineMethods:
     def __init__(self, client: "Telegram") -> None:
         """Initialise the inline query handler with a Telegram client instance.
 
