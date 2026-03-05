@@ -41,7 +41,7 @@ async def main():
             f'Process ID: {os.getpid()}'
         )
         logger.info("Loading Mods...")
-        import Mods; Mods.load_mods()
+        from Hazel.ModLoader import load_mods; load_mods()
         
         logger.info("HazelUB is now running!")
         asyncio.create_task(asyncio.to_thread(startup_popup))
