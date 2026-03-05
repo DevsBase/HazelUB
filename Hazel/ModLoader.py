@@ -1,21 +1,17 @@
-import ast
 import importlib
 import logging
 import os
+import traceback
 import runpy
 import sys
-import traceback
 from pathlib import Path
-
 from importlib.metadata import PackageNotFoundError, version
-from typing import Dict, List, TypedDict, Any
+from typing import Dict, List, TypedDict
 from packaging.version import Version
-
 from restart import restart
 from .enums import USABLE, WORKS, PLATFORM
 
-logger: logging.Logger = logging.getLogger(__name__)
-
+logger = logging.getLogger(__name__)
 
 class ModData(TypedDict):
     help: str
@@ -25,98 +21,18 @@ class ModData(TypedDict):
     platform: PLATFORM
     required_mods: List[str]
 
-
 MODS_DATA: Dict[str, ModData] = {}
-
 
 def config_checks(config: dict) -> bool:
     required: List[str] = ["name", "help", "works", "usable"]
-
     for key in required:
-        if key not in config:
+        if not config.get(key):
             return False
     return True
-
-
-def resolve_ast(node: ast.AST, module_doc: str | None = None) -> Any:
-    if isinstance(node, ast.Constant):
-        return node.value
-
-    if isinstance(node, ast.Name):
-        if node.id == "None":
-            return None
-        if node.id == "True":
-            return True
-        if node.id == "False":
-            return False
-        if node.id == "__doc__":
-            return module_doc
-        raise ValueError(f"Unsupported name: {node.id}")
-
-    if isinstance(node, ast.Dict):
-        result: dict[Any, Any] = {}
-        for k, v in zip(node.keys, node.values):
-            if k is None:
-                raise ValueError("Dict unpacking not supported in MOD_CONFIG")
-
-            key: Any = resolve_ast(k, module_doc)
-            value: Any = resolve_ast(v, module_doc)
-
-            result[key] = value
-        return result
-    if isinstance(node, ast.List):
-        return [resolve_ast(el, module_doc) for el in node.elts]
-
-    if isinstance(node, ast.Tuple):
-        return tuple(resolve_ast(el, module_doc) for el in node.elts)
-
-    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
-        enum_name: str = node.value.id
-        attr: str = node.attr
-
-        if enum_name == "WORKS":
-            return getattr(WORKS, attr)
-        if enum_name == "USABLE":
-            return getattr(USABLE, attr)
-        if enum_name == "PLATFORM":
-            return getattr(PLATFORM, attr)
-        raise ValueError(f"Unsupported enum: {enum_name}")
-
-    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
-        left = resolve_ast(node.left, module_doc)
-        right = resolve_ast(node.right, module_doc)
-
-        return left + right
-    raise ValueError(f"Unsupported AST node: {type(node)}")
-
-
-def extract_mod_config(file_path: str) -> dict | None:
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            source: str = f.read()
-
-        tree: ast.Module = ast.parse(source, filename=file_path)
-        module_doc: str | None = ast.get_docstring(tree)
-
-        for node in tree.body:
-            if isinstance(node, ast.Assign):
-                for target in node.targets:
-                    if isinstance(target, ast.Name) and target.id == "MOD_CONFIG":
-                        try:
-                            return resolve_ast(node.value, module_doc)
-                        except Exception as e:
-                            logger.warning(f"[Mod Loader] MOD_CONFIG in {file_path} is unsupported: {e}")
-                            return None
-
-    except Exception:
-        traceback.print_exc()
-    return
-
 
 def install_package(pkg: str) -> None:
     sys.argv = ["pip", "install", pkg]
     runpy.run_module("pip", run_name="__main__")
-
 
 def get_installed_version(pkg: str) -> Version | None:
     try:
@@ -124,10 +40,8 @@ def get_installed_version(pkg: str) -> Version | None:
     except PackageNotFoundError:
         return None
 
-
 def check_requirement(pkg: str, constraint: str) -> bool:
     installed: Version | None = get_installed_version(pkg)
-
     if installed is None:
         return False
 
@@ -146,7 +60,6 @@ def check_requirement(pkg: str, constraint: str) -> bool:
 
     return True
 
-
 def ensure_requirements(reqs: Dict[str, str]) -> bool:
     restart_required: bool = False
 
@@ -156,13 +69,13 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
         if installed is None:
             logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
             install_package(pkg)
-
             restart_required = True
             continue
 
         if not check_requirement(pkg, constraint):
-            logger.warning(f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})")
-
+            logger.warning(
+                f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
+            )
             install_package(f"{pkg}{constraint}")
             restart_required = True
 
@@ -171,56 +84,50 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
 
     return True
 
-
 def load_mods() -> None:
     global MODS_DATA
 
-    mods_dir: Path = Path("Mods")
-    mods_pkg: str = "Mods"
-
+    mods_pkg: str = f"Mods"
     loaded: List[str] = []
 
-    for file in os.listdir(mods_dir):
+    for file in os.listdir("Mods/"):
         if not file.endswith(".py") or file.startswith("_"):
             continue
 
-        file_path: Path = mods_dir / file
         module_name: str = file[:-3]
         module_path: str = f"{mods_pkg}.{module_name}"
 
         try:
-            config: dict | None = extract_mod_config(str(file_path))
+            module = importlib.import_module(module_path)
 
-            if not config: continue
+            if hasattr(module, "MOD_CONFIG"):
+                config: dict = getattr(module, "MOD_CONFIG")
 
-            if not config_checks(config):
-                logger.warning(f"[Mod Loader] Invalid MOD_CONFIG in {file}")
-                continue
+                if not isinstance(config, dict) or not config_checks(config):
+                    continue
 
-            requires: Dict[str, str] | None = config.get("requires")
-            required_mods: List[str] = config.get("required_mods", [])
+                requires: Dict[str, str] | None = config.get("requires")
+                required_mods: List[str] = config.get("required_mods", [])
 
-            if requires and isinstance(requires, dict):
-                ensure_requirements(requires)
+                if requires and isinstance(requires, dict):
+                    ensure_requirements(requires)
 
-            if required_mods and isinstance(required_mods, list):
-                for req_mod in required_mods:
-                    path: Path = mods_dir / req_mod
-                    if not path.exists():
-                        raise ModuleNotFoundError(
-                            f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found."
-                        )
+                if required_mods and isinstance(required_mods, list):
+                    for req_mod in required_mods:
+                        path = Path("Mods") / req_mod
+                        if not path.exists():
+                            raise ModuleNotFoundError(
+                                f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found."
+                            )
 
-            importlib.import_module(module_path)
-
-            MODS_DATA[config["name"]] = {
-                "help": config["help"],
-                "works": config["works"],
-                "usable": config["usable"],
-                "requires": requires,
-                "platform": config.get("platform") or PLATFORM.TELEGRAM,
-                "required_mods": required_mods,
-            }
+                MODS_DATA[config["name"]] = {
+                    "help": config["help"],
+                    "works": config["works"],
+                    "usable": config["usable"],
+                    "requires": requires,
+                    "platform": config.get("platform") or PLATFORM.TELEGRAM,
+                    "required_mods": required_mods
+                }
 
             loaded.append(module_name)
 
