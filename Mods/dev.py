@@ -40,12 +40,12 @@ async def evalFunc(c: Client, m: Message):
         os.remove("eval.txt")
 
     elif not result[1]:
-        await s.edit(f"Output:```python\n{result[0]}```")
+        await Tele.message(s).edit(f"Output:```python\n{result[0]}```", business_connection_id=m.business_connection_id)
     elif not result[0]:
-        await s.edit(f"Result:```python\n{result[1]}```")
+        await Tele.message(s).edit(f"Result:```python\n{result[1]}```", business_connection_id=m.business_connection_id)
     else:
-        await s.edit(
-            f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```"
+        await Tele.message(s).edit(
+            f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```", business_connection_id=m.business_connection_id
         )
 
 
@@ -180,8 +180,8 @@ async def shellFunc(c: Client, m: Message):
         return os.remove("shell.txt")
 
     if result.returncode != 0:
-        return await Tele.message(s).edit(f"Command Failed:```bash\n{result.stderr}```")
-    await Tele.message(s).edit(f"Command Output:```bash\n{result.stdout}```")
+        return await Tele.message(s).edit(f"Command Failed:```bash\n{result.stderr}```", business_connection_id=m.business_connection_id)
+    await Tele.message(s).edit(f"Command Output:```bash\n{result.stdout}```", business_connection_id=m.business_connection_id)
 
 
 help = """**Usage:**

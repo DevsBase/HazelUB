@@ -17,17 +17,16 @@ if TYPE_CHECKING:
 
 
 class InlineMethods:
-    def __init__(self, client: "Telegram") -> None:
+    def __init__(self, query: InlineQuery) -> None:
         """Initialise the inline query handler with a Telegram client instance.
 
         Args:
-            client (Telegram): The Telegram client orchestrator.
+            query (InlineQuery): The incoming inline query to answer.
         """
-        self.client = client
+        self.query = query
 
     async def answer_text(
         self,
-        query: InlineQuery,
         title: str,
         text: str,
         description: str = "No description",
@@ -48,6 +47,7 @@ class InlineMethods:
         Returns:
             The result of query.answer.
         """
+        query = self.query
         if reply_markup:
             results: List[InlineQueryResult] = [
                 InlineQueryResultArticle(
@@ -79,7 +79,6 @@ class InlineMethods:
 
     async def answer_photo(
         self,
-        query: InlineQuery,
         photo_url: str,
         thumb_url: str,
         title: str,
@@ -103,6 +102,7 @@ class InlineMethods:
         Returns:
             The result of query.answer.
         """
+        query = self.query
         results: List[InlineQueryResult] = [
             InlineQueryResultPhoto(
                 photo_url=photo_url,
@@ -119,7 +119,6 @@ class InlineMethods:
 
     async def answer_video(
         self,
-        query: InlineQuery,
         video_url: str,
         thumb_url: str,
         title: str,
@@ -143,6 +142,7 @@ class InlineMethods:
         Returns:
             The result of query.answer.
         """
+        query = self.query
         results: List[InlineQueryResult] = [
             InlineQueryResultVideo(
                 video_url=video_url,
@@ -160,7 +160,6 @@ class InlineMethods:
 
     async def answer_audio(
         self,
-        query: InlineQuery,
         audio_url: str,
         title: str,
         caption: str = "",
@@ -180,6 +179,7 @@ class InlineMethods:
         Returns:
             The result of query.answer.
         """
+        query = self.query
         results: List[InlineQueryResult] = [
             InlineQueryResultAudio(
                 audio_url=audio_url,
@@ -194,7 +194,6 @@ class InlineMethods:
 
     async def answer_document(
         self,
-        query: InlineQuery,
         document_url: str,
         title: str,
         mime_type: str,
@@ -216,6 +215,7 @@ class InlineMethods:
         Returns:
             The result of query.answer.
         """
+        query = self.query
         results: List[InlineQueryResult] = [
             InlineQueryResultDocument(
                 document_url=document_url,

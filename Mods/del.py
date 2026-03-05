@@ -9,8 +9,8 @@ async def delCommand(client: Client, m: types.Message):
     if (not m.reply_to_message):
        return await m.reply('Reply to a message.')
     try:
-        await m.delete()
-        await m.reply_to_message.delete(revoke=True)
+        await Tele.message(m).delete(business_connection_id=m.business_connection_id)
+        await Tele.message(m.reply_to_message).delete(revoke=True, business_connection_id=m.business_connection_id)
     except: pass
 
 MOD_CONFIG = {

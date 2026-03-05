@@ -60,7 +60,7 @@ class Telegram(
 
         filters.command = partial(filters.command, prefixes=config.PREFIX) # Override filters.command to set defualt prefixes
         # ---------- Methods -------------
-        self.inline = InlineMethods(self)
+        self.inline = InlineMethods
         self.message = MessageMethods
 
     async def create_pyrogram_clients(self) -> None:

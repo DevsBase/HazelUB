@@ -84,19 +84,19 @@ async def joins_func(
 async def joinInlineFunc(c: pyrogram.client.Client, q: InlineQuery):
     chat_username = q.query.split(None, 1)[1] if len(q.query.split(None, 1)) > 1 else None
     if not chat_username:
-        await Tele.inline.answer_text(q, "No chat specified", "Please provide a chat username or link")
+        await Tele.inline(q).answer_text("No chat specified", "Please provide a chat username or link")
         return
     
     join_client = Tele.getClientById(q.from_user.id)
     if not join_client:
-        await Tele.inline.answer_text(q, "No Client found", "You don't have an active client session.")
+        await Tele.inline(q).answer_text("No Client found", "You don't have an active client session.")
         return
     
     try:
         x = await join_client.join_chat(chat_username)
-        await Tele.inline.answer_text(q, "Joined", f"Joined {x.first_name} successfully.")
+        await Tele.inline(q).answer_text("Joined", f"Joined {x.first_name} successfully.")
     except Exception as e:
-        await Tele.inline.answer_text(q, "Failed", f"Failed to join: {e}")
+        await Tele.inline(q).answer_text("Failed", f"Failed to join: {e}")
 
 MOD_CONFIG = {
     "name": "Joins",

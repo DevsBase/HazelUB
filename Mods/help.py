@@ -118,9 +118,9 @@ async def help_userbot(c: Client, m: Message):
 async def help_inline(c: Client, q: InlineQuery):
     markup, count = get_help_markup(0)
     if not markup:
-        return await Tele.inline.answer_text(q, title="No modules found", text="No modules with help found.")
+        return await Tele.inline(q).answer_text(title="No modules found", text="No modules with help found.")
 
-    await Tele.inline.answer_text(q, 
+    await Tele.inline(q).answer_text(
         title="• Help Menu",
         text=f"• **Help Menu**\n\nTotal Modules: `{count}`",
         reply_markup=markup
