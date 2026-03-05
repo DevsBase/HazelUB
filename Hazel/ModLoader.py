@@ -1,19 +1,21 @@
+import ast
 import importlib
 import logging
 import os
-import traceback
 import runpy
 import sys
+import traceback
 from pathlib import Path
 
 from importlib.metadata import PackageNotFoundError, version
-from typing import Dict, List, TypedDict
+from typing import Dict, List, TypedDict, Any
 from packaging.version import Version
 
 from restart import restart
 from .enums import USABLE, WORKS, PLATFORM
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
+
 
 class ModData(TypedDict):
     help: str
@@ -22,6 +24,7 @@ class ModData(TypedDict):
     requires: Dict[str, str] | None
     platform: PLATFORM
     required_mods: List[str]
+
 
 MODS_DATA: Dict[str, ModData] = {}
 
@@ -32,7 +35,34 @@ def config_checks(config: dict) -> bool:
     for key in required:
         if not config.get(key):
             return False
+
     return True
+
+
+def extract_mod_config(file_path: str) -> dict | None:
+    """
+    Extract MOD_CONFIG from a python file without executing it.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            tree: ast.Module = ast.parse(f.read(), filename=file_path)
+
+        for node in tree.body:
+
+            if isinstance(node, ast.Assign):
+
+                for target in node.targets:
+                    if isinstance(target, ast.Name) and target.id == "MOD_CONFIG":
+                        try:
+                            return ast.literal_eval(node.value)
+                        except Exception:
+                            logger.warning(f"[Mod Loader] MOD_CONFIG in {file_path} is not literal.")
+                            return None
+
+    except Exception:
+        traceback.print_exc()
+
+    return None
 
 
 def install_package(pkg: str) -> None:
@@ -70,6 +100,7 @@ def check_requirement(pkg: str, constraint: str) -> bool:
 
 
 def ensure_requirements(reqs: Dict[str, str]) -> bool:
+
     restart_required: bool = False
 
     for pkg, constraint in reqs.items():
@@ -77,67 +108,80 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
         installed: Version | None = get_installed_version(pkg)
 
         if installed is None:
+
             logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
+
             install_package(pkg)
+
             restart_required = True
+
             continue
 
         if not check_requirement(pkg, constraint):
+
             logger.warning(
                 f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
             )
+
             install_package(f"{pkg}{constraint}")
             restart_required = True
 
     if restart_required:
         restart()
-
     return True
 
 
 def load_mods() -> None:
+
     global MODS_DATA
 
-    mods_pkg: str = f"Mods"
+    mods_dir: Path = Path("Mods")
+    mods_pkg: str = "Mods"
 
     loaded: List[str] = []
 
-    for file in os.listdir("Mods/"):
+    for file in os.listdir(mods_dir):
         if not file.endswith(".py") or file.startswith("_"):
             continue
 
+        file_path: Path = mods_dir / file
         module_name: str = file[:-3]
         module_path: str = f"{mods_pkg}.{module_name}"
 
         try:
-            module = importlib.import_module(module_path)
+            config: dict | None = extract_mod_config(str(file_path))
 
-            if hasattr(module, "MOD_CONFIG"):
+            if not config:
+                continue
 
-                config: dict = getattr(module, "MOD_CONFIG")
+            if not config_checks(config):
+                logger.warning(f"[Mod Loader] Invalid MOD_CONFIG in {file}")
+                continue
 
-                if not isinstance(config, dict) or not config_checks(config):
-                    continue
+            requires: Dict[str, str] | None = config.get("requires")
+            required_mods: List[str] = config.get("required_mods", [])
 
-                requires: Dict[str, str] | None = config.get("requires")
-                required_mods: List[str] = config.get("required_mods", [])
+            if requires and isinstance(requires, dict):
+                ensure_requirements(requires)
 
-                if requires and isinstance(requires, dict):
-                    ensure_requirements(requires)
-                if required_mods and isinstance(required_mods, list):
-                    for req_mod in required_mods:
-                        path = Path("Mods") / req_mod
-                        if not path.exists():
-                            raise ModuleNotFoundError(f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found.")
+            if required_mods and isinstance(required_mods, list):
+                for req_mod in required_mods:
+                    path: Path = mods_dir / req_mod
+                    if not path.exists():
+                        raise ModuleNotFoundError(
+                            f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found."
+                        )
 
-                MODS_DATA[config["name"]] = {
-                    "help": config["help"],
-                    "works": config["works"],
-                    "usable": config["usable"],
-                    "requires": requires,
-                    "platform": config.get("platform") or PLATFORM.TELEGRAM,
-                    "required_mods": required_mods
-                }
+            importlib.import_module(module_path)
+
+            MODS_DATA[config["name"]] = {
+                "help": config["help"],
+                "works": config["works"],
+                "usable": config["usable"],
+                "requires": requires,
+                "platform": config.get("platform") or PLATFORM.TELEGRAM,
+                "required_mods": required_mods,
+            }
 
             loaded.append(module_name)
 
