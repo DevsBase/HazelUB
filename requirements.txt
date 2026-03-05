@@ -1,6 +1,5 @@
 art
 kurigram
-aiofiles
 requests
 py-tgcalls
 python-dotenv
@@ -8,3 +7,4 @@ plyer
 SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
+cachetools

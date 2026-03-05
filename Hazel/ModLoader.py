@@ -13,7 +13,7 @@ from packaging.version import Version
 from restart import restart
 from .enums import USABLE, WORKS, PLATFORM
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("[Hazel ModLoader]")
 
 class ModData(TypedDict):
     help: str
@@ -81,14 +81,14 @@ def ensure_requirements(reqs: Dict[str, str] | List[str]) -> bool:
             installed: Version | None = get_installed_version(pkg)
 
             if installed is None:
-                logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
+                logger.warning(f"Installing missing package: {pkg}")
                 install_package(pkg if not constraint else f"{pkg}{constraint}")
                 restart_required = True
                 continue
 
             if constraint and not check_requirement(pkg, constraint):
                 logger.warning(
-                    f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
+                    f"Upgrading {pkg} (installed {installed}, requires {constraint})"
                 )
                 install_package(f"{pkg}{constraint}")
                 restart_required = True
@@ -98,14 +98,14 @@ def ensure_requirements(reqs: Dict[str, str] | List[str]) -> bool:
             installed: Version | None = get_installed_version(pkg)
 
             if installed is None:
-                logger.warning(f"[Mod Loader] Installing missing package: {pkg}")
+                logger.warning(f"Installing missing package: {pkg}")
                 install_package(pkg)
                 restart_required = True
                 continue
 
             if not check_requirement(pkg, constraint):
                 logger.warning(
-                    f"[Mod Loader] Upgrading {pkg} (installed {installed}, requires {constraint})"
+                    f"Upgrading {pkg} (installed {installed}, requires {constraint})"
                 )
                 install_package(f"{pkg}{constraint}")
                 restart_required = True
@@ -155,7 +155,7 @@ def load_mods() -> None:
     for file in mods:
         if not file.endswith(".py") or file.startswith("_"):
             if not file.startswith("_"):
-                logger.warning(f"[Mod Loader] Skipping invalid mod file: {file}")
+                logger.warning(f"Skipping invalid mod file: {file}")
             continue
 
         module_name: str = file[:-3]
@@ -174,7 +174,7 @@ def load_mods() -> None:
                 config: dict = getattr(module, "MOD_CONFIG")
 
                 if not isinstance(config, dict) or not config_checks(config):
-                    logger.warning(f"[Mod Loader] Invalid or missing MOD_CONFIG in {module_path}. Skipping mod.")
+                    logger.warning(f"Invalid or missing MOD_CONFIG in {module_path}. Skipping mod.")
                     continue
 
                 requires = config.get("requires")
@@ -185,7 +185,7 @@ def load_mods() -> None:
                         path = Path("Mods") / req_mod
                         if not path.exists():
                             raise ModuleNotFoundError(
-                                f"[Mod Loader] Required mod '{req_mod}' for '{config['name']}' not found."
+                                f"Required mod '{req_mod}' for '{config['name']}' not found."
                             )
 
                 MODS_DATA[config["name"]] = {
@@ -202,4 +202,5 @@ def load_mods() -> None:
         except Exception:
             traceback.print_exc()
             logger.error(f"[FAILED TO LOAD]: {module_path}. see error above ↑")
-    logger.info(f"[Mods] Loaded: {', '.join(loaded)}")
+    logger.info(f"Loaded: {', '.join(loaded)}")
+    logger.info(f"Loaded {len(loaded)} mods.")
