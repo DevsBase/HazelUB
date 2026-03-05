@@ -5,6 +5,7 @@ import traceback
 import subprocess
 import sys
 import ast
+import time
 from pathlib import Path
 from importlib.metadata import PackageNotFoundError, version
 from typing import Dict, List, TypedDict
@@ -36,7 +37,6 @@ def config_checks(config: dict) -> bool:
 def install_package(pkg: str) -> None:
     sys.argv = ["pip", "install", pkg]
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
-    importlib.invalidate_caches()
 
 def get_installed_version(pkg: str) -> Version | None:
     try:
@@ -111,6 +111,8 @@ def ensure_requirements(reqs: Dict[str, str] | List[str]) -> bool:
                 restart_required = True
 
     if restart_required:
+        logger.info("Package changes detected. Restarting to apply changes...")
+        time.sleep(2)
         restart()
     return True
 
