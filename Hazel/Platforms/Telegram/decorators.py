@@ -28,11 +28,19 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
     if user_id in sudoers.get(client.me.id, []):
         return True
     
-    if client.me.is_bot:
+    if message.business_connection_id:
+        for _sudoers in Hazel.sudoers.values():
+            if user_id in _sudoers:
+                bc_conn = await client.get_business_connection(message.business_connection_id)
+                if bc_conn and bc_conn.id == user_id:
+                    return True
+    
+    if not message.business_connection_id and client.me and client.me.is_bot:
+        # If it's a bot client and the message is not from a business connection, check if the user is a sudoer for any of the owner's clients
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
                 return True
-
+    
     return False
 
 class Decorators:

@@ -151,11 +151,11 @@ def load_mods() -> None:
     mods_pkg: str = "Mods"
     loaded: List[str] = []
     mods = os.listdir(mods_pkg)
-    logger.info(f"[Mod Loader] Found {mods} mod files. Loading...")
 
     for file in mods:
         if not file.endswith(".py") or file.startswith("_"):
-            logger.warning(f"[Mod Loader] Skipping invalid mod file: {file}")
+            if not file.startswith("_"):
+                logger.warning(f"[Mod Loader] Skipping invalid mod file: {file}")
             continue
 
         module_name: str = file[:-3]
