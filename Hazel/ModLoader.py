@@ -30,14 +30,11 @@ MODS_DATA: Dict[str, ModData] = {}
 
 
 def config_checks(config: dict) -> bool:
-    """
-    Validate minimal config structure.
-    """
-
+    """Validate required config keys."""
     required: List[str] = ["name", "help", "works", "usable"]
 
     for key in required:
-        if not config.get(key):
+        if key not in config:
             return False
 
     return True
@@ -45,16 +42,22 @@ def config_checks(config: dict) -> bool:
 
 def resolve_ast(node: ast.AST) -> Any:
     """
-    Convert AST nodes into real Python values.
-
-    Supports:
-    - literals
-    - dict/list/tuple
-    - enum references (WORKS.X, USABLE.X, PLATFORM.X)
+    Safely convert AST nodes to Python objects.
+    Supports literals, containers, enums and basic names.
     """
 
     if isinstance(node, ast.Constant):
         return node.value
+
+    if isinstance(node, ast.Name):
+        if node.id == "None":
+            return None
+        if node.id == "True":
+            return True
+        if node.id == "False":
+            return False
+
+        raise ValueError(f"Unsupported name: {node.id}")
 
     if isinstance(node, ast.Dict):
         return {
@@ -82,13 +85,13 @@ def resolve_ast(node: ast.AST) -> Any:
         if enum_name == "PLATFORM":
             return getattr(PLATFORM, attr)
 
-    raise ValueError("Unsupported AST node in MOD_CONFIG")
+        raise ValueError(f"Unsupported enum: {enum_name}")
+
+    raise ValueError(f"Unsupported AST node: {type(node)}")
 
 
 def extract_mod_config(file_path: str) -> dict | None:
-    """
-    Extract MOD_CONFIG from a module without executing it.
-    """
+    """Extract MOD_CONFIG without importing the module."""
 
     try:
 
@@ -105,13 +108,10 @@ def extract_mod_config(file_path: str) -> dict | None:
 
                         try:
                             return resolve_ast(node.value)
-
-                        except Exception:
-
+                        except Exception as e:
                             logger.warning(
-                                f"[Mod Loader] MOD_CONFIG in {file_path} is unsupported."
+                                f"[Mod Loader] MOD_CONFIG in {file_path} is unsupported: {e}"
                             )
-
                             return None
 
     except Exception:
@@ -121,18 +121,13 @@ def extract_mod_config(file_path: str) -> dict | None:
 
 
 def install_package(pkg: str) -> None:
-    """
-    Install package using pip.
-    """
-
+    """Install package via pip."""
     sys.argv = ["pip", "install", pkg]
     runpy.run_module("pip", run_name="__main__")
 
 
 def get_installed_version(pkg: str) -> Version | None:
-    """
-    Return installed version of a package.
-    """
+    """Return installed version if available."""
 
     try:
         return Version(version(pkg))
@@ -141,9 +136,7 @@ def get_installed_version(pkg: str) -> Version | None:
 
 
 def check_requirement(pkg: str, constraint: str) -> bool:
-    """
-    Validate version constraint.
-    """
+    """Check version constraint."""
 
     installed: Version | None = get_installed_version(pkg)
 
@@ -154,16 +147,12 @@ def check_requirement(pkg: str, constraint: str) -> bool:
 
     if constraint.startswith(">="):
         return installed >= required
-
     if constraint.startswith("<="):
         return installed <= required
-
     if constraint.startswith("=="):
         return installed == required
-
     if constraint.startswith(">"):
         return installed > required
-
     if constraint.startswith("<"):
         return installed < required
 
@@ -171,9 +160,7 @@ def check_requirement(pkg: str, constraint: str) -> bool:
 
 
 def ensure_requirements(reqs: Dict[str, str]) -> bool:
-    """
-    Ensure required packages are installed.
-    """
+    """Ensure required packages are installed."""
 
     restart_required: bool = False
 
@@ -208,7 +195,13 @@ def ensure_requirements(reqs: Dict[str, str]) -> bool:
 
 def load_mods() -> None:
     """
-    Load all mods safely."""
+    Load mods safely.
+
+    Flow:
+    1. Read MOD_CONFIG via AST
+    2. Install requirements
+    3. Import module
+    """
 
     global MODS_DATA
 
