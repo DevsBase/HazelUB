@@ -21,7 +21,7 @@ from Hazel.ModLoader import MODS_DATA
 logger = logging.getLogger(__name__)
 
 
-def get_help_markup(page_num=0):
+def get_help_markup(page_num: int = 0) -> tuple[InlineKeyboardMarkup | None, int]:
     mod_names = sorted(MODS_DATA.keys())
     page_size = 10
     total_pages = (len(mod_names) + page_size - 1) // page_size
@@ -38,9 +38,9 @@ def get_help_markup(page_num=0):
     end = start + page_size
     items = mod_names[start:end]
 
-    buttons = []
+    buttons: list[list[InlineKeyboardButton]] = []
     for i in range(0, len(items), 2):
-        row = []
+        row: list[InlineKeyboardButton] = []
         for j in range(i, min(i + 2, len(items))):
             row.append(
                 InlineKeyboardButton(
@@ -49,7 +49,7 @@ def get_help_markup(page_num=0):
             )
         buttons.append(row)
 
-    nav = []
+    nav: list[InlineKeyboardButton] = []
     if page_num > 0:
         nav.append(InlineKeyboardButton("⬅️ Prev", callback_data=f"hpage_{page_num-1}"))
 
@@ -70,26 +70,45 @@ async def help_userbot(c: Client, m: Message):
     try:
         if c.me and c.me.is_bot:
             markup, count = get_help_markup(0)
-            await m.reply(
-                f"• **Help Menu**\n\nTotal Modules: `{count}`", reply_markup=markup
-            )
+            if markup:
+                await m.reply(
+                    f"• **Help Menu**\n\nTotal Modules: `{count}`", reply_markup=markup
+                )
             return
 
-        bot_username = Tele.bot.me.username  # type: ignore
-        results = await c.get_inline_bot_results(bot_username, "help")  # type: ignore
-        if results.results:
-            await c.send_inline_bot_result(
-                m.chat.id, results.query_id, results.results[0].id  # type: ignore
-            )
-            await m.delete()
-        else:
-            await m.edit("No results from bot. Make sure inline mode is enabled.")
+        bot = Tele.bot
+        if not bot or not bot.me or not bot.me.username:
+            await m.edit("Bot client is not initialized.")
+            return
+
+        bot_username = bot.me.username
+        results = await c.get_inline_bot_results(bot_username, "help")
+        
+        if results and results.results and len(results.results) > 0:
+            query_id = results.query_id
+            result_id = results.results[0].id
+            if not m.chat:
+                return
+            chat_id = m.chat.id
+
+            if query_id and result_id and chat_id:
+                await c.send_inline_bot_result(
+                    chat_id=chat_id,
+                    query_id=query_id,
+                    result_id=result_id
+                )
+                await m.delete()
+                return
+                
+        await m.edit("No results from bot. Make sure inline mode is enabled.")
 
     except Exception as e:
-        if "CHAT_SEND_INLINE_FORBIDDEN" in str(e):
-            return await m.reply("Sending inline messages is not allowed in this chat.")
-        elif "BOT_INLINE_DISABLED" in str(e):
-            return await m.reply(f"Please enable inline mode for @{Tele.bot.me.username} in @BotFather")  # type: ignore
+        error_msg = str(e)
+        if "CHAT_SEND_INLINE_FORBIDDEN" in error_msg:
+            await m.reply("Sending inline messages is not allowed in this chat.")
+        elif "BOT_INLINE_DISABLED" in error_msg:
+            bot_uname = Tele.bot.me.username if Tele.bot and Tele.bot.me else "Bot"
+            await m.reply(f"Please enable inline mode for @{bot_uname} in @BotFather")
         else:
             logging.error(f"Error while sending help menu: {e}")
             await m.edit(
@@ -101,7 +120,7 @@ async def help_userbot(c: Client, m: Message):
 async def help_inline(c: Client, q: InlineQuery):
     markup, count = get_help_markup(0)
     if not markup:
-        return await q.answer(
+        await q.answer(
             [
                 InlineQueryResultArticle(
                     title="No modules found",
@@ -112,6 +131,7 @@ async def help_inline(c: Client, q: InlineQuery):
             ],
             cache_time=1,
         )
+        return
 
     await q.answer(
         [
@@ -130,50 +150,56 @@ async def help_inline(c: Client, q: InlineQuery):
 
 @Tele.bot.on_callback_query(filters.regex(r"^hpage_(\d+)$"))
 async def help_page_cb(c: Client, q: CallbackQuery):
+    if not q.matches or not q.message:
+        return
+        
     page_num = int(q.matches[0].group(1))
     markup, count = get_help_markup(page_num)
     
-    if not markup: return
-    
-    if c.me and c.me.is_bot:
-        return await q.message.edit(
-            f"• **Help Menu**\n\nTotal Modules: `{count}`",
-            reply_markup=markup,
-        )
-    
+    if not markup:
+        return
+        
     await q.edit_message_text(
-        f"• **Help Menu**\n\nTotal Modules: `{count}`",
-        reply_markup=markup,  
+        text=f"• **Help Menu**\n\nTotal Modules: `{count}`",
+        reply_markup=markup,
     )
 
 
 @Tele.bot.on_callback_query(filters.regex(r"^hmod_(.*)_(\d+)$"))
 async def help_mod_cb(c: Client, q: CallbackQuery):
+    if not q.matches or not q.message:
+        return
+        
     mod_name = q.matches[0].group(1)
     page_num = int(q.matches[0].group(2))
-    help_data = MODS_DATA.get(mod_name, {"help": "No help found.", "works": "Unknown", "usable": "Unknown"})
     
-    help_text = help_data["help"]
+    help_data = MODS_DATA.get(mod_name)
+    if not help_data:
+        help_text = "No help found."
+        usable = "Unknown"
+        works = "Unknown"
+    else:
+        help_text = help_data.get("help", "No help found.")
+        u_val = help_data.get("usable")
+        w_val = help_data.get("works")
+        
+        usable = getattr(u_val, "name", str(u_val)) if u_val else "Unknown"
+        works = getattr(w_val, "name", str(w_val)) if w_val else "Unknown"
 
     buttons = [
-        [InlineKeyboardButton(f"👤 Usable By: {help_data['usable']}", callback_data="none")],
-        [InlineKeyboardButton(f"🌍 Works In: {help_data['works']}", callback_data="none")],
+        [InlineKeyboardButton(f"👤 Usable By: {usable}", callback_data="none")],
+        [InlineKeyboardButton(f"🌍 Works In: {works}", callback_data="none")],
         [InlineKeyboardButton("⬅️ Back", callback_data=f"hpage_{page_num}")]
     ]
-    if c.me and c.me.is_bot:
-        return await q.message.edit(
-            f"**Module:** {mod_name}\n\n{help_text}",
-            reply_markup=InlineKeyboardMarkup(buttons),
-        )
     
     await q.edit_message_text(
-        f"**Module:** {mod_name}\n\n{help_text}",
+        text=f"**Module:** {mod_name}\n\n{help_text}",
         reply_markup=InlineKeyboardMarkup(buttons),
     )
 
 
 @Tele.bot.on_callback_query(filters.regex("none"))
-async def none_cb(c, q):
+async def none_cb(c: Client, q: CallbackQuery):
     await q.answer()
 
 MOD_CONFIG = {
