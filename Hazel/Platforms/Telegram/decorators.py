@@ -11,8 +11,12 @@ if TYPE_CHECKING:
 else:
     Telegram = None
 
+from cachetools import TTLCache
+
+BC_OWNER_CACHE: TTLCache[str, int] = TTLCache(maxsize=1000, ttl=600)
+
 async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
-    """Check whether the sender of the message holds sudo privileges for the current client session."""
+    """Check if the user is sudo."""
     import Hazel
 
     if not message.from_user:
@@ -31,16 +35,19 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
     if message.business_connection_id:
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
-                bc_conn = await client.get_business_connection(message.business_connection_id)
-                if bc_conn and bc_conn.id == user_id:
+                if BC_OWNER_CACHE.get(message.business_connection_id) == user_id:
                     return True
+                else:
+                    bc_conn = await client.get_business_connection(message.business_connection_id)
+                    if bc_conn and bc_conn.id == user_id:
+                        BC_OWNER_CACHE[message.business_connection_id] = user_id
+                        return True
     
     if not message.business_connection_id and client.me and client.me.is_bot:
         # If it's a bot client and the message is not from a business connection, check if the user is a sudoer for any of the owner's clients
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
                 return True
-    
     return False
 
 class Decorators:
