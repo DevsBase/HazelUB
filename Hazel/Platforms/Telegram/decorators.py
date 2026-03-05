@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 import pyrogram
+from cachetools import TTLCache
 from pyrogram import filters
 from pyrogram.types import Message
 
@@ -11,9 +12,9 @@ if TYPE_CHECKING:
 else:
     Telegram = None
 
-from cachetools import TTLCache
 
 BC_OWNER_CACHE: TTLCache[str, int] = TTLCache(maxsize=1000, ttl=600)
+
 
 async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> bool:
     """Check if the user is sudo."""
@@ -28,27 +29,34 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message) -> boo
     user_id: int = message.from_user.id
     if not client.me:
         return False
-    
+
     if user_id in sudoers.get(client.me.id, []):
         return True
-    
+
     if message.business_connection_id:
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
                 if BC_OWNER_CACHE.get(message.business_connection_id) == user_id:
                     return True
                 else:
-                    bc_conn = await client.get_business_connection(message.business_connection_id)
+                    bc_conn = await client.get_business_connection(
+                        message.business_connection_id
+                    )
                     if bc_conn and bc_conn.id == user_id:
                         BC_OWNER_CACHE[message.business_connection_id] = user_id
                         return True
-    
+
     if not message.business_connection_id and client.me and client.me.is_bot:
         # If it's a bot client and the message is not from a business connection, check if the user is a sudoer for any of the owner's clients
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
                 return True
+
+    if not message.business_connection_id:
+        if user_id in Hazel.Tele._allClientsIds:
+            return True
     return False
+
 
 class Decorators:
     """Mixin class providing decorator methods for registering message and call handlers.
@@ -59,7 +67,7 @@ class Decorators:
     multi-session support with a single decorator call.
     """
 
-    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, bot: bool = True, group: int = 0): # type: ignore
+    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, bot: bool = True, group: int = 0):  # type: ignore
         """Register a message handler across all Pyrogram client sessions.
 
         This decorator iterates over every client in ``self._allClients`` and
@@ -100,23 +108,24 @@ class Decorators:
                 # Both the owner and sudo users can trigger this.
                 ...
         """
+
         def decorator(func):
-            for i in self._allClients: 
+            for i in self._allClients:
                 if sudo:
                     _filters = filters_param & filters.create(sudo_check)
                 else:
                     _filters = filters_param
-                
+
                 i.on_message(_filters, group=group)(func)
-                
+
             if sudo and bot:
                 _bot_filters = filters_param & filters.create(sudo_check)
                 self.bot.on_business_message(_bot_filters, group=group)(func)
             return func
-            
+
         return decorator
-    
-    def on_update(self: Telegram, *args): # type: ignore
+
+    def on_update(self: Telegram, *args):  # type: ignore
         """Register a PyTgCalls update handler across all call instances.
 
         This decorator iterates over every ``PyTgCalls`` instance in
@@ -140,8 +149,11 @@ class Decorators:
                 # Handle the end of an audio/video stream.
                 ...
         """
+
         def decorator(func):
-            for i in self._allPyTgCalls: 
+            for i in self._allPyTgCalls:
                 i.on_update(*args)(func)
             return func
-        return decorator  
+
+        return decorator
+        return decorator
