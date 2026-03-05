@@ -29,7 +29,7 @@ MODS_DATA: Dict[str, ModData] = {}
 def config_checks(config: dict) -> bool:
     required: List[str] = ["name", "help", "works", "usable"]
     for key in required:
-        if not config.get(key):
+        if key not in config:
             return False
     return True
 
