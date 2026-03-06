@@ -9,55 +9,73 @@ from pyrogram.client import Client
 logger = logging.getLogger(__name__)
 
 @Tele.on_message(filters.command(["ban", 'unban', 'kick']) & filters.group, sudo=True)
-async def banFunc(c: Client, m: Message): 
-    ban_or_unban_or_kick = m.command[0]  # type: ignore
-    if m.chat:
-        chat = m.chat.id
+async def banFunc(c: Client, m: Message):
+    if not m.chat or not m.command or not m.from_user or not c.me:
+        return
+        
+    chat_id = m.chat.id
+    if chat_id is None:
+        return
 
-    if len(m.command) < 2 and not m.reply_to_message: # type: ignore
-        return await m.reply(f"Provide a user to {ban_or_unban_or_kick}.")
-    elif m.reply_to_message and m.reply_to_message.from_user.id == c.me.id: # type: ignore
-        return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
+    me_id = c.me.id
+    if me_id is None:
+        return
+
+    ban_or_unban_or_kick = m.command[0]
     
-    is_admin = await Tele.is_admin(c, m.chat.id) # type: ignore
+    if len(m.command) < 2 and not m.reply_to_message:
+        return await m.reply(f"Provide a user to {ban_or_unban_or_kick}.")
+    
+    if m.reply_to_message and m.reply_to_message.from_user:
+        if m.reply_to_message.from_user.id == me_id:
+            return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")
+    
+    is_admin = await Tele.is_admin(c, chat_id)
     if not is_admin:
         return await m.reply("You must be admin to do this.")
-    privileges = await Tele.get_chat_member_privileges(c, m.chat.id) # type: ignore
+        
+    privileges = await Tele.get_chat_member_privileges(c, chat_id)
     if privileges and not privileges.can_restrict_members:
         return await m.reply("You are missing rights `can_restrict_members`.")
     
     try:
-        _user = await Tele.get_user(c, m, chat, chat_member=True) 
-        if isinstance(_user, ChatMember):
+        _user = await Tele.get_user(c, m, chat_id, chat_member=True) 
+        if isinstance(_user, ChatMember) and _user.user:
             user: User = _user.user
-        else: return await m.reply("User not found.")
+        else:
+            return await m.reply("User not found.")
     except PeerIdInvalid:
-        return await m.reply('PeerId is invalid. You must interacted with that person once, otherwise use thier username.')
+        return await m.reply("PeerId is invalid. You must interacted with that person once, otherwise use thier username.")
     except Exception as e:
         logger.error(e)
-        return await m.reply('User is not found.')
+        return await m.reply("User is not found.")
+
+    target_user_id = user.id
+    if target_user_id is None:
+        return
     
-    if user.id == getattr(m.from_user, 'id'):
+    if target_user_id == m.from_user.id:
         return await m.reply(f"You can't {ban_or_unban_or_kick} yourself.")   
-    elif ban_or_unban_or_kick == "ban":
+        
+    if ban_or_unban_or_kick == "ban":
         try:
-            await c.ban_chat_member(m.chat.id, user.id) # type: ignore
+            await c.ban_chat_member(chat_id, target_user_id)
             await m.reply(f"Banned {user.mention}.")
         except Exception as e:
-            await m.reply(f"Failed to ban user {user.id}\n\n**Error:** {e}")
+            await m.reply(f"Failed to ban user {target_user_id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "unban":
         try:
-            await c.unban_chat_member(m.chat.id, user.id) # type: ignore
+            await c.unban_chat_member(chat_id, target_user_id)
             await m.reply(f"Unbanned {user.mention}.")
         except Exception as e:
-            await m.reply(f"Failed to unban user {user.id}\n\n**Error:** {e}")
+            await m.reply(f"Failed to unban user {target_user_id}\n\n**Error:** {e}")
     elif ban_or_unban_or_kick == "kick":
         try:
-            await c.ban_chat_member(m.chat.id, user.id) # type: ignore
-            await c.unban_chat_member(m.chat.id, user.id) # type: ignore
+            await c.ban_chat_member(chat_id, target_user_id)
+            await c.unban_chat_member(chat_id, target_user_id)
             await m.reply(f"Kicked {user.mention}.")
         except Exception as e:
-            await m.reply(f"Failed to kick user {user.id}\n\n**Error:** {e}")
+            await m.reply(f"Failed to kick user {target_user_id}\n\n**Error:** {e}")
 
 MOD_CONFIG = {
     "name": "Bans",
