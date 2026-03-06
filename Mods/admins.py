@@ -55,7 +55,6 @@ async def admin_actions(c: Client, m: Message):
         return await m.reply("User not found. Use a reply or mention.")
 
     if not user:
-        logger.info(f"DEBUG: {m.command},  {extra_arg},  {user}")
         return await m.reply("User not found.")
 
     if not isinstance(user, ChatMember):

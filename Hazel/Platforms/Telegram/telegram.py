@@ -375,7 +375,7 @@ class Telegram(
                 user = entity.user.id
                 break
         elif message.text and message.command:
-            if len(message.command) > 2:
+            if len(message.command) > 1:
                 user = message.command[1].replace('@', '')
         
         if isinstance(user, str) and user.isdigit():
