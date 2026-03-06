@@ -379,13 +379,9 @@ class Telegram(
                 user = message.command[1].replace('@', '')
         
         if isinstance(user, str) and user.isdigit():
-            try: user = int(user)
-            except: return None
-        
+            user = int(user)
         if chat_member:
             if chat_id and user:
                 return await client.get_chat_member(chat_id, user_id=user)
-        if user:
-            return await client.get_users(user)
-        if user:
+        elif user:
             return await client.get_users(user)

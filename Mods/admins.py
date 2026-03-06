@@ -47,7 +47,7 @@ async def admin_actions(c: Client, m: Message):
     
     is_admin = await Tele.is_admin(c, chat_id)
     if not is_admin:
-        return await m.reply("I need to be an admin to perform this action.")
+        return await m.reply("You must be admin to do this.")
 
     try:
         user = await Tele.get_user(c, m, chat_id, chat_member=True)
@@ -55,6 +55,7 @@ async def admin_actions(c: Client, m: Message):
         return await m.reply("User not found. Use a reply or mention.")
 
     if not user:
+        logger.info(f"DEBUG: {m.command},  {extra_arg},  {user}")
         return await m.reply("User not found.")
 
     if not isinstance(user, ChatMember):
