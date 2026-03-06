@@ -42,7 +42,7 @@ async def admin_actions(c: Client, m: Message):
     if reply := m.reply_to_message:
         if reply.from_user and len(m.command) > 1:
             extra_arg = m.command[1]
-    elif len(m.command) > 2:
+    elif not m.reply_to_message and len(m.command) > 2:
         extra_arg = m.command[2]
     
     is_admin = await Tele.is_admin(c, chat_id)
@@ -62,11 +62,16 @@ async def admin_actions(c: Client, m: Message):
     
     user = user.user
     user_id = user.id
-
+    mention = getattr(user, 'mention', user_id)
+    
     if user_id == me_id:
         return await m.reply("I can't perform this action on myself.")
 
     if cmd in ["promote", "fpromote", "lpromote"]:
+        
+        if await Tele.is_admin(c, chat_id, user_id):
+            return await m.reply(f"{mention} is already admin.")
+        
         privs = ChatPrivileges(
             can_manage_chat=True,
             can_delete_messages=True,
@@ -80,7 +85,7 @@ async def admin_actions(c: Client, m: Message):
         try:
             await c.promote_chat_member(chat_id, user_id, privs)
             await c.set_administrator_title(chat_id, user_id, extra_arg)
-            await m.reply(f"Promoted {getattr(user, 'mention', user_id)} ({cmd}).")
+            await m.reply(f"Promoted {mention}{f" with title '{extra_arg}'" if extra_arg else ''}.")
         except Exception as e:
             await m.reply(f"Failed to promote: {e}")
 
@@ -99,14 +104,14 @@ async def admin_actions(c: Client, m: Message):
                     can_pin_messages=False
                 )
             )
-            await m.reply(f"Demoted {getattr(user, 'mention', user_id)}.")
+            await m.reply(f"Demoted {mention}.")
         except Exception as e:
             await m.reply(f"Failed to demote: {e}")
 
     elif cmd in ["mute", "tmute"]:
         until_date = datetime.now()
         if cmd == "tmute":
-            if len(m.command) < 3:
+            if not extra_arg:
                 return await m.reply("Usage: .tmute @user 1h` (m/h/d)")
             duration = parse_time(extra_arg)
             if not duration:
@@ -122,7 +127,7 @@ async def admin_actions(c: Client, m: Message):
                 until_date=until_date
             )
             time_str = m.command[2] if cmd == "tmute" else "forever"
-            await m.reply(f"Muted {getattr(user, 'mention', user_id)} for {time_str}.")
+            await m.reply(f"Muted {mention} for {time_str}.")
         except Exception as e:
             await m.reply(f"Failed to mute: {e}")
 
@@ -137,7 +142,7 @@ async def admin_actions(c: Client, m: Message):
                     can_add_web_page_previews=True
                 )
             )
-            await m.reply(f"Unmuted {getattr(user, 'mention', user_id)}.")
+            await m.reply(f"Unmuted {mention}.")
         except Exception as e:
             await m.reply(f"Failed to unmute: {e}")
 

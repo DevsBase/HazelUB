@@ -293,7 +293,7 @@ class Telegram(
                 ChatMemberStatus.OWNER,
             )
         except Exception as e:
-            logger = logging.getLogger("Telegram.is_admin")
+            logger = logging.getLogger("Hazel.Telegram.is_admin")
             logger.error(f"Error checking admin status: {str(e)}")
             return False
     
@@ -365,6 +365,7 @@ class Telegram(
         user = None
         if not chat_id and chat_member:
             raise ValueError("chat_id is required. when chat_member is True")
+        
         if message.reply_to_message and message.reply_to_message.from_user:
             user = message.reply_to_message.from_user.id
         elif message.entities and any(e.type == MessageEntityType.TEXT_MENTION for e in message.entities):
@@ -373,8 +374,9 @@ class Telegram(
                     continue
                 user = entity.user.id
                 break
-        elif message.text:
-            user = (message.text.split(None, 1)[1]).replace('@', '')
+        elif message.text and message.command:
+            if len(message.command) > 2:
+                user = message.command[1].replace('@', '')
         
         if isinstance(user, str) and user.isdigit():
             try: user = int(user)
