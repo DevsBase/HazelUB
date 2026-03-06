@@ -196,11 +196,10 @@ def load_mods() -> None:
                     "platform": config.get("platform") or PLATFORM.TELEGRAM,
                     "required_mods": required_mods
                 }
-
+            logger.info(f"Loaded: {module_name}")
             loaded.append(module_name)
 
         except Exception:
             traceback.print_exc()
             logger.error(f"[FAILED TO LOAD]: {module_path}. see error above ↑")
-    logger.info(f"Loaded: {', '.join(loaded)}")
     logger.info(f"Loaded {len(loaded)} mods.")

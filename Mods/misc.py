@@ -72,7 +72,7 @@ async def repoFunc(c: Client, m: Message | InlineQuery):
             m = m.reply_to_message
     await Tele.message(m).reply("https://github.com/DevsBase/HazelUB")
 
-@Tele.bot.on_message(filters.command("start"))
+@Tele.bot.on_message(filters.command("start", prefixes="/"))
 async def start_cmd(c: Client, m: Message):
     if not m.command:
         return
