@@ -50,9 +50,9 @@ async def admin_actions(c: Client, m: Message):
     if not user:
         return await m.reply("User not found.")
 
-    user_id = getattr(user, "id", None)
-    if user_id is None:
+    if not isinstance(user, ChatMember):
         return
+    user_id = user.user.id
 
     if user_id == me_id:
         return await m.reply("I can't perform this action on myself.")
