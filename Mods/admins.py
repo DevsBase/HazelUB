@@ -128,7 +128,7 @@ async def admin_actions(c: Client, m: Message):
                 ChatPermissions(can_send_messages=False),
                 until_date=until_date
             )
-            time_str = m.command[2] if cmd == "tmute" else "forever"
+            time_str = extra_arg if cmd == "tmute" else "forever"
             await m.reply(f"Muted {mention} for {time_str}.")
         except Exception as e:
             await m.reply(f"Failed to mute: {e}")
