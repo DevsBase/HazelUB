@@ -1,8 +1,9 @@
-from Hazel.enums import USABLE, WORKS
-from pyrogram.client import Client
 from pyrogram import filters
+from pyrogram.client import Client
 from pyrogram.types import Message
+
 from Hazel import Tele, __version__
+from Hazel.enums import USABLE, WORKS
 
 infoTxt = """
 ![👤](tg://emoji?id=5258011929993026890) **Name:** - **{}**
@@ -24,7 +25,7 @@ async def clientsFunc(c: Client, m: Message):
     await m.reply(txt)
 
 
-@Tele.on_message(filters.command("cpromote"), sudo=True, bot=False)
+@Tele.on_message(filters.command("cpromote"), sudo=True, business_bot=False)
 async def add_sudo(c: Client, m: Message):
     if not m or not m.from_user:
         return
@@ -53,7 +54,7 @@ async def add_sudo(c: Client, m: Message):
     )
 
 
-@Tele.on_message(filters.command("cdemote"), sudo=True, bot=False)
+@Tele.on_message(filters.command("cdemote"), sudo=True, business_bot=False)
 async def remove_sudo(c: Client, m: Message):
     if not m or not m.from_user:
         return

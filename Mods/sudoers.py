@@ -1,13 +1,13 @@
-from Hazel.enums import USABLE, WORKS
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 
 import Hazel
 from Hazel import SQLClient, Tele, sudoers
+from Hazel.enums import USABLE, WORKS
 
 
-@Tele.on_message(filters.command(["asudo", "addsudo"]), sudo=True, bot=False)
+@Tele.on_message(filters.command(["asudo", "addsudo"]), sudo=True, business_bot=False)
 async def addsudo_handler(c: Client, m: Message):
     if m.reply_to_message and hasattr(m.reply_to_message.from_user, "id"):
         user_id = m.reply_to_message.from_user.id  # type: ignore
@@ -35,7 +35,9 @@ async def addsudo_handler(c: Client, m: Message):
         await m.reply(f"User `{user_id}` is already a sudoer.")
 
 
-@Tele.on_message(filters.command(["rsudo", "dsudo", "delsudo"]), sudo=True, bot=False)
+@Tele.on_message(
+    filters.command(["rsudo", "dsudo", "delsudo"]), sudo=True, business_bot=False
+)
 async def delsudo_handler(c: Client, m: Message):
     if not c.me:
         return
@@ -80,6 +82,7 @@ async def sudoers_handler(c: Client, m: Message):
     for user_id in client_sudoers:
         text += f"- `{user_id}`\n"
     await m.reply(text)
+
 
 help = """**Usage:**
 > .asudo (reply) - Add a user to sudoers. (Business bot wont work)
