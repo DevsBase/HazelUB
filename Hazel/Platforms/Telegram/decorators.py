@@ -44,7 +44,7 @@ async def sudo_check(_, client: pyrogram.client.Client, message: Message | Inlin
                         BC_OWNER_CACHE[message.business_connection_id] = user_id
                         return True
 
-    if isinstance(message, Message) and not message.business_connection_id and client.me.is_bot:
+    if not hasattr(message, 'business_connection_id') and client.me.is_bot:
         # If it's a bot client and the message is not from a business connection, check if the user is a sudoer for any of the owner's clients
         for _sudoers in Hazel.sudoers.values():
             if user_id in _sudoers:
@@ -86,13 +86,14 @@ class Decorators:
 
         return decorator
     
-    def on_inline_query(self: Telegram, filters_param: filters.Filter, sudo: bool = False):  # type: ignore
+    def on_inline_query(self: Telegram, filters_param: filters.Filter, sudo: bool = False, group: int = 0):  # type: ignore
         """_summary_
 
         Args:
             self (Telegram): _description_
             filters_param (filters.Filter): _description_
             sudo (bool, optional): _description_. Defaults to False.
+            group (int, optional): The group identifier for the handler. Defaults to 0.
         """
         def decorator(func):
             if sudo:
@@ -100,7 +101,7 @@ class Decorators:
             else:
                 _filters = filters_param
             
-            self.bot.on_inline_query(_filters)(func)
+            self.bot.on_inline_query(_filters, group=group)(func)
             return func
         return decorator
 
