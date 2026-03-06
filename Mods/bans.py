@@ -79,7 +79,7 @@ async def banFunc(c: Client, m: Message):
 
 MOD_CONFIG = {
     "name": "Bans",
-    "help": "**Usage:**\n> .ban (reply/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nOnly works on group.",
+    "help": "**Usage:**\n> .ban (reply/id/username/mention)\n> .unban (reply/username/mention)\n> .kick (reply/username/mention)\n\nOnly works on group.",
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO
 }

@@ -52,7 +52,9 @@ async def admin_actions(c: Client, m: Message):
 
     if not isinstance(user, ChatMember):
         return
-    user_id = user.user.id
+    
+    user = user.user
+    user_id = user.id
 
     if user_id == me_id:
         return await m.reply("I can't perform this action on myself.")
