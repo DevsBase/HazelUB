@@ -166,14 +166,14 @@ async def admin_actions(c: Client, m: Message):
 MOD_CONFIG = {
     "name": "Admins",
     "help": (
-        "**Usage:**\n\n"
-        "> .promote (reply/id/mention/username) [title, __optional__] - Promote to admin\n\n"
-        "> .fpromote (reply/id/mention/username) [title, __optional__] - Full promotion\n\n"
-        "> .lpromote (reply/id/mention/username) [title, __optional__] - Low promotion\n\n"
-        "> .demote (reply/id/mention/username) - Remove admin rights\n\n"
-        "> .mute (reply/id/mention/username) - Mute a user\n\n"
-        "> .tmute (reply/id/mention/username) [time, __optional__] - Timed mute (e.g., .tmute 1h, 1m, or 1d.)\n\n"
-        "> .unmute (reply/id/mention/username) - Unmute user"
+        "**Usage:**\n"
+        "> .promote [$user$] [title, __optional__] - Promote to admin\n\n"
+        "> .fpromote [$user$] [title, __optional__] - Full promotion\n\n"
+        "> .lpromote [$user$] [title, __optional__] - Low promotion\n\n"
+        "> .demote [$user$] - Remove admin rights\n\n"
+        "> .mute [$user$] - Mute a user\n\n"
+        "> .tmute [$user$]) [time] - Timed mute (e.g., .tmute 1h, 1m, or 1d.)\n\n"
+        "> .unmute [$user$] - Unmute user"
     ),
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO

@@ -150,7 +150,7 @@ async def help_page_cb(c: Client, q: CallbackQuery):
 
 @Tele.bot.on_callback_query(filters.regex(r"^hmod_(.*)_(\d+)$"))
 async def help_mod_cb(c: Client, q: CallbackQuery):
-    if not q.matches:
+    if not q.matches or not Tele.bot.me:
         return
         
     mod_name = q.matches[0].group(1)
@@ -162,7 +162,7 @@ async def help_mod_cb(c: Client, q: CallbackQuery):
         usable = "Unknown"
         works = "Unknown"
     else:
-        help_text = help_data.get("help", "No help found.")
+        help_text = help_data.get("help", "No help found.").replace("[$user$]", f"[user](https://t.me/{Tele.bot.me.username}?start=help_what_is_user)")
         u_val = help_data.get("usable")
         w_val = help_data.get("works")
         
