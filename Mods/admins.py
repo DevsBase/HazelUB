@@ -85,7 +85,9 @@ async def admin_actions(c: Client, m: Message):
         try:
             await c.promote_chat_member(chat_id, user_id, privs)
             await c.set_administrator_title(chat_id, user_id, extra_arg)
-            await m.reply(f"Promoted {mention}{f" with title '{extra_arg}'" if extra_arg else ''}.")
+            await m.reply(
+                f"Promoted {mention}." if extra_arg else f"Promoted {mention} ({extra_arg})."
+            )
         except Exception as e:
             await m.reply(f"Failed to promote: {e}")
 
