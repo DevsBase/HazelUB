@@ -50,7 +50,7 @@ async def admin_actions(c: Client, m: Message):
         return await m.reply("You must be admin to do this.")
 
     try:
-        user = await Tele.get_user(c, m, chat_id, chat_member=True)
+        user = await Tele.get_user(c, message=m, chat_id=chat_id, chat_member=True)
     except Exception:
         return await m.reply("User not found. Use a reply or mention.")
 

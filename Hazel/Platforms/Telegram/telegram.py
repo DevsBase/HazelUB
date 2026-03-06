@@ -325,56 +325,26 @@ class Telegram(
             logger.error(f"Error getting chat member privileges: {str(e)}")
             return None
     
-    async def get_user(self, client: Client, message: Message, chat_id: Optional[int] = None, chat_member: bool = False) -> ChatMember | User | None | List[User]:
-        """Resolve a target user from a message using multiple strategies.
-
-        Resolution is attempted in the following order:
-
-        1. **Reply** – If the message is a reply and the replied-to message
-           has a sender, that sender's ID is used.
-        2. **Text mention** – If the message contains a ``TEXT_MENTION``
-           entity (an inline mention of a user without a public username),
-           that user's ID is used.
-        3. **Text argument** – The first whitespace-separated token after
-           the command is used as a username or user ID; a leading ``@`` is
-           stripped, and a purely numeric string is coerced to ``int``.
-
-        If a numeric string cannot be converted to ``int``, ``None`` is
-        returned immediately.
-
-        Args:
-            client (Client): The Pyrogram client used for API calls.
-            message (Message): The incoming message that triggered the command.
-            chat_id (Optional[int], optional): The chat ID used for the
-                membership lookup. Required when *chat_member* is ``True``.
-                Defaults to ``None``.
-            chat_member (bool, optional): When ``True``, returns a
-                :class:`ChatMember` object instead of a plain :class:`User`.
-                Requires *chat_id* to be provided. Defaults to ``False``.
-
-        Returns:
-            ChatMember | User | None | List[User]: The resolved
-            :class:`ChatMember` (if *chat_member* is ``True``),
-            :class:`User` (or list thereof), or ``None`` if the user
-            could not be determined or the conversion failed.
-
-        Raises:
-            ValueError: If *chat_member* is ``True`` but *chat_id* is
-                ``None``.
+    async def get_user(self, client: Client, message: Message | None = None, user_id: int | None = None, chat_id: Optional[int] = None, chat_member: bool = False) -> ChatMember | User | None | List[User]:
+        """update soon
         """
         user = None
         if not chat_id and chat_member:
             raise ValueError("chat_id is required. when chat_member is True")
+        elif not message and not user_id:
+            raise ValueError("message or user_id is required.")
+        elif user_id:
+            user = user_id
         
-        if message.reply_to_message and message.reply_to_message.from_user:
+        if message and message.reply_to_message and message.reply_to_message.from_user:
             user = message.reply_to_message.from_user.id
-        elif message.entities and any(e.type == MessageEntityType.TEXT_MENTION for e in message.entities):
+        elif message and message.entities and any(e.type == MessageEntityType.TEXT_MENTION for e in message.entities):
             for entity in message.entities: 
                 if entity.type != MessageEntityType.TEXT_MENTION:
                     continue
                 user = entity.user.id
                 break
-        elif message.text and message.command:
+        elif message and message.text and message.command:
             if len(message.command) > 1:
                 user = message.command[1].replace('@', '')
         
