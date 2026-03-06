@@ -77,6 +77,10 @@ async def ai_cmd(c: Client, m: Message | InlineQuery):
     elif len(m.command) < 2: # type: ignore
         return await m.reply("Usage: `.ai <your question>`")
     
+    chat_name = "Inline Query so cannot get this"
+    replied_msg = "Inline Query so cannot get this"
+    replied_msg_user = "Inline Query so cannot get this"
+
     if isinstance(m, Message):
         query = m.text.split(None, 1)[1] # type: ignore
         loading = await m.reply("...")
