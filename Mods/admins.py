@@ -40,9 +40,9 @@ async def admin_actions(c: Client, m: Message):
     extra_arg = ""
 
     if reply := m.reply_to_message:
-        if reply.from_user and len(m.command) > 0:
+        if reply.from_user and len(m.command) > 1:
             extra_arg = m.command[1]
-    elif len(m.command) > 1:
+    elif len(m.command) > 2:
         extra_arg = m.command[2]
     
     is_admin = await Tele.is_admin(c, chat_id)
@@ -148,10 +148,10 @@ MOD_CONFIG = {
         "> .promote (reply/id/mention/username) [title, __optional__] - Promote to admin\n"
         "> .fpromote (reply/id/mention/username) [title, __optional__] - Full promotion\n"
         "> .lpromote (reply/id/mention/username) [title, __optional__] - Low promotion\n"
-        "> .demote (reply/id/mention/username) [title, __optional__] - Remove admin rights\n"
-        "> .mute (reply/id/mention/username) [title, __optional__] - Mute a user\n"
-        "> .tmute (reply/id/mention/username) [title, __optional__] - Timed mute (e.g., .tmute 1h)\n"
-        "> .unmute (reply/id/mention/username) [title, __optional__] - Unmute user"
+        "> .demote (reply/id/mention/username) - Remove admin rights\n"
+        "> .mute (reply/id/mention/username) - Mute a user\n"
+        "> .tmute (reply/id/mention/username) [time, __optional__] - Timed mute (e.g., .tmute 1h, 1m, or 1d.)\n"
+        "> .unmute (reply/id/mention/username) - Unmute user"
     ),
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO
