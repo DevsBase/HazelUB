@@ -63,6 +63,7 @@ async def delsudo_handler(c: Client, m: Message):
 
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
     if not c.me:
         return
@@ -85,8 +86,8 @@ async def sudoers_handler(c: Client, m: Message):
 
 
 help = """**Usage:**
-> .asudo (reply) - Add a user to sudoers. (Business bot wont work)
-> .dsudo (ID/reply) - Remove a user from sudoers. (Business bot won't work)
+> .asudo (reply) - Add a user to sudoers. (Inline and business bot not supported)
+> .dsudo (ID/reply) - Remove a user from sudoers. (Inline and business bot not supported)
 > .sudoers - List all sudoers.
 
 **⚠️ Warning:** Do not give sudo access to anyone unless it's you or a trusted person. Anyone can steal your session using this, Plus. they can hack the userbot's system and your telegram account.

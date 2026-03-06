@@ -83,6 +83,7 @@ def calculate(expression: str) -> Decimal:
 
 
 @Tele.on_message(filters.regex(r"^//"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"^//"), sudo=True)
 async def calculateFunc(c: Client, m: Message) -> None:
     exp: str = m.text.strip()  # type: ignore
 

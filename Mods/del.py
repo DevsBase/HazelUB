@@ -15,7 +15,7 @@ async def delCommand(client: Client, m: types.Message):
 
 MOD_CONFIG = {
     "name": "Delete",
-    "help": "**Usage:**\n> .del (reply to a message)",
+    "help": "**Usage:**\n> .del (reply to a message) (Inline not supported)",
     "works": WORKS.ALL,
     "usable": USABLE.ALL
 }

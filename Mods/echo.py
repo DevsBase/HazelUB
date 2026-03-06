@@ -13,7 +13,7 @@ async def echo_cmd(c: Client, m: Message):
 
 MOD_CONFIG = {
     "name": "Echo",
-    "help": "> .echo / .ec (reply) - to send the replied message.",
+    "help": "> .echo / .ec (reply) - to send the replied message. (inline not supported)",
     "works": WORKS.ALL,
     "usable": USABLE.ALL
 }

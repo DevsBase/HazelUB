@@ -81,8 +81,9 @@ async def urban_dictionary(_, message: Message | InlineQuery):
             title=f"Urban Dictionary: {term}",
             text=reply_text
         )
-    await Tele.message(processing).delete(business_connection_id=message.business_connection_id)
-    await message.reply(reply_text)
+    else:
+        await Tele.message(processing).delete(business_connection_id=message.business_connection_id)
+        await message.reply(reply_text)
 
 MOD_CONFIG = {
     "name": "Urban Dictionary",

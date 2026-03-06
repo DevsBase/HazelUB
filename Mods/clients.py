@@ -1,6 +1,6 @@
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 
 from Hazel import Tele, __version__
 from Hazel.enums import USABLE, WORKS
@@ -14,7 +14,8 @@ infoTxt = """
 
 
 @Tele.on_message(filters.command("clients"), sudo=True)
-async def clientsFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"clients"), sudo=True)
+async def clientsFunc(c: Client, m: Message | InlineQuery):
     txt = "• **Hazel Clients:**\n"
 
     for client in Tele._allClients:
@@ -22,7 +23,10 @@ async def clientsFunc(c: Client, m: Message):
             txt += infoTxt.format(client.me.first_name, client.me.id, Tele.getClientPrivilege(client), client.is_connected)  # type: ignore
 
     txt += f"\nHazelUB `v{__version__}`"
-    await m.reply(txt)
+    if isinstance(m, InlineQuery):
+        await Tele.inline(m).answer_text("clients", txt)
+    else:
+        await m.reply(txt)
 
 
 @Tele.on_message(filters.command("cpromote"), sudo=True, business_bot=False)

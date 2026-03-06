@@ -3,7 +3,7 @@ from google import genai
 from google.genai.chats import Chat
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 from Hazel import Tele
 import logging
 import os
@@ -61,26 +61,38 @@ User Prompt: {}
 """
 
 @Tele.on_message(filters.command("ai"), sudo=True)
-async def ai_cmd(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^ai"), sudo=True)
+async def ai_cmd(c: Client, m: Message | InlineQuery):
     if not API_KEY:
-        return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
+        if isinstance(m, InlineQuery):
+            return await Tele.inline(m).answer_text("AI", "GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
+        else:
+            return await m.reply("GEMINI_API_KEY not found in config or enviroment. This command will not work without it.")
+    
+    elif isinstance(m, InlineQuery):
+        query = m.query.split(None, 1)[1] if len(m.query.split(None, 1)) > 1 else None
+        if not query:
+            return await Tele.inline(m).answer_text("AI", "Please provide a query.")
+        query = m.query
     elif len(m.command) < 2: # type: ignore
         return await m.reply("Usage: `.ai <your question>`")
-    loading = await m.reply("...")
-    reply = m.reply_to_message
-
+    
+    if isinstance(m, Message):
+        query = m.text.split(None, 1)[1] # type: ignore
+        loading = await m.reply("...")
+        reply = m.reply_to_message
+        chat_name = m.chat.full_name # type: ignore
+        replied_msg = getattr(reply, 'text') if reply else "> SYS: User not replied any message"
+        replied_msg_user = getattr(reply.from_user, 'first_name') if reply else "> SYS: User not replied any message"
+    
+    user_id = m.from_user.id  # type: ignore
     ist_time = datetime.now(ZoneInfo("Asia/Kolkata"))
     name = m.from_user.first_name # type: ignore
-    chat_name = m.chat.full_name # type: ignore
-    replied_msg = getattr(reply, 'text') if reply else "> SYS: User not replied any message"
-    replied_msg_user = getattr(reply.from_user, 'first_name') if reply else "> SYS: User not replied any message"
-    query = m.text.split(None, 1)[1] # type: ignore
-    
 
     message = prompt.format(ist_time, name, chat_name, replied_msg, replied_msg_user, query)
 
     try:
-        session = get_ai_session(c.me.id)  # type: ignore
+        session = get_ai_session(user_id=user_id)
 
         response = await asyncio.to_thread(
             session.send_message,
@@ -95,22 +107,35 @@ async def ai_cmd(c: Client, m: Message):
                 full_text = "Gemini sent nothing. Please check if the prompt is not offensive."
 
         full_text = full_text[:4090] # type: ignore
-        if full_text:
+        if full_text and isinstance(m, Message):
             await Tele.message(loading).edit(full_text, business_connection_id=m.business_connection_id)
+        elif isinstance(m, InlineQuery):
+            await Tele.inline(m).answer_text("AI", full_text or "Gemini sent nothing. Please check if the prompt is not offensive.")
 
     except Exception as e:
         logger.error(f"Gemini AI Error: {e}")
-        await Tele.message(loading).edit(f"Error: `{e}`", business_connection_id=m.business_connection_id)
+        if isinstance(m, Message):
+            await Tele.message(loading).edit(f"Error: `{e}`", business_connection_id=m.business_connection_id)
+        else:
+            await Tele.inline(m).answer_text("AI Error", f"Error: `{e}`")
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"aiclr"), sudo=True)
 async def ai_clear(c: Client, m: Message):
-    uid = c.me.id  # type: ignore
+    uid = m.from_user.id  # type: ignore
 
     if AI_SESSIONS.pop(uid, None):
-        await m.reply("Cleared.")
+        if isinstance(m, Message):
+            await m.reply("Cleared.")
+        else:
+            await Tele.inline(m).answer_text("Cleared", "Cleared.")
     else:
-        await m.reply("No active AI session to clear.")
+        if isinstance(m, Message):
+            await m.reply("No active AI session to clear.")
+        else:
+            await Tele.inline(m).answer_text("No session", "No active AI session to clear.")
+
 help = """**Usage:**
 > .ai <query> - Talk to Gemini AI
 > .aiclr - Clear chat history
