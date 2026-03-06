@@ -16,7 +16,7 @@ async def search_urban_dictionary(term: str) -> dict:
 
 
 @Tele.on_message(
-    filters.command("ud") | filters.regex(r"^ud\s+(\w+)"),
+    filters.regex(r"^ud\s+(\w+)") | filters.command("ud"),
     sudo=True,
     inline=True
 )
