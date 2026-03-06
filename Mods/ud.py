@@ -16,10 +16,10 @@ async def search_urban_dictionary(term: str) -> dict:
 
 
 @Tele.on_message(
-    filters.regex(r"^ud\s+(\w+)") | filters.command("ud"),
+    filters.command("ud") | filters.regex(r"^ud\s+(\w+)"),
     sudo=True,
-    inline=True
 )
+@Tele.on_inline_query(filters.regex(r"^ud\s+(\w+)"), sudo=True)
 async def urban_dictionary(_, message: Message | InlineQuery):
     if isinstance(message, InlineQuery):
         term = message.query.split(None, 1)[1] if len(message.query.split(None, 1)) > 1 else None

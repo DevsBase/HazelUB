@@ -65,7 +65,7 @@ class Decorators:
     multi-session support with a single decorator call.
     """
 
-    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, business_bot: bool = True, inline: bool = False, group: int = 0):  # type: ignore
+    def on_message(self: Telegram, filters_param: filters.Filter, sudo: bool = False, business_bot: bool = True, group: int = 0):  # type: ignore
         """
             update soon
         """
@@ -82,11 +82,26 @@ class Decorators:
             if sudo and business_bot:
                 _bot_filters = filters_param & filters.create(sudo_check)
                 self.bot.on_business_message(_bot_filters, group=group)(func)
-            if sudo and inline:
-                _inline_filters = filters_param & filters.create(sudo_check)
-                self.bot.on_inline_query(_inline_filters)(func)
             return func
 
+        return decorator
+    
+    def on_inline_query(self: Telegram, filters_param: filters.Filter, sudo: bool = False):  # type: ignore
+        """_summary_
+
+        Args:
+            self (Telegram): _description_
+            filters_param (filters.Filter): _description_
+            sudo (bool, optional): _description_. Defaults to False.
+        """
+        def decorator(func):
+            if sudo:
+                _filters = filters_param & filters.create(sudo_check)
+            else:
+                _filters = filters_param
+            
+            self.bot.on_inline_query(_filters)(func)
+            return func
         return decorator
 
     def on_update(self: Telegram, *args):  # type: ignore
