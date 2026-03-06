@@ -59,7 +59,7 @@ def get_help_markup(page_num: int = 0) -> tuple[InlineKeyboardMarkup | None, int
         nav.append(InlineKeyboardButton("Next ➡️", callback_data=f"hpage_{page_num+1}"))
 
     buttons.append(nav)
-    buttons.append([InlineKeyboardButton("> HazelUB <", callback_data="none")])
+    buttons.append([InlineKeyboardButton("HazelUB", callback_data="none")])
     return InlineKeyboardMarkup(buttons), len(mod_names)
 
 

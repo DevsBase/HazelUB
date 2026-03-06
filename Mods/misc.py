@@ -11,7 +11,7 @@ start_msg = """🔥 Hi, I'm Hazel Userbot!
 
 ⚡️ Fast, modular, and easy to extend with modules. 
 
-🆘 Prss Help to view available commands.
+🆘 Press Help to view available commands.
 """
 
 entities: list[MessageEntity] = [
@@ -80,7 +80,12 @@ async def start_cmd(c: Client, m: Message):
         if m.command[1] == "help_what_is_user":
             ...
     
-    btn = InlineKeyboardMarkup([[InlineKeyboardButton("Help", callback_data="hpage_0")]])
+    btn = InlineKeyboardMarkup(
+            [
+                [InlineKeyboardButton("Help", callback_data="hpage_0")],
+                [InlineKeyboardButton("Source", url="https://github.com/DevsBase/HazelUB")]
+            ]
+        )
     await m.reply(start_msg, entities=entities, reply_markup=btn)
 
 MOD_CONFIG = {
