@@ -66,17 +66,18 @@ async def admin_actions(c: Client, m: Message):
     
     if user_id == me_id:
         return await m.reply("I can't perform this action on myself.")
+    my_privs = await Tele.get_chat_member_privileges(c, chat_id, me_id)
+    if not my_privs:
+        return await m.reply("cannot get my privilege")
 
     if cmd in ["promote", "fpromote", "lpromote"]:
         
         if await Tele.is_admin(c, chat_id, user_id):
             return await m.reply(f"{mention} is already admin.")
-        
-        my_privs = await Tele.get_chat_member_privileges(c, chat_id, me_id)
-        if not my_privs:
-            return await m.reply("cannot get my privilege")
         if not my_privs.can_promote_members:
-            return await m.reply("You are missing rights `can_promote_members`")
+            return await m.reply("You are missing rights `can_promote_members`.")
+        elif not my_privs.can_restrict_members:
+            return await m.reply("You are missing rights `can_restrict_members`.")
         
         privs = ChatPrivileges(
             can_manage_chat = (my_privs.can_manage_chat),
@@ -92,7 +93,7 @@ async def admin_actions(c: Client, m: Message):
             await c.promote_chat_member(chat_id, user_id, privs)
             await c.set_administrator_title(chat_id, user_id, extra_arg)
             await m.reply(
-                f"Promoted {mention}." if extra_arg else f"Promoted {mention} ({extra_arg})."
+                f"Promoted {mention}." if extra_arg != '' else f"Promoted {mention} ({extra_arg})."
             )
         except Exception as e:
             await m.reply(f"Failed to promote: {e}")
@@ -101,6 +102,8 @@ async def admin_actions(c: Client, m: Message):
         try:
             if not await Tele.is_admin(c, chat_id=chat_id, user_id=user_id):
                 return await m.reply(f"{mention} is not admin already.")
+            elif not my_privs.can_restrict_members:
+                return await m.reply("You are missing rights `can_restrict_members`.")
             await c.promote_chat_member(
                 chat_id, user_id, 
                 ChatPrivileges(
@@ -119,6 +122,8 @@ async def admin_actions(c: Client, m: Message):
             await m.reply(f"Failed to demote: {e}")
 
     elif cmd in ["mute", "tmute"]:
+        if not my_privs.can_restrict_members:
+            return await m.reply("You are missing rights `can_restrict_members`.")
         until_date = datetime.now()
         if cmd == "tmute":
             if not extra_arg:
@@ -142,6 +147,8 @@ async def admin_actions(c: Client, m: Message):
             await m.reply(f"Failed to mute: {e}")
 
     elif cmd == "unmute":
+        if not my_privs.can_restrict_members:
+            return await m.reply("You are missing rights `can_restrict_members`.")
         try:
             await c.restrict_chat_member(
                 chat_id, user_id,
@@ -159,13 +166,13 @@ async def admin_actions(c: Client, m: Message):
 MOD_CONFIG = {
     "name": "Admins",
     "help": (
-        "**Usage:**\n"
-        "> .promote (reply/id/mention/username) [title, __optional__] - Promote to admin\n"
-        "> .fpromote (reply/id/mention/username) [title, __optional__] - Full promotion\n"
-        "> .lpromote (reply/id/mention/username) [title, __optional__] - Low promotion\n"
-        "> .demote (reply/id/mention/username) - Remove admin rights\n"
-        "> .mute (reply/id/mention/username) - Mute a user\n"
-        "> .tmute (reply/id/mention/username) [time, __optional__] - Timed mute (e.g., .tmute 1h, 1m, or 1d.)\n"
+        "**Usage:**\n\n"
+        "> .promote (reply/id/mention/username) [title, __optional__] - Promote to admin\n\n"
+        "> .fpromote (reply/id/mention/username) [title, __optional__] - Full promotion\n\n"
+        "> .lpromote (reply/id/mention/username) [title, __optional__] - Low promotion\n\n"
+        "> .demote (reply/id/mention/username) - Remove admin rights\n\n"
+        "> .mute (reply/id/mention/username) - Mute a user\n\n"
+        "> .tmute (reply/id/mention/username) [time, __optional__] - Timed mute (e.g., .tmute 1h, 1m, or 1d.)\n\n"
         "> .unmute (reply/id/mention/username) - Unmute user"
     ),
     "works": WORKS.GROUP,
