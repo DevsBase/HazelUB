@@ -72,15 +72,21 @@ async def admin_actions(c: Client, m: Message):
         if await Tele.is_admin(c, chat_id, user_id):
             return await m.reply(f"{mention} is already admin.")
         
+        my_privs = await Tele.get_chat_member_privileges(c, chat_id, me_id)
+        if not my_privs:
+            return await m.reply("cannot get my privilege")
+        if not my_privs.can_promote_members:
+            return await m.reply("You are missing rights `can_promote_members`")
+        
         privs = ChatPrivileges(
-            can_manage_chat=True,
-            can_delete_messages=True,
-            can_manage_video_chats=True,
-            can_restrict_members=True,
-            can_promote_members=(cmd == "fpromote"),
-            can_change_info=(cmd != "lpromote"),
-            can_invite_users=True,
-            can_pin_messages=True,
+            can_manage_chat = (my_privs.can_manage_chat),
+            can_delete_messages = (cmd != "lpromote" and my_privs.can_delete_messages),
+            can_manage_video_chats = (my_privs.can_manage_video_chats),
+            can_restrict_members = (cmd != "lpromote" and my_privs.can_restrict_members),
+            can_promote_members = (cmd == "fpromote"),
+            can_change_info = (cmd != "lpromote" and my_privs.can_change_info),
+            can_invite_users = (my_privs.can_invite_users),
+            can_pin_messages = (cmd != "lpromote" and my_privs.can_pin_messages),
         )
         try:
             await c.promote_chat_member(chat_id, user_id, privs)
@@ -93,6 +99,8 @@ async def admin_actions(c: Client, m: Message):
 
     elif cmd == "demote":
         try:
+            if not await Tele.is_admin(c, chat_id=chat_id, user_id=user_id):
+                return await m.reply(f"{mention} is not admin already.")
             await c.promote_chat_member(
                 chat_id, user_id, 
                 ChatPrivileges(
