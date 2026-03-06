@@ -4,7 +4,7 @@ from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel.enums import USABLE, WORKS
 
-copy_data: dict[int, Message]= {}
+copy_data: dict[int, Message] = {}
 
 @Tele.on_message(filters.command(["copy", "cp"]), sudo=True)
 async def copy_cmd(c: Client, m: Message):
