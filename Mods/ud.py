@@ -29,7 +29,6 @@ async def urban_dictionary(_, message: Message | InlineQuery):
                 description="Please provide a term to search for.",
                 text="Please provide a term to search for.\nExample: `> ud girl`"
             )
-        return
     else:
         if message.command and len(message.command) < 2:
             return await message.reply(
