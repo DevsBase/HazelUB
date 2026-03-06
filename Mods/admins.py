@@ -37,6 +37,13 @@ async def admin_actions(c: Client, m: Message):
         return
 
     cmd = m.command[0].lower()
+    extra_arg = ""
+
+    if reply := m.reply_to_message:
+        if reply.from_user and len(m.command) > 0:
+            extra_arg = m.command[1]
+    elif len(m.command) > 1:
+        extra_arg = m.command[2]
     
     is_admin = await Tele.is_admin(c, chat_id)
     if not is_admin:
@@ -72,6 +79,7 @@ async def admin_actions(c: Client, m: Message):
         )
         try:
             await c.promote_chat_member(chat_id, user_id, privs)
+            await c.set_administrator_title(chat_id, user_id, extra_arg)
             await m.reply(f"Promoted {getattr(user, 'mention', user_id)} ({cmd}).")
         except Exception as e:
             await m.reply(f"Failed to promote: {e}")
@@ -100,7 +108,7 @@ async def admin_actions(c: Client, m: Message):
         if cmd == "tmute":
             if len(m.command) < 3:
                 return await m.reply("Usage: .tmute @user 1h` (m/h/d)")
-            duration = parse_time(m.command[2])
+            duration = parse_time(extra_arg)
             if not duration:
                 return await m.reply("Invalid time format. Use 10m, 2h, or 7d.")
             until_date += duration
@@ -137,13 +145,13 @@ MOD_CONFIG = {
     "name": "Admins",
     "help": (
         "**Usage:**\n"
-        "> .promote (reply/id/mention/username) - Promote to admin\n"
-        "> .fpromote (reply/id/mention/username) - Full promotion\n"
-        "> .lpromote (reply/id/mention/username) - Low promotion\n"
-        "> .demote (reply/id/mention/username) - Remove admin rights\n"
-        "> .mute (reply/id/mention/username) - Mute a user\n"
-        "> .tmute (reply/id/mention/username) - Timed mute (e.g., .tmute 1h)\n"
-        "> .unmute (reply/id/mention/username) - Unmute user"
+        "> .promote (reply/id/mention/username) [title, __optional__] - Promote to admin\n"
+        "> .fpromote (reply/id/mention/username) [title, __optional__] - Full promotion\n"
+        "> .lpromote (reply/id/mention/username) [title, __optional__] - Low promotion\n"
+        "> .demote (reply/id/mention/username) [title, __optional__] - Remove admin rights\n"
+        "> .mute (reply/id/mention/username) [title, __optional__] - Mute a user\n"
+        "> .tmute (reply/id/mention/username) [title, __optional__] - Timed mute (e.g., .tmute 1h)\n"
+        "> .unmute (reply/id/mention/username) [title, __optional__] - Unmute user"
     ),
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO
