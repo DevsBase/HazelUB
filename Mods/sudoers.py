@@ -77,12 +77,12 @@ async def sudoers_handler(c: Client, m: Message):
 
     client_sudoers = await SQLClient.get_sudoers(owner_id)
     if not client_sudoers:
-        return await m.reply("No sudo users found.")
+        return await Tele.message(m).reply("No sudo users found.")
 
     text = f"**Sudo Users for {c.me.first_name}:**\n"
     for user_id in client_sudoers:
         text += f"- `{user_id}`\n"
-    await m.reply(text)
+    await Tele.message(m).reply(text)
 
 
 help = """**Usage:**
