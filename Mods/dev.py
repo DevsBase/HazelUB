@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 
 import restart
 from Hazel import Tele
@@ -14,18 +14,26 @@ from Hazel.utils import aexec
 
 
 @Tele.on_message(filters.command(["e", "eval"]), sudo=True)
-async def evalFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^(e|eval)\s"), sudo=True)
+async def evalFunc(c: Client, m: Message | InlineQuery):
     if not m or not m.from_user:
         return
+    
     if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
-        return await m.reply(
+        return await Tele.message(m).reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
 
-    cmd = m.text.split(None, 1)  # type: ignore
+    cmd = m.text.split(None, 1) if isinstance(m, Message) else( # type: ignore
+        m.query.split(None, 1)
+    ) 
+
+    client = Tele.getClientById(m.from_user.id) or Tele.bot
+
     if len(cmd) == 1:
-        return await m.reply("No code provided.")
-    s = await m.reply("Evaluating...")
+        return await Tele.message(m).reply("No code provided.")
+    if isinstance(m, Message):
+        s = await m.reply("Evaluating...")
     try:
         result = await aexec(cmd[1], c, m)
     except Exception as e:
@@ -36,54 +44,69 @@ async def evalFunc(c: Client, m: Message):
         with open("eval.txt", "w", encoding="utf-8") as f:
             f.write(f"Output:\n{result[0]}\n\nResult:\n{result[1]}")
 
-        await m.reply_document(document="eval.txt")
-        os.remove("eval.txt")
+        if isinstance(m, Message):
+            await m.reply_document(document="eval.txt")
+        else:
+            await Tele.inline(m).answer_text(title="Eval Result", text=f"You will rcv the result in @{client.me.username}.") # type: ignore
+            await client.send_document(
+                chat_id=m.from_user.id, document="eval.txt", caption="Eval Result"
+            )
+        await asyncio.to_thread(os.remove, "eval.txt")
 
     elif not result[1]:
+        if isinstance(m, InlineQuery):
+            return await Tele.inline(m).answer_text("Eval Result", f"Output:```python\n{result[0]}```")
         await Tele.message(s).edit(f"Output:```python\n{result[0]}```", business_connection_id=m.business_connection_id)
     elif not result[0]:
+        if isinstance(m, InlineQuery):
+            return await Tele.inline(m).answer_text("Eval Result", f"Result:```python\n{result[1]}```")
         await Tele.message(s).edit(f"Result:```python\n{result[1]}```", business_connection_id=m.business_connection_id)
     else:
+        if isinstance(m, InlineQuery):
+            return await Tele.inline(m).answer_text("Eval Result", f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```")
         await Tele.message(s).edit(
             f"Output:```python\n{result[0]}```\nResult:```python\n{result[1]}```", business_connection_id=m.business_connection_id
         )
 
 
 @Tele.on_message(filters.command("stop"), sudo=True)
-async def stopFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^stop"), sudo=True)
+async def stopFunc(c: Client, m: Message | InlineQuery):
     if not m or not m.from_user:
         return
     if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
-        return await m.reply(
+        return await Tele.message(m).reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
-    await m.reply("Stopping HazelUB...")
+    await Tele.message(m).reply("Stopping HazelUB...")
     import os
 
     os._exit(0)
 
 
 @Tele.on_message(filters.command("restart"), sudo=True)
-async def restartFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^restart"), sudo=True)
+async def restartFunc(c: Client, m: Message | InlineQuery):
     if not m or not m.from_user:
         return
     if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
-        return await m.reply(
+        return await Tele.message(m).reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
-    await m.reply("Restarting...")
+    await Tele.message(m).reply("Restarting...")
     restart.restart()
 
 
 @Tele.on_message(filters.command("update"), sudo=True)
-async def updateFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^update"), sudo=True)
+async def updateFunc(c: Client, m: Message | InlineQuery):
     if not m or not m.from_user:
         return
     if Tele.getClientPrivilege(user_id=m.from_user.id) != "sudo":
-        return await m.reply(
+        return await Tele.message(m).reply(
             "This client don't have `sudo` privillage. It is required to use this command."
         )
-    s = await m.reply("Updating HazelUB...")
+    s = await m.reply("Updating HazelUB...") if isinstance(m, Message) else None
 
     config_data, env_data = "", ""
     with open("config.py", "r") as f:
@@ -104,24 +127,31 @@ async def updateFunc(c: Client, m: Message):
             with open(".env", "w") as f:
                 f.write(env_data)
     except Exception as e:
-        await m.reply(f"Could not restore config files: {e}")
+        if isinstance(m, Message):
+            await m.reply(f"Could not restore config files: {e}")
 
     if result.returncode != 0:
-        return await m.reply(f"Update Failed:```bash\n{result.stderr}```")
+        return await Tele.message(m).reply(f"Update Failed:```bash\n{result.stderr}```")
     if "Already up to date." in result.stdout:
-        return await m.reply("Already up to date.")
+        return await Tele.message(m).reply("Already up to date.")
 
     msg = subprocess.run(
         ["git", "log", "-1", "--pretty=%B"], capture_output=True, text=True, check=True
     ).stdout.strip()
 
     title, body = msg.split("\n\n", 1) if "\n\n" in msg else (msg, "")
-    await Tele.message(s).edit(
-        f"**Update Successful:**```bash\n{result.stdout}```\n"
-        f"**Update information:** \nCommit message: {title}\nDescription: {body}\n\n"
-        "`Restarting HazelUB...`",
-        business_connection_id=m.business_connection_id
-    )
+    if isinstance(m, InlineQuery):
+        return await Tele.inline(m).answer_text(
+            "Update Successful",
+            f"Commit message: {title}\nDescription: {body}\n\n`Restarting HazelUB...`"
+        )
+    elif s:
+        await Tele.message(s).edit(
+            f"**Update Successful:**```bash\n{result.stdout}```\n"
+            f"**Update information:** \nCommit message: {title}\nDescription: {body}\n\n"
+            "`Restarting HazelUB...`",
+            business_connection_id=m.business_connection_id
+        )
     restart.restart()
 
 

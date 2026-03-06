@@ -6,7 +6,7 @@ import time
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.raw.functions.ping import Ping
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 
 from Hazel import Tele, start_time
 
@@ -42,8 +42,8 @@ def get_readable_time(seconds: int) -> str:
 
 
 @Tele.on_message(filters.command("ping"), sudo=True)
-@Tele.on_inline_query(filters.regex(r"ping"), sudo=True)
-async def pingFunc(c: Client, m: Message):
+@Tele.on_inline_query(filters.regex(r"^ping"), sudo=True)
+async def pingFunc(c: Client, m: Message | InlineQuery):
     start = time.perf_counter()
     await c.invoke(Ping(ping_id=int(time.time())))
     end = time.perf_counter()
@@ -51,11 +51,14 @@ async def pingFunc(c: Client, m: Message):
     latency = round((end - start) * 1000, 2)
     uptime = await asyncio.to_thread(get_readable_time, int(time.time() - start_time))
 
-    return await m.reply(
-        f"**Pong:**\n"
-        f"Latency: `{latency}` ms\n"
-        f"Uptime: `{uptime}`"
-    )
+    if isinstance(m, Message):
+        await m.reply(
+            f"**Pong:**\n"
+            f"Latency: `{latency}` ms\n"
+            f"Uptime: `{uptime}`"
+        )
+    else:
+        await Tele.inline(m).answer_text("Pong", f"Latency: `{latency}` ms\nUptime: `{uptime}`")
 
 MOD_CONFIG = {
     "name": "Ping",

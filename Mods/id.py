@@ -5,10 +5,10 @@ from Hazel import Tele
 
 
 @Tele.on_message(pyrogram.filters.command("id"), sudo=True)
-@Tele.on_inline_query(pyrogram.filters.regex(r'id'), sudo=True)
+@Tele.on_inline_query(pyrogram.filters.regex(r"^id"), sudo=True)
 async def id_func(_, m: pyrogram.types.Message | pyrogram.types.InlineQuery):
   if isinstance(m, pyrogram.types.InlineQuery):
-    ans = f"**Your ID**: `{m.from_user.id}\n**Inline Query ID:** `{m.id}\n\n**Note:** __Since Telegram don't give much info for InlineQuery we cannot show other id(s)__"
+    ans = f"**Your ID**: `{m.from_user.id}`\n**Inline Query ID:** `{m.id}`\n\n**Note:** __Since Telegram don't give much info for InlineQuery we cannot show other id(s)__"
     await Tele.inline(m).answer_text("ID", ans)
     return
   reply = m.reply_to_message

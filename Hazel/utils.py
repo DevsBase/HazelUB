@@ -4,41 +4,13 @@ import sys
 from typing import Any
 
 from pyrogram.client import Client
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 
 from Hazel import SQLClient, Tele
 
 
-async def aexec(code: str, app: Client, m: Message) -> Any:
-    """Asynchronously execute arbitrary Python code in an isolated scope.
-
-    The *code* string is wrapped inside an async function and executed
-    with a set of convenient local variables pre-injected:
-
-    * ``app``     – the :class:`pyrogram.Client` instance.
-    * ``m``       – the triggering :class:`pyrogram.types.Message`.
-    * ``r``       – shortcut for ``m.reply_to_message``.
-    * ``frm``     – shortcut for ``m.from_user``.
-    * ``chat_id`` – the current chat ID.
-    * ``loop``    – the running :class:`asyncio` event loop.
-    * ``p``       – alias for the built-in ``print``.
-
-    Any calls to ``print()`` inside the executed code are captured
-    and returned as part of the output string.
-
-    The literal ``r$4`` in *code* is replaced with ``return`` as a
-    convenient shorthand.
-
-    Args:
-        code: The Python source code to execute.
-        app: The active Pyrogram client.
-        m: The message that triggered the execution.
-
-    Returns:
-        A tuple ``(output, result)`` where *output* is the captured
-        stdout content and *result* is the return value of the
-        executed code (if any).
-    """
+async def aexec(code: str, app: Client, m: Message | InlineQuery) -> Any:
+    """Asynchronously execute arbitrary Python code in an isolated scope"""
     code = code.replace("r$4", "return")
     old_stdout = sys.stdout
     sys.stdout = buffer = io.StringIO()
@@ -55,9 +27,9 @@ async def aexec(code: str, app: Client, m: Message) -> Any:
         result = await func(
             app,
             m,
-            m.reply_to_message,
+            m.reply_to_message if isinstance(m, Message) else None,
             m.from_user,
-            m.chat.id,  # type: ignore
+            m.chat.id if isinstance(m, Message) else None,  # type: ignore
             asyncio.get_running_loop(),
         )
     finally:

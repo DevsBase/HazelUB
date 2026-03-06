@@ -63,7 +63,7 @@ async def delsudo_handler(c: Client, m: Message):
 
 
 @Tele.on_message(filters.command("sudoers"), sudo=True)
-@Tele.on_inline_query(filters.regex(r"sudoers"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"^sudoers"), sudo=True)
 async def sudoers_handler(c: Client, m: Message):
     if not c.me:
         return

@@ -7,7 +7,7 @@ from typing import Callable, Dict, Union
 from Hazel import Tele
 from pyrogram import filters
 from pyrogram.client import Client
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineQuery
 
 logger: logging.Logger = logging.getLogger("Mods.calculator")
 
@@ -84,8 +84,11 @@ def calculate(expression: str) -> Decimal:
 
 @Tele.on_message(filters.regex(r"^//"), sudo=True)
 @Tele.on_inline_query(filters.regex(r"^//"), sudo=True)
-async def calculateFunc(c: Client, m: Message) -> None:
-    exp: str = m.text.strip()  # type: ignore
+async def calculateFunc(c: Client, m: Message | InlineQuery):
+    if isinstance(m, Message):
+        exp: str = m.text.strip()  # type: ignore
+    else:
+        exp: str = m.query.strip()  # type: ignore
 
     if not exp.startswith("//"):
         return
@@ -101,10 +104,14 @@ async def calculateFunc(c: Client, m: Message) -> None:
         result: Decimal = calculate(exp)
         result_str: str = clean_decimal(result)
 
+        if isinstance(m, InlineQuery):
+            return await Tele.inline(m).answer_text("Calculator", f"» {exp} = `{result_str}`")
         await m.reply(f"» {exp} = `{result_str}`")
 
     except DivisionByZero:
-        await m.reply("Division by zero is not allowed.")
+        if isinstance(m, Message):
+            return await m.reply("Division by zero is not allowed.")
+        await Tele.inline(m).answer_text("Calculator", "Division by zero is not allowed.")
 
     except Exception as e:
         logger.error(f"Failed to calculate: {exp}. Error: {e}")

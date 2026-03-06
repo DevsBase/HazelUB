@@ -121,7 +121,7 @@ async def ai_cmd(c: Client, m: Message | InlineQuery):
 
 
 @Tele.on_message(filters.command("aiclr"), sudo=True)
-@Tele.on_inline_query(filters.regex(r"aiclr"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"^aiclr"), sudo=True)
 async def ai_clear(c: Client, m: Message):
     uid = m.from_user.id  # type: ignore
 

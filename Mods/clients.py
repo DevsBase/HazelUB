@@ -14,7 +14,7 @@ infoTxt = """
 
 
 @Tele.on_message(filters.command("clients"), sudo=True)
-@Tele.on_inline_query(filters.regex(r"clients"), sudo=True)
+@Tele.on_inline_query(filters.regex(r"^clients"), sudo=True)
 async def clientsFunc(c: Client, m: Message | InlineQuery):
     txt = "• **Hazel Clients:**\n"
 
