@@ -22,8 +22,8 @@ async def paste_cmd(c: Client, m: Message):
     if not copy_data.get(m.from_user.id):
         return await m.reply("Clipboard is empty.")
     if m.text and "nps" in m.text:
-        return await copy_data[m.from_user.id].copy(m.chat.id, caption="")
-    await copy_data[m.from_user.id].copy(m.chat.id)
+        return await copy_data[m.from_user.id].copy(m.chat.id, caption="", business_connection_id=m.business_connection_id)
+    await copy_data[m.from_user.id].copy(m.chat.id, business_connection_id=m.business_connection_id)
 
 MOD_CONFIG = {
     "name": "Copy Paste",
@@ -34,5 +34,5 @@ MOD_CONFIG = {
         "> .nps - to paste the copied message without caption (only for media)."
     ),
     "works": WORKS.ALL,
-    "usable": USABLE.OWNER and USABLE.SUDO
+    "usable": USABLE.OWNER & USABLE.SUDO & USABLE.BOT
 }

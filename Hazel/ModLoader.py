@@ -13,10 +13,11 @@ from packaging.version import Version
 from restart import restart
 from .enums import USABLE, WORKS, PLATFORM
 
-logger = logging.getLogger("[Hazel ModLoader]")
+logger = logging.getLogger(__name__)
 
 class ModData(TypedDict):
     help: str
+    group: str
     works: WORKS
     usable: USABLE
     requires: Dict[str, str] | List[str] | None
@@ -111,8 +112,8 @@ def ensure_requirements(reqs: Dict[str, str] | List[str]) -> bool:
                 restart_required = True
 
     if restart_required:
-        logger.info("Package changes detected. Restarting to apply changes...")
-        time.sleep(2)
+        logger.info("New packages are installed. Restarting to apply changes...")
+        time.sleep(4)
         restart()
     return True
 
@@ -141,9 +142,30 @@ def extract_requires(file_path: str) -> Dict[str, str] | List[str] | None:
                                         if isinstance(el, ast.Constant):
                                             req.append(str(el.value))
                                     return req
-    except Exception: ...
+    except Exception:
+        pass
     return
 
+def extract_required_mods(file_path: str) -> List[str] | None:
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+
+        for node in tree.body:
+            if isinstance(node, ast.Assign):
+                for t in node.targets:
+                    if isinstance(t, ast.Name) and t.id == "MOD_CONFIG" and isinstance(node.value, ast.Dict):
+                        for k, v in zip(node.value.keys, node.value.values):
+                            if isinstance(k, ast.Constant) and k.value == "required_mods":
+                                if isinstance(v, ast.List):
+                                    req = []
+                                    for el in v.elts:
+                                        if isinstance(el, ast.Constant):
+                                            req.append(str(el.value))
+                                    return req
+    except Exception:
+        pass
+    return
 
 def load_mods() -> None:
     global MODS_DATA
@@ -164,9 +186,18 @@ def load_mods() -> None:
 
         try:
             reqs = extract_requires(file_path)
+            req_mods = extract_required_mods(file_path)
 
             if reqs:
                 ensure_requirements(reqs)
+            
+            if req_mods:
+                for mod in req_mods:
+                    path = Path("Mods") / mod
+                    if not path.exists():
+                        raise ModuleNotFoundError(
+                                f"Requied '{mod}'. Requested by '{file_path}'. Please add {mod} in your Mods/ folder."
+                            )
 
             module = importlib.import_module(module_path)
 
@@ -179,27 +210,23 @@ def load_mods() -> None:
 
                 requires = config.get("requires")
                 required_mods: List[str] = config.get("required_mods", [])
-
-                if required_mods and isinstance(required_mods, list):
-                    for req_mod in required_mods:
-                        path = Path("Mods") / req_mod
-                        if not path.exists():
-                            raise ModuleNotFoundError(
-                                f"Required mod '{req_mod}' for '{config['name']}' not found."
-                            )
+                group = str(config.get("group", "Default")).capitalize().replace(' ', '')
 
                 MODS_DATA[config["name"]] = {
-                    "help": config["help"].capitalize(),
+                    "help": config["help"],
+                    "group": group,
                     "works": config["works"],
                     "usable": config["usable"],
                     "requires": requires,
                     "platform": config.get("platform") or PLATFORM.TELEGRAM,
-                    "required_mods": required_mods
+                    "required_mods": required_mods,
                 }
+                
             logger.info(f"Loaded: {module_name}")
             loaded.append(module_name)
 
         except Exception:
             traceback.print_exc()
-            logger.error(f"[FAILED TO LOAD]: {module_path}. see error above ^^^")
+            logger.error(f"[FAILED TO LOAD]: {module_path}. see error above ^")
+            
     logger.info(f"Loaded {len(loaded)} mods.")

@@ -113,8 +113,8 @@ class DownloadSong:
             media = getattr(_m, 'audio', None) or getattr(_m, 'video', None) or getattr(_m, 'voice', None)
             
             if media:
-                # Generate a unique filename
-                random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+                
+                random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=6)) # Generate a unique filename
                 unique_name = f"hazel_{int(time.time())}_{random_str}"
                 
                 # Check if it's a video that needs conversion

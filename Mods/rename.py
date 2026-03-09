@@ -28,11 +28,12 @@ async def rename_func(c: Client, m: Message):
         return await m.reply("Reply to a message to rename it.")
     
 MOD_CONFIG = {
-    "name": "rename",
+    "name": "Rename",
     "help": (
         "**Usage:**\n"
         "> .rename (reply media & new file name) - to rename files"
     ),
-    "usable": USABLE.OWNER & USABLE.SUDO,
+    "group": "Files",
+    "usable": USABLE.OWNER & USABLE.SUDO & USABLE.BOT,
     "works": WORKS.ALL
 }

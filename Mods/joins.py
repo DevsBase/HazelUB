@@ -103,8 +103,7 @@ MOD_CONFIG = {
     "help": (
         "**Usage:**\n"
         "> .join [username/link] - Join a group/channel.\n"
-        "> .leave [username/link] - Leave a group/channel.\n"
-        "> .leave (reply) - Leave the replied group/channel.\n\n"
+        "> .leave [username/link, __optional__] - Leave a group/channel. \n\n"
         "You can also use `-silent` with leave command to avoid sending a message after leaving."
     ),
     "works": WORKS.ALL,

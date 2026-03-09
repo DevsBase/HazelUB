@@ -1,8 +1,11 @@
-import Hazel
+import time
 from logging import getLogger
-from restart import restart
 from typing import TYPE_CHECKING, Tuple
-from .utils import install_requirements, load_config, clear, HazelConfig
+
+import Hazel
+from restart import restart
+
+from .utils import HazelConfig, clear, install_requirements, load_config
 
 if TYPE_CHECKING:
     from Database.client import DBClient
@@ -12,27 +15,7 @@ else:
 logger = getLogger(__name__)
 
 async def main() -> Tuple[DBClient, HazelConfig]:
-    """Run the installation and configuration sequence for HazelUB.
-
-    The function performs two checks:
-
-    1. **Essential-package check** – imports critical dependencies
-       (``dotenv``, ``sqlalchemy``, ``pyrogram``, etc.) and, if any
-       are missing, installs them from ``requirements.txt`` and
-       restarts the process.
-    2. **First-time setup** – if the database ``installed`` flag is
-       ``False``, installs/upgrades packages from ``requirements.txt``
-       and marks the bot as installed.
-
-    Between these checks the database engine is created, all tables
-    are initialised, and the global ``Hazel.SQLClient`` /
-    ``Hazel.sudoers`` references are populated.
-
-    Returns:
-        A tuple ``(db, config)`` where *db* is the initialised
-        :class:`DBClient` and *config* is the loaded configuration
-        tuple.
-    """
+    """Run the installation and configuration sequence for HazelUB."""
     clear()
     print(
         "HazelUB is now booting...\n"
@@ -42,19 +25,26 @@ async def main() -> Tuple[DBClient, HazelConfig]:
     try:
         import ensurepip
         ensurepip.bootstrap()
-    except ImportError: ... 
-    try: # Checking once if essential packages are installed.
+    except ImportError:
+        pass
+    
+    try: 
+        # Checking once if essential packages are installed.
+        import aiosqlite
+        import art
+        import asyncpg
+        import cachetools
+        import sqlalchemy
+        import pytgcalls
+        import requests
         from dotenv import load_dotenv
-        from sqlalchemy import create_engine
-        from asyncpg import create_pool
-        from aiosqlite import connect
-        from art import text2art
         from pyrogram.client import Client
     except ImportError:
         logger.critical("ImportError, Installing required packages...")
         install_status = install_requirements()
         if install_status == 0:
             logger.info("Packages installed successfully. Restarting...")
+            time.sleep(4)
             restart()
         else:
             raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
@@ -65,16 +55,6 @@ async def main() -> Tuple[DBClient, HazelConfig]:
     config = load_config()
     db = DBClient(config.DB_URL)
     await db.init()
-    Hazel.SQLClient = db # Override SQLClient in Hazel.__init__
-    Hazel.sudoers = await db.get_all_sudoers_map()
-
-    is_installed = await db.is_installed()
-    if not is_installed:
-        logger.info("Installing required packages...")
-        install_status = install_requirements()
-        if install_status == 0:
-            logger.info("Packages installed successfully.")
-        else:
-            raise SystemExit(f"Setup Failed: Could not install required packages: {install_status}")
-        await db.set_installed(True)
+    Hazel.SQLClient = db # Override
+    Hazel.sudoers = await db.get_all_sudoers_map() # Override
     return (db, config)

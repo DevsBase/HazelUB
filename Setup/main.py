@@ -10,18 +10,7 @@ import os
 logger = logging.getLogger("Hazel.setup")
 
 async def main():
-    """Entry-point that orchestrates the full HazelUB startup lifecycle.
-
-    The sequence executed is:
-    1. Run first-time installation / dependency checks via
-       :func:`installation_main`.
-    2. Create and start all Pyrogram client sessions.
-    3. Load user-defined Mods (command modules).
-    4. Spawn background tasks (e.g. the message repeater).
-    5. Enter an idle loop that keeps the process alive until a
-       termination signal (``SIGINT``, ``SIGTERM``, ``SIGABRT``) is
-       received.
-    """
+    """Entry-point that orchestrates the full HazelUB startup lifecycle."""
     db, config = await installation_main()  # Ensure installation is done first.
     from Hazel.Platforms.Telegram import Telegram
     import art

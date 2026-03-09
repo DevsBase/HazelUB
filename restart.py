@@ -1,8 +1,9 @@
 import os
 import sys
 import shutil
+from typing import NoReturn
 
-def restart():
+def restart() -> NoReturn:
     """Restart the HazelUB process in-place.
 
     Cleans up the ``Hazel/downloads`` directory (if it exists) and

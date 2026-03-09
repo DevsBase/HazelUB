@@ -15,5 +15,5 @@ MOD_CONFIG = {
     "name": "Echo",
     "help": "> .echo / .ec (reply) - to send the replied message. (inline not supported)",
     "works": WORKS.ALL,
-    "usable": USABLE.ALL
+    "usable": USABLE.OWNER & USABLE.SUDO & USABLE.BOT
 }

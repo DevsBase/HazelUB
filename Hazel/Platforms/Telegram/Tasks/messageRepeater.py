@@ -11,35 +11,24 @@ import traceback
 logger = logging.getLogger("Hazel.Tasks.messageRepeater")
 
 if TYPE_CHECKING:
-    events: Dict[int, asyncio.Event] # Mapping of client user-IDs to their pause/resume events.
+    events: Dict[int, asyncio.Event] # Mapping of client user ids to their pause/resume events.
 else:
     events: Dict[int, asyncio.Event] = {}
 
 async def createJob(job: RepeatMessage, chats: list[int], client: Client) -> None:
-    """Run an infinite loop that periodically copies a message to target chats.
-
-    The loop sleeps for ``job.repeatTime`` minutes between iterations.
-    If the owning client's :class:`asyncio.Event` is unset (paused),
-    the loop blocks until it is resumed.  Individual ``FloodWait``
-    errors are handled gracefully by sleeping for the required duration.
-
-    Args:
-        job: The :class:`RepeatMessage` row describing what to repeat.
-        chats: List of chat IDs the message should be copied to.
-        client: The Pyrogram client used to send the messages.
-    """
+    """Run an infinite loop that periodically copies a message to target chats."""
     while True:
         try:
-            await asyncio.sleep(int(job.repeatTime * 60)) # type: ignore # Convert sec to mins 
+            await asyncio.sleep(int(job.repeatTime * 60)) # Convert sec to mins 
             if job.userId in events:
-                await events[job.userId].wait() # type: ignore
+                await events[job.userId].wait()
             chat_id: int = 0
             for chat_id in chats:
                 try:
                     await client.copy_message(
                         chat_id=chat_id,
-                        from_chat_id=job.source_chat_id, # type: ignore
-                        message_id=job.message_id # type: ignore
+                        from_chat_id=job.source_chat_id,
+                        message_id=job.message_id
                     )
                     await asyncio.sleep(2.59)
                 except FloodWait as e:
@@ -51,25 +40,15 @@ async def createJob(job: RepeatMessage, chats: list[int], client: Client) -> Non
             logger.error(f"Failed to do repeat task for user: {job.userId}: Full Traceback: {traceback.format_exc()}")
             
 async def main(Tele: Telegram, db: DBClient) -> None:
-    """Bootstrap all stored repeat-message jobs at startup.
-
-    Fetches every :class:`RepeatMessage` from the database, matches
-    each job to its owning Pyrogram client, creates the corresponding
-    pause/resume :class:`asyncio.Event`, and spawns background tasks
-    via :func:`createJob`.
-
-    Args:
-        Tele: The multi-session manager holding all active clients.
-        db: The database client used to query repeat-message data.
-    """
+    """Bootstrap all stored repeat-message jobs at startup."""
     jobs: list[RepeatMessage] = await db.get_repeat_messages()
     jobs_created = 0
 
     for job in jobs:
         for client in Tele._allClients:
-            # Type assertion to ensure IDEs understand the attribute types
+            
             client_id: int = int(client.me.id) if client.me else 0
-            job_user_id: int = int(job.userId) # type: ignore
+            job_user_id: int = int(job.userId)
 
             if client_id == job_user_id:
                 if job_user_id not in events:
@@ -78,8 +57,8 @@ async def main(Tele: Telegram, db: DBClient) -> None:
                     if not is_paused:
                         events[job_user_id].set() 
                 
-                chats: list[int] = await db.get_group_chats(int(job.group_id), user_id=client_id) # type: ignore
+                chats: list[int] = await db.get_group_chats(int(job.group_id), user_id=client_id)
                 asyncio.create_task(createJob(job, chats, client))
                 jobs_created += 1
-                logger.info(f"Created repeat message job for user {job_user_id} in group {job.group_id}") # type: ignore
+                logger.info(f"Created repeat message job for user {job_user_id} in group {job.group_id}")
     logger.info(f"Loaded {jobs_created} repeat message jobs.")

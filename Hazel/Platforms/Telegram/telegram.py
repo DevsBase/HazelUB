@@ -247,20 +247,7 @@ class Telegram(
             return self._clientPrivileges.get(client, "user")
     
     def getClientPyTgCalls(self, client: Client) -> Optional[PyTgCalls]:
-        """Return the :class:`PyTgCalls` instance associated with a client.
-
-        If *client* is the bot account (``client.me.is_bot`` is ``True``),
-        the method resolves it to the corresponding user client via
-        :meth:`getClientById` before performing the lookup.
-
-        Args:
-            client (Client): The Pyrogram client whose associated
-                :class:`PyTgCalls` instance is requested.
-
-        Returns:
-            Optional[PyTgCalls]: The matching :class:`PyTgCalls` instance,
-            or ``None`` if no call handler is registered for the client.
-        """
+        """Return the :class:`PyTgCalls` instance associated with a client."""
         if client.me and client.me.is_bot:
             id = client.me.id
             _client = self.getClientById(id)
@@ -268,22 +255,7 @@ class Telegram(
         return self._clientPyTgCalls.get(client, None)
     
     async def is_admin(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> bool:
-        """Check whether a user is an admin or owner of a chat.
-
-        If *user_id* is omitted the check is performed for the *client*'s
-        own account.  On any API error the method logs the exception and
-        returns `False` rather than propagating.
-
-        Args:
-            client (Client): The Pyrogram client to use for the API call.
-            chat_id (int): The target chat / group / channel ID.
-            user_id (Optional[int], optional): The user to check. Defaults
-                to the *client*'s own user ID.
-
-        Returns:
-            bool: `True` if the user holds `ADMINISTRATOR` or `OWNER`
-            status, `False` otherwise (including on errors).
-        """
+        """Check whether a user is an admin or owner of a chat."""
         try:
             if not user_id:
                 user_id = client.me.id # type: ignore
@@ -298,23 +270,7 @@ class Telegram(
             return False
     
     async def get_chat_member_privileges(self, client: Client, chat_id: int, user_id: Optional[int] = None) -> Optional[ChatPrivileges]:
-        """Retrieve the granular admin privileges of a user in a chat.
-
-        If *user_id* is omitted the privileges are fetched for the
-        *client*'s own account.  Returns `None` on any API error
-        (logged at `ERROR` level).
-
-        Args:
-            client (Client): The Pyrogram client to use for the API call.
-            chat_id (int): The target chat / group / channel ID.
-            user_id (Optional[int], optional): The user whose privileges
-                are requested. Defaults to the *client*'s own user ID.
-
-        Returns:
-            Optional[ChatPrivileges]: A :class:`ChatPrivileges` object
-            describing the user's admin permissions, or `None` if the
-            lookup fails.
-        """
+        """Retrieve the granular admin privileges of a user in a chat."""
         try:
             if not user_id:
                 user_id = client.me.id # type: ignore

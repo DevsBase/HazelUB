@@ -24,7 +24,7 @@ help = """**Usage:**
 Only works on groups
 """
 
-MOD_CONFIG = {
+MOD_CONFIG: dict = {
     "name": "VC Tools",
     "help": help,
     "works": WORKS.GROUP,
