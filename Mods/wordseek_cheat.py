@@ -180,8 +180,6 @@ async def wordseek_cheat(c: Client, m: Message):
 
     if chat in data["chats"]:
         data["chats"].remove(chat)
-        if chat in data["auto"]:
-            data["auto"].remove(chat)
         return await m.reply("WordSeek cheat **disabled** for this chat.")
 
     data["chats"].append(chat)
@@ -199,9 +197,6 @@ async def on_game_message(c: Client, m: Message):
     data = _data(cid)
     text = getattr(m, "text") or ""
 
-    if chat not in data["chats"]:
-        return
-
     new_match = re.search(r"/new(\d)", text, re.IGNORECASE)
     if new_match:
         if chat in data["auto"]:
@@ -210,6 +205,9 @@ async def on_game_message(c: Client, m: Message):
             await c.send_message(chat, f"/new{length}@wordseekbot")
             await asyncio.sleep(1)
             await c.send_message(chat, pick_opener(int(length)))
+        return
+
+    if chat not in data["chats"]:
         return
 
     guess, top, won = await asyncio.to_thread(get_best_guess, text)
