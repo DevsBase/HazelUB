@@ -1,11 +1,14 @@
 import re
 import asyncio
 import requests
+import logging
 from Hazel.enums import USABLE, WORKS
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele
+
+logger = logging.getLogger(__name__)
 
 # ── Unicode bold → ASCII ──────────────────────────────────────────────────────
 
@@ -112,7 +115,7 @@ def fetch_candidates(word_length, correct):
                 result.append((word.upper(), freq))
         return result
     except Exception as e:
-        print(f"[WordSeek] Datamuse error: {e}")
+        logger.error(f"[WordSeek] Datamuse error: {e}")
         return []
 
 # ── Solver ────────────────────────────────────────────────────────────────────
@@ -170,9 +173,11 @@ async def on_game_message(c: Client, m: Message):
     if cid not in game_data or chat not in game_data[cid].get("chats", []):
         return
 
-    guess, _, won = await asyncio.to_thread(get_best_guess, m.text or "")
-    if not won and guess:
+    guess, top, won = await asyncio.to_thread(get_best_guess, m.text or "")
+    if guess:
+        await asyncio.sleep(1)
         await c.send_message(chat_id=chat, text=guess.lower())
+    logger.info(f"cannot guess the word: {m.text}, guess: {guess}, top: {top}")
 
 
 MOD_CONFIG = {
