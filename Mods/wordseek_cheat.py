@@ -10,8 +10,6 @@ from Hazel import Tele
 
 logger = logging.getLogger(__name__)
 
-# ── Unicode bold → ASCII ──────────────────────────────────────────────────────
-
 def unbold(text: str) -> str:
     result = []
     for ch in text:
@@ -25,8 +23,6 @@ def unbold(text: str) -> str:
     return "".join(result)
 
 EMOJI_COLOR = {"🟩": "green", "🟨": "yellow", "🟥": "red"}
-
-# ── Parser ────────────────────────────────────────────────────────────────────
 
 def parse_message(text: str):
     m = re.search(r"(\d)-letter", text, re.IGNORECASE)
@@ -42,8 +38,6 @@ def parse_message(text: str):
 
     won = bool(clues) and all(c == "green" for c in clues[-1][1])
     return clues, word_length, won
-
-# ── Constraint builder ────────────────────────────────────────────────────────
 
 def build_constraints(clues):
     correct, present, absent, min_count = {}, {}, set(), {}
@@ -73,8 +67,6 @@ def build_constraints(clues):
     absent -= set(min_count.keys())
     return correct, present, absent, min_count
 
-# ── Word filter ───────────────────────────────────────────────────────────────
-
 def word_matches(word, correct, present, absent, min_count):
     word = word.upper()
     if any(word[pos] != letter for pos, letter in correct.items()):
@@ -88,15 +80,13 @@ def word_matches(word, correct, present, absent, min_count):
             return False
     return True
 
-# ── Datamuse fetch ────────────────────────────────────────────────────────────
-
-def fetch_candidates(word_length, correct):
+def fetch_candidates(word_length: int, correct: dict) -> list:
     pattern = ["?"] * word_length
     for pos, letter in correct.items():
         pattern[pos] = letter.lower()
 
     try:
-        resp  = requests.get(
+        resp = requests.get(
             "https://api.datamuse.com/words",
             params={"sp": "".join(pattern), "md": "f", "max": 1000},
             timeout=10
@@ -111,14 +101,17 @@ def fetch_candidates(word_length, correct):
                 if tag.startswith("f:"):
                     try: freq = float(tag[2:])
                     except ValueError: pass
-            if freq >= 0.1:
-                result.append((word.upper(), freq))
+            result.append((word.upper(), freq))
         return result
     except Exception as e:
         logger.error(f"[WordSeek] Datamuse error: {e}")
         return []
 
-# ── Solver ────────────────────────────────────────────────────────────────────
+def _apply_filter(raw: list, guessed: set, correct: dict, present: dict, absent: set, min_count: dict, min_freq: float) -> list:
+    return sorted(
+        [(w, f) for w, f in raw if f >= min_freq and w not in guessed and word_matches(w, correct, present, absent, min_count)],
+        key=lambda x: -x[1]
+    )
 
 def get_best_guess(message_text: str):
     clues, word_length, won = parse_message(message_text)
@@ -128,11 +121,14 @@ def get_best_guess(message_text: str):
         return None, [], False
 
     correct, present, absent, min_count = build_constraints(clues)
-    guessed   = {w for w, _ in clues}
-    raw       = fetch_candidates(word_length, correct)
-    candidates = sorted(
-        [(w, f) for w, f in raw if w not in guessed and word_matches(w, correct, present, absent, min_count)],
-        key=lambda x: -x[1]
+    guessed = {w for w, _ in clues}
+    raw = fetch_candidates(word_length, correct)
+
+    # Relax frequency threshold progressively so we always find a candidate
+    candidates = (
+        _apply_filter(raw, guessed, correct, present, absent, min_count, 1.0) or
+        _apply_filter(raw, guessed, correct, present, absent, min_count, 0.1) or
+        _apply_filter(raw, guessed, correct, present, absent, min_count, 0.0)
     )
 
     best  = candidates[0][0] if candidates else None
@@ -143,23 +139,37 @@ def get_best_guess(message_text: str):
 
 game_data: dict = {}
 
+def _data(cid: int) -> dict:
+    if cid not in game_data:
+        game_data[cid] = {"chats": [], "auto": []}
+    return game_data[cid]
+
 # ── Commands ──────────────────────────────────────────────────────────────────
+
 @Tele.on_message(filters.command("ws_cheat") & filters.group, sudo=True)
 async def wordseek_cheat(c: Client, m: Message):
     cid  = getattr(c.me, "id")
     chat = getattr(m.chat, "id")
+    data = _data(cid)
+    args = (getattr(m, "text") or "").split()
+    auto = len(args) > 1 and args[1].lower() == "auto"
 
-    if cid not in game_data:
-        game_data[cid] = {"chats": []}
+    if auto:
+        if chat in data["auto"]:
+            data["auto"].remove(chat)
+            return await m.reply("WordSeek **auto-start disabled** for this chat.")
+        data["auto"].append(chat)
+        return await m.reply("WordSeek **auto-start enabled** for this chat.")
 
-    chats = game_data[cid]["chats"]
-
-    if chat in chats:
-        chats.remove(chat)
+    if chat in data["chats"]:
+        data["chats"].remove(chat)
+        if chat in data["auto"]:
+            data["auto"].remove(chat)
         return await m.reply("WordSeek cheat **disabled** for this chat.")
 
-    chats.append(chat)
+    data["chats"].append(chat)
     await m.reply("WordSeek cheat **enabled**. Starting game...")
+    await asyncio.sleep(1)
     await c.send_message(chat, "/new@wordseekbot")
     await asyncio.sleep(1)
     await c.send_message(chat, "lover")
@@ -169,23 +179,39 @@ async def wordseek_cheat(c: Client, m: Message):
 async def on_game_message(c: Client, m: Message):
     cid  = getattr(c.me, "id")
     chat = getattr(m.chat, "id")
+    data = _data(cid)
+    text = getattr(m, "text") or ""
 
-    if cid not in game_data or chat not in game_data[cid].get("chats", []):
+    if chat not in data["chats"]:
         return
 
-    guess, top, won = await asyncio.to_thread(get_best_guess, m.text or "")
-    if guess:
+    new_match = re.search(r"/new(\d)", text, re.IGNORECASE)
+    if new_match:
+        if chat in data["auto"]:
+            length = new_match.group(1)
+            await asyncio.sleep(1)
+            await c.send_message(chat, f"/new{length}@wordseekbot")
+            await asyncio.sleep(1)
+            await c.send_message(chat, "lover")
+        return
+
+    guess, top, won = await asyncio.to_thread(get_best_guess, text)
+    if not won and guess:
         await asyncio.sleep(1)
         await c.send_message(chat_id=chat, text=guess.lower())
-    logger.info(f"cannot guess the word: {m.text}, guess: {guess}, top: {top}")
+    elif not guess:
+        logger.info(f"[WordSeek] No guess found | top: {top} | text: {text}")
 
 
 MOD_CONFIG = {
     "name": "WordSeek",
-    "help": "**.ws_cheat** — Toggle auto-cheat for WordSeek bot in the current group.",
+    "help": (
+        "**.ws_cheat** — Toggle auto-cheat for WordSeek bot in the current group.\n"
+        "**.ws_cheat auto** — Toggle auto-start a new game after each win."
+    ),
     "works": WORKS.GROUP,
     "usable": USABLE.OWNER & USABLE.SUDO,
     "requires": [
         "requests"
-    ] 
+    ]
 }
