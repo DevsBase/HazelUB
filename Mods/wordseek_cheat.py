@@ -124,9 +124,16 @@ def fetch_candidates(word_length: int, correct: dict) -> list:
         logger.error(f"[WordSeek] Datamuse error: {e}")
         return []
 
-def _apply_filter(raw: list, guessed: set, correct: dict, present: dict, absent: set, min_count: dict, min_freq: float) -> list:
+def _filter(raw: list, guessed: set, correct: dict, present: dict, absent: set, min_count: dict, min_freq: float) -> list:
     return sorted(
         [(w, f) for w, f in raw if f >= min_freq and w not in guessed and word_matches(w, correct, present, absent, min_count)],
+        key=lambda x: -x[1]
+    )
+
+def _filter_loose(raw: list, guessed: set, absent: set, min_freq: float) -> list:
+    # Only enforce absent letters — ignore yellow/green position constraints
+    return sorted(
+        [(w, f) for w, f in raw if f >= min_freq and w not in guessed and not any(l in w for l in absent)],
         key=lambda x: -x[1]
     )
 
@@ -141,12 +148,19 @@ def get_best_guess(message_text: str):
     guessed = {w for w, _ in clues}
     raw = fetch_candidates(word_length, correct)
 
-    # Relax frequency threshold progressively so we always find a candidate
+    # Tier 1-3: full constraints, progressively lower freq
     candidates = (
-        _apply_filter(raw, guessed, correct, present, absent, min_count, 1.0) or
-        _apply_filter(raw, guessed, correct, present, absent, min_count, 0.1) or
-        _apply_filter(raw, guessed, correct, present, absent, min_count, 0.0)
+        _filter(raw, guessed, correct, present, absent, min_count, 1.0) or
+        _filter(raw, guessed, correct, present, absent, min_count, 0.1) or
+        _filter(raw, guessed, correct, present, absent, min_count, 0.0)
     )
+
+    # Tier 4-5: constraints too tight — relax yellow/green, keep only absent exclusion
+    if not candidates:
+        candidates = (
+            _filter_loose(raw, guessed, absent, 1.0) or
+            _filter_loose(raw, guessed, absent, 0.0)
+        )
 
     best  = candidates[0][0] if candidates else None
     top10 = [w for w, _ in candidates[:10]]
@@ -176,7 +190,16 @@ async def wordseek_cheat(c: Client, m: Message):
             data["auto"].remove(chat)
             return await m.reply("WordSeek **auto-start disabled** for this chat.")
         data["auto"].append(chat)
-        return await m.reply("WordSeek **auto-start enabled** for this chat.")
+        if chat not in data["chats"]:
+            data["chats"].append(chat)
+            await m.reply("WordSeek **auto-start enabled** and cheat **started**.")
+            await asyncio.sleep(1)
+            await c.send_message(chat, "/new@wordseekbot")
+            await asyncio.sleep(1)
+            await c.send_message(chat, pick_opener(5))
+        else:
+            await m.reply("WordSeek **auto-start enabled** for this chat.")
+        return
 
     if chat in data["chats"]:
         data["chats"].remove(chat)
