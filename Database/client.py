@@ -68,29 +68,3 @@ class DBClient(Methods):
     def get_db(self) -> AsyncSession:
         """Returns the main database session."""
         return self.session_factory()
-
-    # ---------- Local helpers ----------
-
-    async def is_installed(self) -> bool:
-        """Check whether the bot has completed its first-time setup.
-
-        Returns:
-            ``True`` if the ``installed`` flag is set in the local
-            state table, ``False`` otherwise.
-        """
-        async with self.get_db() as session:
-            row = await session.get(LocalState, 1)
-            return row.installed if row else False # type: ignore
-
-    async def set_installed(self, value: bool) -> None:
-        """Update the first-time setup flag in the local state table.
-
-        Args:
-            value: ``True`` to mark the bot as installed, ``False``
-                to reset it.
-        """
-        async with self.get_db() as session:
-            row = await session.get(LocalState, 1)
-            if row:
-                row.installed = value # type: ignore
-                await session.commit()
