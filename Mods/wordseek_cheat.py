@@ -124,18 +124,8 @@ def fetch_candidates(word_length: int, correct: dict) -> list:
         logger.error(f"[WordSeek] Datamuse error: {e}")
         return []
 
-def _filter(raw: list, guessed: set, correct: dict, present: dict, absent: set, min_count: dict, min_freq: float) -> list:
-    return sorted(
-        [(w, f) for w, f in raw if f >= min_freq and w not in guessed and word_matches(w, correct, present, absent, min_count)],
-        key=lambda x: -x[1]
-    )
-
-def _filter_loose(raw: list, guessed: set, absent: set, min_freq: float) -> list:
-    # Only enforce absent letters — ignore yellow/green position constraints
-    return sorted(
-        [(w, f) for w, f in raw if f >= min_freq and w not in guessed and not any(l in w for l in absent)],
-        key=lambda x: -x[1]
-    )
+def _sort(pairs: list) -> list:
+    return sorted(pairs, key=lambda x: -x[1])
 
 def get_best_guess(message_text: str):
     clues, word_length, won = parse_message(message_text)
@@ -148,19 +138,20 @@ def get_best_guess(message_text: str):
     guessed = {w for w, _ in clues}
     raw = fetch_candidates(word_length, correct)
 
-    # Tier 1-3: full constraints, progressively lower freq
-    candidates = (
-        _filter(raw, guessed, correct, present, absent, min_count, 1.0) or
-        _filter(raw, guessed, correct, present, absent, min_count, 0.1) or
-        _filter(raw, guessed, correct, present, absent, min_count, 0.0)
-    )
-
-    # Tier 4-5: constraints too tight — relax yellow/green, keep only absent exclusion
+    # Tier 1: full constraints, common words
+    candidates = _sort([(w, f) for w, f in raw if f >= 1.0 and w not in guessed and word_matches(w, correct, present, absent, min_count)])
+    # Tier 2: full constraints, any freq
     if not candidates:
-        candidates = (
-            _filter_loose(raw, guessed, absent, 1.0) or
-            _filter_loose(raw, guessed, absent, 0.0)
-        )
+        candidates = _sort([(w, f) for w, f in raw if w not in guessed and word_matches(w, correct, present, absent, min_count)])
+    # Tier 3: drop yellow/green position rules, keep absent + freq
+    if not candidates:
+        candidates = _sort([(w, f) for w, f in raw if f >= 1.0 and w not in guessed and not any(l in w for l in absent)])
+    # Tier 4: drop yellow/green position rules, keep absent
+    if not candidates:
+        candidates = _sort([(w, f) for w, f in raw if w not in guessed and not any(l in w for l in absent)])
+    # Tier 5: drop everything except not-already-guessed — always produces a guess
+    if not candidates:
+        candidates = _sort([(w, f) for w, f in raw if w not in guessed])
 
     best  = candidates[0][0] if candidates else None
     top10 = [w for w, _ in candidates[:10]]
