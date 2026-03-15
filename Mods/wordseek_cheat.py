@@ -1,4 +1,5 @@
 import re
+import random
 import asyncio
 import requests
 import logging
@@ -21,6 +22,22 @@ def unbold(text: str) -> str:
         else:
             result.append(ch)
     return "".join(result)
+
+
+OPENERS: dict[int, list[str]] = {
+    4: ["area", "also", "able", "open", "unit", "each", "idea", "into", "once", "item"],
+    5: ["arose", "stare", "crane", "slate", "crate", "snare", "trace", "later", "alter", "tales"],
+    6: ["stoner", "tinsel", "alerts", "insole", "nested", "stolen", "tailor", "trails", "reason", "detail"],
+}
+_last_opener: dict[int, str] = {}
+
+def pick_opener(length: int) -> str:
+    pool = OPENERS.get(length, OPENERS[5])
+    last = _last_opener.get(length)
+    choices = [w for w in pool if w != last] or pool
+    word = random.choice(choices)
+    _last_opener[length] = word
+    return word
 
 EMOJI_COLOR = {"🟩": "green", "🟨": "yellow", "🟥": "red"}
 
@@ -172,7 +189,7 @@ async def wordseek_cheat(c: Client, m: Message):
     await asyncio.sleep(1)
     await c.send_message(chat, "/new@wordseekbot")
     await asyncio.sleep(1)
-    await c.send_message(chat, "lover")
+    await c.send_message(chat, pick_opener(5))
 
 
 @Tele.on_message(filters.user("WordSeekBot"), group=101)
@@ -192,7 +209,7 @@ async def on_game_message(c: Client, m: Message):
             await asyncio.sleep(1)
             await c.send_message(chat, f"/new{length}@wordseekbot")
             await asyncio.sleep(1)
-            await c.send_message(chat, "lover")
+            await c.send_message(chat, pick_opener(int(length)))
         return
 
     guess, top, won = await asyncio.to_thread(get_best_guess, text)
