@@ -137,7 +137,6 @@ def get_best_guess(message_text: str, blacklist: set | None = None):
         return None, [], False
 
     correct, present, absent, min_count = build_constraints(clues)
-    # Combine already-guessed words and blacklisted words to skip
     guessed = {w for w, _ in clues} | blacklist
     raw = fetch_candidates(word_length, correct)
 
@@ -166,7 +165,7 @@ game_data: dict = {}
 
 def _data(cid: int) -> dict:
     if cid not in game_data:
-        game_data[cid] = {"chats": [], "auto": [], "blacklist": {}}
+        game_data[cid] = {"chats": [], "auto": [], "blacklist": {}, "last_clue": {}}
     return game_data[cid]
 
 def _get_blacklist(data: dict, chat: int, length: int) -> set:
@@ -237,7 +236,6 @@ async def on_game_message(c: Client, m: Message):
         return
 
     # ── Detect "X is not a valid N-letter word." ─────────────────────────────
-    # Example: "ffffff is not a valid 6-letter word."
     invalid_match = re.search(
         r"([A-Za-z]+)\s+is\s+not\s+a\s+valid\s+(\d+)-letter\s+word",
         text,
@@ -246,19 +244,26 @@ async def on_game_message(c: Client, m: Message):
     if invalid_match:
         xWord = invalid_match.group(1)
         _add_to_blacklist(data, chat, xWord)
-        # Only re-guess if this chat is actively cheating
         if chat in data["chats"]:
-            # We don't have the current game state here, so we send a fresh
-            # guess signal by re-using the last known game text — but since
-            # we don't cache it, we just log and let the next clue trigger a guess.
-            # Alternatively: send a placeholder guess from the blacklist-aware pool.
-            logger.info(f"[WordSeek] Will skip '{xWord.upper()}' on next guess in chat {chat}.")
+            last_clue = data["last_clue"].get(chat)
+            if last_clue:
+                _, word_length, _ = parse_message(last_clue)
+                bl = _get_blacklist(data, chat, word_length) if word_length else set()
+                guess, top, won = await asyncio.to_thread(get_best_guess, last_clue, bl)
+                if not won and guess:
+                    await asyncio.sleep(1)
+                    await c.send_message(chat_id=chat, text=guess.lower())
+                else:
+                    logger.info(f"[WordSeek] No re-guess after blacklist | top: {top}")
         return
 
     if chat not in data["chats"]:
         return
 
-    # ── Normal clue message: compute and send guess ───────────────────────────
+    # ── Normal clue message: cache it, then guess ────────────────────────────
+    if any(ch in text for ch in EMOJI_COLOR):
+        data["last_clue"][chat] = text
+
     _, word_length, _ = parse_message(text)
     bl = _get_blacklist(data, chat, word_length) if word_length else set()
 
