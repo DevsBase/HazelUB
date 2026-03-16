@@ -127,7 +127,9 @@ def fetch_candidates(word_length: int, correct: dict) -> list:
 def _sort(pairs: list) -> list:
     return sorted(pairs, key=lambda x: -x[1])
 
-def get_best_guess(message_text: str):
+def get_best_guess(message_text: str, blacklist: set | None = None):
+    blacklist = {w.upper() for w in blacklist} if blacklist else set()
+
     clues, word_length, won = parse_message(message_text)
     if won:
         return None, [], True
@@ -135,7 +137,8 @@ def get_best_guess(message_text: str):
         return None, [], False
 
     correct, present, absent, min_count = build_constraints(clues)
-    guessed = {w for w, _ in clues}
+    # Combine already-guessed words and blacklisted words to skip
+    guessed = {w for w, _ in clues} | blacklist
     raw = fetch_candidates(word_length, correct)
 
     # Tier 1: full constraints, common words
@@ -163,8 +166,19 @@ game_data: dict = {}
 
 def _data(cid: int) -> dict:
     if cid not in game_data:
-        game_data[cid] = {"chats": [], "auto": []}
+        game_data[cid] = {"chats": [], "auto": [], "blacklist": {}}
     return game_data[cid]
+
+def _get_blacklist(data: dict, chat: int, length: int) -> set:
+    """Return the blacklist set for a specific chat+word_length combo."""
+    return data["blacklist"].setdefault(chat, {}).setdefault(length, set())
+
+def _add_to_blacklist(data: dict, chat: int, word: str):
+    """Add an invalid word to the blacklist for its chat+length."""
+    length = len(word)
+    bl = _get_blacklist(data, chat, length)
+    bl.add(word.upper())
+    logger.info(f"[WordSeek] Blacklisted '{word.upper()}' (len={length}) in chat {chat}. Total: {len(bl)}")
 
 # ── Commands ──────────────────────────────────────────────────────────────────
 
@@ -211,6 +225,7 @@ async def on_game_message(c: Client, m: Message):
     data = _data(cid)
     text = getattr(m, "text") or ""
 
+    # ── Detect "/newN" prompts (auto-restart) ────────────────────────────────
     new_match = re.search(r"/new(\d)", text, re.IGNORECASE)
     if new_match:
         if chat in data["auto"]:
@@ -221,10 +236,33 @@ async def on_game_message(c: Client, m: Message):
             await c.send_message(chat, pick_opener(int(length)))
         return
 
+    # ── Detect "X is not a valid N-letter word." ─────────────────────────────
+    # Example: "ffffff is not a valid 6-letter word."
+    invalid_match = re.search(
+        r"([A-Za-z]+)\s+is\s+not\s+a\s+valid\s+(\d+)-letter\s+word",
+        text,
+        re.IGNORECASE
+    )
+    if invalid_match:
+        xWord = invalid_match.group(1)
+        _add_to_blacklist(data, chat, xWord)
+        # Only re-guess if this chat is actively cheating
+        if chat in data["chats"]:
+            # We don't have the current game state here, so we send a fresh
+            # guess signal by re-using the last known game text — but since
+            # we don't cache it, we just log and let the next clue trigger a guess.
+            # Alternatively: send a placeholder guess from the blacklist-aware pool.
+            logger.info(f"[WordSeek] Will skip '{xWord.upper()}' on next guess in chat {chat}.")
+        return
+
     if chat not in data["chats"]:
         return
 
-    guess, top, won = await asyncio.to_thread(get_best_guess, text)
+    # ── Normal clue message: compute and send guess ───────────────────────────
+    _, word_length, _ = parse_message(text)
+    bl = _get_blacklist(data, chat, word_length) if word_length else set()
+
+    guess, top, won = await asyncio.to_thread(get_best_guess, text, bl)
     if not won and guess:
         await asyncio.sleep(1)
         await c.send_message(chat_id=chat, text=guess.lower())
