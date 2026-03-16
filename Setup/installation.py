@@ -40,7 +40,7 @@ async def main() -> Tuple[DBClient, HazelConfig]:
         from dotenv import load_dotenv
         from pyrogram.client import Client
     except ImportError:
-        logger.critical("ImportError, Installing required packages...")
+        logger.info("ImportError, Installing required packages...")
         install_status = install_requirements()
         if install_status == 0:
             logger.info("Packages installed successfully. Restarting...")

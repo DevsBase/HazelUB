@@ -235,6 +235,7 @@ async def on_game_message(c: Client, m: Message):
 MOD_CONFIG = {
     "name": "WordSeek",
     "help": (
+        "**Usage:**\n"
         "**.ws_cheat** — Toggle auto-cheat for WordSeek bot in the current group.\n"
         "**.ws_cheat auto** — Toggle auto-start a new game after each win."
     ),

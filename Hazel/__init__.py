@@ -28,6 +28,5 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-__version__ = "03.2026"
-__channel__ = "DevsBase"
-__channel__ = "DevsBase"
+__version__: str = "03.2026"
+__AutoJoinChats__: List[str] = ["DevsBase", "UnitedFreaks"]

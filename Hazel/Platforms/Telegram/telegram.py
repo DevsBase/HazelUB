@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from functools import partial
 from typing import Dict, List, Optional, Set
 from Setup.utils import HazelConfig
@@ -129,29 +130,18 @@ class Telegram(
         self._allPyTgCalls.append(mainClientPyTgCalls)
 
     async def start(self) -> None:
-        """Start the bot, all user clients, and their PyTgCalls instances.
-
-        Startup sequence:
-
-        1. The assistant bot (``self.bot``) is started first.
-        2. Each user client in ``self._allClients`` is started in order;
-           its associated :class:`PyTgCalls` instance (if any) is also
-           started immediately after.
-        3. Every user client silently attempts to join the HazelUB support
-           channel (``Hazel.__channel__``); any failure is suppressed.
-        """
+        """Start the bot, all user clients, and their PyTgCalls instances."""
         import Hazel
-        __channel__ = Hazel.__channel__
-        await self.bot.start()
+        autojoinchats = Hazel.__AutoJoinChats__
+        asyncio.create_task(self.bot.start())
         
         for client in self._allClients:
             await client.start()
             pytgcalls = self.getClientPyTgCalls(client)
             if pytgcalls:
-                await pytgcalls.start()
-            try:
-                await client.join_chat(__channel__)
-            except: ...
+                asyncio.create_task(pytgcalls.start())
+            for chat in autojoinchats:
+                asyncio.create_task(client.join_chat(chat))
         
         self._allClientsIds: set[int] = {
             c.me.id for c in self._allClients if c.me
@@ -163,12 +153,7 @@ class Telegram(
                 del Hazel.sudoers[x]
 
     async def stop(self) -> None:
-        """Gracefully stop all user clients.
-
-        Iterates over ``self._allClients`` and calls ``stop()`` on each
-        Pyrogram client to disconnect from Telegram. The bot client is
-        **not** stopped here.
-        """
+        asyncio.create_task(self.bot.stop())
         for client in self._allClients:
             await client.stop()
     
