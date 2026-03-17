@@ -8,6 +8,7 @@ from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
 from Hazel import Tele
+from pyrogram.errors import FloodWait
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +218,7 @@ async def wordseek_cheat(c: Client, m: Message):
     await c.send_message(chat, pick_opener(5))
 
 
-@Tele.on_message(filters.user("WordSeekBot"), group=101)
+@Tele.on_message(filters.user(7245442728), group=101)
 async def on_game_message(c: Client, m: Message):
     cid  = getattr(c.me, "id")
     chat = getattr(m.chat, "id")
@@ -231,7 +232,7 @@ async def on_game_message(c: Client, m: Message):
             length = new_match.group(1)
             await asyncio.sleep(1)
             await c.send_message(chat, f"/new{length}@wordseekbot")
-            await asyncio.sleep(1)
+            await asyncio.sleep(1.5)
             await c.send_message(chat, pick_opener(int(length)))
         return
 
@@ -269,8 +270,14 @@ async def on_game_message(c: Client, m: Message):
 
     guess, top, won = await asyncio.to_thread(get_best_guess, text, bl)
     if not won and guess:
-        await asyncio.sleep(1)
-        await c.send_message(chat_id=chat, text=guess.lower())
+        await asyncio.sleep(1.5)
+        try:
+            await c.send_message(chat_id=chat, text=guess.lower())
+        except FloodWait as e:
+            if isinstance(e.value, int):
+                logger.info(f"Floodwait: sleeping for {e.value}")
+                await asyncio.sleep(e.value)
+                await c.send_message(chat_id=chat, text=guess.lower())
     elif not guess:
         logger.info(f"[WordSeek] No guess found | top: {top} | text: {text}")
 
