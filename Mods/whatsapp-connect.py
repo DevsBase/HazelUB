@@ -13,11 +13,11 @@ async def whatsapp_connect_cmd(c: Client, m: Message):
     await WA.connect_neonize_client(nclient)
 
 help_text = """**Usage:**
-> .wiki (query) - Search Wikipedia.
+> soon
 """
 
 MOD_CONFIG = {
-    "name": "Wikipedia",
+    "name": "Whatsapp",
     "help": help_text,
     "works": WORKS.ALL,
     "usable": USABLE.ALL,
