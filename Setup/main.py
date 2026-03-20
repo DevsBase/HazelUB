@@ -26,11 +26,8 @@ async def main():
     try:
         await Tele.create_pyrogram_clients()
         await Tele.start()
-        if config.WHATSAPP:
-            client = WA.create_neonize_client("Hazel-whatsapp-1.db")
-            await WA.connect_neonize_client(client)
 
-        #clear()
+        clear()
         print(art.text2art("HazelUB"))
         print(
             f'Version: {Hazel.__version__}\n'

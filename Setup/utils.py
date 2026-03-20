@@ -20,7 +20,6 @@ class HazelConfig:
     OtherSessions: List[str]
     PREFIX: List[str]
     GEMINI_API_KEY: str
-    WHATSAPP: bool
 
 
 def clear() -> None:
@@ -106,7 +105,6 @@ def load_config() -> HazelConfig:
     )
 
     GEMINI_API_KEY: str = _resolve("GEMINI_API_KEY", "")
-    WHATSAPP: bool = _resolve("WHATSAPP", False)
 
     return HazelConfig(
         BOT_TOKEN=BOT_TOKEN,
@@ -117,7 +115,6 @@ def load_config() -> HazelConfig:
         OtherSessions=OtherSessions,
         PREFIX=PREFIX,
         GEMINI_API_KEY=GEMINI_API_KEY,
-        WHATSAPP=WHATSAPP
     )
 
 
