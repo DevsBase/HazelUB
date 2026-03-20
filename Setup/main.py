@@ -13,17 +13,24 @@ async def main():
     """Entry-point that orchestrates the full HazelUB startup lifecycle."""
     db, config = await installation_main()  # Ensure installation is done first.
     from Hazel.Platforms.Telegram import Telegram
+    from Hazel.Platforms.Whatsapp import WhatsApp
     import art
     
     logger.info("Starting telegram setup...")
     Tele = Telegram(config)
-    Hazel.Tele = Tele # Override Tele in Hazel.__init__
+    WA = WhatsApp()
+    # override in Hazel.__init__
+    Hazel.Tele = Tele 
+    Hazel.WA = WA
     
     try:
         await Tele.create_pyrogram_clients()
         await Tele.start()
+        if config.WHATSAPP:
+            client = WA.create_neonize_client("Hazel-whatsapp-1.db")
+            await WA.connect_neonize_client(client)
 
-        clear()
+        #clear()
         print(art.text2art("HazelUB"))
         print(
             f'Version: {Hazel.__version__}\n'

@@ -65,27 +65,7 @@ class Telegram(
         self.message = MessageMethods
 
     async def create_pyrogram_clients(self) -> None:
-        """Instantiate Pyrogram clients and PyTgCalls instances for every session.
-
-        Builds all client objects in the following order:
-
-        1. **Bot client** – if ``self.bot_token`` is longer than 50 characters
-           it is treated as a session string; otherwise it is used as a plain
-           bot token.
-        2. **Main user client** – created from ``self.session``.
-        3. **Additional user clients** – one per entry in ``self.othersessions``.
-
-        Every user client is paired with a :class:`PyTgCalls` instance and
-        assigned an initial privilege level:
-
-        * The main client receives ``"sudo"`` privileges.
-        * Additional clients receive ``"user"`` privileges (adjustable at
-          runtime via the ``.cpromote`` / ``.cdemote`` commands).
-
-        After this method returns, ``self._allClients`` and
-        ``self._allPyTgCalls`` are fully populated and ready for
-        :meth:`start`.
-        """
+        """Instantiate Pyrogram clients and PyTgCalls instances for every session."""
         if len(self.bot_token) > 50: # Bot Client
             self.bot = Client(
                 name="HazelUB-Bot",

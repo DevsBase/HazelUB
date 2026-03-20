@@ -9,7 +9,10 @@ from typing import TYPE_CHECKING, Dict, List
 if TYPE_CHECKING:
     import Database.client as Database
     from Hazel.Platforms.Telegram import Telegram
+    from Hazel.Platforms.Whatsapp import WhatsApp
+
     Tele: Telegram
+    WA: WhatsApp
     SQLClient: Database.DBClient
     sudoers: Dict[int, List[int]]
     start_time: float

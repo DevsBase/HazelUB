@@ -37,6 +37,7 @@ async def main() -> Tuple[DBClient, HazelConfig]:
         import sqlalchemy
         import pytgcalls
         import requests
+        import neonize
         from dotenv import load_dotenv
         from pyrogram.client import Client
     except ImportError:

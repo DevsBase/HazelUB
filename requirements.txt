@@ -8,3 +8,4 @@ SQLAlchemy[asyncio]
 asyncpg
 aiosqlite
 cachetools
+neonize
