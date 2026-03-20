@@ -7,7 +7,7 @@ logger = logging.getLogger("Platforms.WhatsApp")
 
 class WhatsApp:
     def __init__(self) -> None:
-        self._allClients: List[NewAClient]
+        self._allClients: List[NewAClient] = []
     
     def create_neonize_client(self, name: str, *args, **kwargs) -> NewAClient:
         client = NewAClient(name, *args, **kwargs)
