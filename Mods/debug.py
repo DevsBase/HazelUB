@@ -1,15 +1,15 @@
 # Hazel/Platforms/Whatsapp/handler.py
 
-from neonize.aioze.events import MessageEv
+from neonize.aioze.events import ConnectedEv
 from Hazel import WA
 import logging
 
 def setup():
     for c in WA._allClients:
 
-        @c.event(MessageEv)
+        @c.event(ConnectedEv)
         async def wsf(client, event):
-            logging.info("WA message received")
+            logging.info("Client connected")
 
             msg = getattr(event, "message", None)
             chat = getattr(event, "chat", None)
