@@ -1,4 +1,5 @@
 from neonize.aioze.client import NewAClient
+from neonize.aioze.events import MessageEv
 from typing import List
 import logging
 import asyncio
@@ -22,3 +23,16 @@ class WhatsApp:
         
         logger.info("Please scan the QR code below. It will expire in 20 sec.")
         asyncio.create_task(client.connect())
+    
+    async def stop(self):
+        for client in self._allClients:
+            try:
+                await client.stop()
+            except: pass
+    
+    def on_message(self):
+        def decorator(func):
+            for client in self._allClients:
+                client.event(MessageEv)(func)
+            return func
+        return decorator

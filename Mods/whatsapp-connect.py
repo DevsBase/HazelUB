@@ -10,6 +10,7 @@ async def whatsapp_connect_cmd(c: Client, m: Message):
     if Tele.getClientPrivilege(c) != "sudo":
         return await m.reply("This client don't have `sudo` privillage. It is required to use this command.")
     nclient = WA.create_neonize_client("idk")
+    await m.reply("Please scan the QR code shown in the terminal.")
     await WA.connect_neonize_client(nclient)
 
 help_text = """**Usage:**
