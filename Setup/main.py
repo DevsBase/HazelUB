@@ -26,6 +26,7 @@ async def main():
     try:
         await Tele.create_pyrogram_clients()
         await Tele.start()
+        WA.create_neonize_client("idk")
 
         clear()
         print(art.text2art("HazelUB"))
