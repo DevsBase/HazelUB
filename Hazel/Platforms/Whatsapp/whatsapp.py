@@ -76,7 +76,15 @@ class WhatsApp:
                     continue
 
             if from_users:
-                if phone_number not in from_users:
+                user_matched = False
+                if "me" in from_users:
+                    if event.Info.MessageSource.IsFromMe:
+                        user_matched = True
+                
+                if not user_matched and phone_number in from_users:
+                    user_matched = True
+
+                if not user_matched:
                     continue
             
             if prefixes:
