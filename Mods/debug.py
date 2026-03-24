@@ -1,13 +1,13 @@
 
+from neonize.aioze.events import MessageEv
 from Hazel import WA
 import logging
 
 @WA.on_message()
-async def wsf(client, event):
+async def wsf(client, event: MessageEv):
     logging.info("WA message received")
 
     msg = getattr(event, "message", None)
-    chat = getattr(event, "chat", None)
 
-    if msg and getattr(msg, "text", None):
-        await client.send_message(chat_id=chat, text="yh")
+    if event.Message.conversation == ".hi":
+        await client.reply_message("Hello", event)
