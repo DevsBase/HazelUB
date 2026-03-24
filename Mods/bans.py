@@ -39,7 +39,7 @@ async def banFunc(c: Client, m: Message):
         return await m.reply("You are missing rights `can_restrict_members`.")
     
     try:
-        _user = await Tele.get_user(c, message=m, chat_id=chat_id, chat_member=True) 
+        _user = await Tele.get_user(c, message=m, chat_id=chat_id) 
         if isinstance(_user, ChatMember) and _user.user:
             user: User = _user.user
         else:

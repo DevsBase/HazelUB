@@ -32,16 +32,6 @@ class Telegram(
     """
 
     def __init__(self, config: HazelConfig) -> None:
-        """Initialise the Telegram manager from a configuration tuple.
-
-        Unpacks connection credentials from *config*, initialises empty
-        containers for clients, PyTgCalls instances, and privilege mappings,
-        and overrides ``filters.command`` so that every command filter uses
-        the custom command prefix(es) defined in the configuration.
-
-        Args:
-            config (HazelConfig): A tuple containing the necessary configuration values
-        """
         # ----------- Config---------
         self.session: str = config.SESSION
         self.othersessions: List[str] = config.OtherSessions
