@@ -7,7 +7,6 @@ import logging
 async def wsf(client, event: MessageEv):
     logging.info("WA message received")
 
-    msg = getattr(event, "message", None)
-
     if event.Message.conversation == ".hi":
-        await client.reply_message("Hello", event)
+        
+        await client.reply_message(f"Hello {event.Info.MessageSource.Sender}", event)
