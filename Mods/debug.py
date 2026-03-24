@@ -9,4 +9,4 @@ async def wsf(client, event: MessageEv):
 
     if event.Message.conversation == ".hi":
         
-        await client.reply_message(f"Hello {event.Info.MessageSource.Sender}", event)
+        await client.reply_message(f"Hello {event.Info.MessageSource.Chat}", event)
